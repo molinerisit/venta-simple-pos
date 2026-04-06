@@ -1,0 +1,86 @@
+PAGINA PRODUCTOS:
+SOLUCIONADO
+1- Cuando escaneo codigo de barras al agregar productos envia el formulario por el enter automatico del escaner.
+SOLUCIONADO
+2- Al agregar el producto sale en el costado un mensaje de success: "Producto creado con exito" que comprime la pantalla. Deberia salir como un push abajo.
+Cuando hago el cambio de estado de producto de activo a inactivo y cuando elimino un producto pasa lo mismo.
+SOLUCIONADO
+3- No me muestra la imagen del producto en la pagina productos.
+[Protocolo app://] Archivo no encontrado: mages/productos/producto_1755283740117.jpg
+NO RESUELTO
+4- Al crear o eliminar o modificar un producto no me deja por un rato escribir en ningun campo.
+Puede ser un problema de renderizado.
+
+5- En el modal de edicion me sale bien asignado el departamento y la familia pero en la lista de
+productos no me sale directamente.
+
+PROVEEDORES:
+SOLUCIONADO
+4-No me deja crear un proveedor me da este error: Error al guardar: SQLITE_ERROR: table proveedores has no column named createdAt
+
+CLIENTES:
+SOLUCIONADO
+5 - Al crear un cliente pasa lo mismo con el success me sale al costado en vez de ser un push up.4
+NO RESUELTO
+6 - Cuando elimino un cliente o creo un cliente se me bloquea por unos segundos la app y no me deja escibir
+ en ningun campo.
+
+COMPRAS:
+NO RESUELTO
+7 - Agregar a insumos la posibilidad de asignar un proveedor. Preguntar si combiene dar el alta desde proveedores.
+RESUELTO
+8 - Al registrar una compra me sale error critico:
+Error occurred in handler for 'registrar-compra-producto': TypeError: Cannot read properties of undefined (reading 'transaction')
+    at C:\Users\Julian\Desktop\sistema-gestion-desktop\src\ipc-handlers\compras.js:152:31
+    at WebContents.<anonymous> (node:electron/js2c/browser_init:2:77979)
+    at WebContents.emit (node:events:517:28)
+
+
+CAJA:
+RESUELTO
+9 - No me muestra la imagen del producto en la pagina caja.
+10 - Revisar las teclas de atajos.
+INSUMOS:
+Agregar texto a los alerts de succes o error.
+
+LOGIN:
+Agregar mensajes de error para el usuario no avisa si la pass es incorrecta o el mail
+
+
+
+
+
+Set de testeos dos:
+FUNCIONANDO - SOLUCIONADO
+1 - Alta usuario cajero: julian - 27462582
+
+
+2 - En admin y en todas las paginas pasa el error de cuando agregamos, editamos o eliminamos algo se 
+bloquea el input a campos de texto.
+
+3 - En productos no pasa, ni cuando se editan, ni cuando se eliminan ni cuando se crean.
+Solo ocurre en admin y en el alta de la apertura de caja.
+
+4 - En proveedor tambien se bloquea pero al eliminar y querer crear un producto.
+Se desbloquea un poco mas rapido que en admin.
+
+5 - En insumos no me deja ingresar directamente stock actual, ademas
+deberiamos poner aclaraciones en ultimo precio si es por unidad o 
+las cosas que son por kg si el precio es por el total o por kg.
+Ademas si elimino un insumo y quiero crear uno nuevo se bloquean los campos input
+pero se desbloquea rapido.
+
+6 - En etiquetas no se pasan los datos cuando genero las etiquetas de 
+precios y las listas salen vacias siempre.
+
+7 - En estadisticas estaria bueno incorporar los datos que entren desde 
+mercado pago tambien. Se obtienen desde el token.
+
+8 - Algunas configuraciones, como por ejemplo los tokens de mercado pago
+las balanzas agregadas deberian poder ser varias  y no sincronizar en 
+todas las pc la misma por ejemplo si registro dos tokens se deberia
+sincronizar eso pero si selecciono un token en una pc y quiero poner
+otro en la otra pc no deberia actualizarse los dos en la misma. Lo mismo
+ocurriria con el tema de las balanzas. Deberiamos incorporar una
+forma profesional y optima para ese manejo.
+

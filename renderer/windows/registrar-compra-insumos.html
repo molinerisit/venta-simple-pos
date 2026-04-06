@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline';
+               script-src 'self' 'unsafe-inline';
+               img-src 'self' app: data:;
+               connect-src 'self';">
+
+    <meta charset="UTF-8">
+    <title>Registrar Compra de Insumos</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/registrar-compra.css"> <!-- Reutilizamos el mismo CSS -->
+</head>
+<body>
+    <div class="container">
+  <!-- Deja solo el placeholder (sin XHR sync) -->
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h2>Registrar Compra de Insumos</h2>
+                <div class="header-actions">
+                    <a href="insumos.html" class="btn btn-secundario">Volver a Insumos</a>
+                    <button id="btn-registrar-compra" class="btn btn-success">Finalizar y Cargar Stock</button>
+                </div>
+            </header>
+
+            <section class="content-body">
+                <!-- CABECERA DE LA FACTURA (Idéntica) -->
+                <div class="card">
+                    <div class="card-body form-grid-3">
+                        <div class="form-campo">
+                            <label for="proveedor-select">Proveedor</label>
+                            <select id="proveedor-select" required></select>
+                        </div>
+                        <div class="form-campo">
+                            <label for="nro-factura-input">Nro. Factura / Remito</label>
+                            <input type="text" id="nro-factura-input" placeholder="Opcional">
+                        </div>
+                        <div class="form-campo">
+                            <label for="fecha-display">Fecha</label>
+                            <input type="text" id="fecha-display" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DETALLES DE INSUMOS (Simplificado) -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h4>Detalle de Insumos</h4>
+                        <div class="form-campo">
+                            <input type="text" id="insumo-search-input" placeholder="Buscar por nombre de insumo...">
+                            <div id="search-suggestions" class="suggestions-box"></div>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="compra-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">Insumo</th>
+                                    <th>Cantidad</th>
+                                    <th>Costo Unitario</th>
+                                    <th>Subtotal</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="compra-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TOTALES Y PAGO (Idéntico) -->
+                <div class="card mt-3">
+                    <div class="form-grid-2">
+                        <!-- Lado izquierdo: Resumen de costos -->
+                        <div class="resumen-costos">
+                            <div class="resumen-fila">
+                                <span>Subtotal:</span>
+                                <span id="subtotal-display">$0.00</span>
+                            </div>
+                            <div class="resumen-fila">
+                                <label for="descuento-input">Descuento (-):</label>
+                                <input type="number" id="descuento-input" class="resumen-input" value="0" step="0.01">
+                            </div>
+                            <div class="resumen-fila">
+                                <label for="recargo-input">Recargo (+):</label>
+                                <input type="number" id="recargo-input" class="resumen-input" value="0" step="0.01">
+                            </div>
+                            <hr>
+                            <div class="resumen-fila total-final">
+                                <span>TOTAL A PAGAR:</span>
+                                <span id="total-compra-display">$0.00</span>
+                            </div>
+                        </div>
+                        <!-- Lado derecho: Formulario de pago -->
+                        <div class="formulario-pago">
+                            <h4>Forma de Pago</h4>
+                            <div class="form-campo">
+                                <label for="metodo-pago-select">Método de Pago</label>
+                                <select id="metodo-pago-select">
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Tarjeta">Tarjeta</option>
+                                    <option value="Cuenta Corriente">Cuenta Corriente</option>
+                                </select>
+                            </div>
+                            <div class="form-campo">
+                                <label for="monto-abonado-input">Monto Abonado</label>
+                                <input type="number" id="monto-abonado-input" step="0.01" value="0">
+                            </div>
+                            <div class="resumen-fila saldo-pendiente">
+                                <span>Saldo Pendiente:</span>
+                                <span id="saldo-pendiente-display">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <div id="toast-notification" class="toast"></div> <!-- Para las notificaciones -->
+    
+    <!-- Scripts -->
+    <script src="../js/navbar-loader.js"></script>
+    <script src="../js/registrar-compra-insumos.js"></script> <!-- Carga el JS correcto -->
+</body>
+</html>

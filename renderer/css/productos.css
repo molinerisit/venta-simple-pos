@@ -1,0 +1,485 @@
+/* renderer/css/productos.css - versión limpia y corregida */
+
+/* === 1. Cabecera y Búsqueda === */
+#search-input {
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    width: 300px;
+    font-size: 1em;
+}
+
+/* ESTILO NUEVO PARA EL CONTADOR DE PRODUCTOS */
+.contador-titulo {
+    font-size: 0.65em;
+    font-weight: normal;
+    color: #6c757d;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* === 2. Contenedor de la Tabla === */
+.table-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+/* === 3. Estilos Generales de la Tabla === */
+#productos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+/* === 4. Cabecera de la Tabla === */
+#productos-table thead {
+    background-color: #f8f9fa;
+}
+
+#productos-table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 500;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+/* === 5. Cuerpo y Filas de la Tabla === */
+#productos-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+#productos-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+#productos-table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* === 6. Celdas === */
+#productos-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+    color: #212529;
+}
+
+/* === 7. Estilos Específicos de Productos === */
+.producto-imagen {
+    width: 45px;
+    height: 45px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+
+.producto-nombre {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+/* Badges de estado */
+.estado-activo, .estado-inactivo {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+.estado-activo { background-color: #dcfce7; color: #166534; }
+.estado-inactivo { background-color: #fee2e2; color: #991b1b; }
+
+/* Alineaciones por columna (Ajustadas para la tabla de productos) */
+#productos-table th:nth-child(6),
+#productos-table td:nth-child(6),
+#productos-table th:nth-child(7),
+#productos-table td:nth-child(7),
+#productos-table th:nth-child(8),
+#productos-table td:nth-child(8) {
+    text-align: right;
+}
+
+/* Estado al centro */
+#productos-table th:nth-child(9),
+#productos-table td:nth-child(9) {
+    text-align: center;
+}
+
+/* Acciones a la derecha */
+#productos-table th:nth-child(10),
+#productos-table td:nth-child(10) {
+    text-align: right;
+}
+
+.acciones-btn {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* === 8. Sección de Importación (CSV) === */
+.import-section {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+}
+.import-section h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+.import-section p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 0.9em;
+    color: #555;
+}
+.import-section .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-start;
+}
+
+/* === 9. Estilos del Formulario de Producto (product-form.html) === */
+
+/* Fieldsets */
+fieldset {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+}
+fieldset legend {
+    font-size: 0.85em;
+    font-weight: 500;
+    padding: 0 0.5rem;
+}
+
+/* Formularios */
+.form-campo {
+    margin-bottom: 0.75rem;
+}
+.form-campo label {
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+.form-grid-2 {
+    gap: 1rem;
+}
+
+/* Select + botón '+' */
+.form-campo-con-boton {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.form-campo-con-boton select {
+    flex-grow: 1;
+}
+.btn-add {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+/* Formularios inline (aparecen al crear nueva familia/depto) */
+.form-campo-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.inline-form-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.inline-form-container input {
+    flex-grow: 1;
+}
+.inline-form-container button {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* Rentabilidad */
+.rentabilidad-box {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    margin-top: 5px;
+    text-align: center;
+}
+.rentabilidad-box span {
+    font-size: 0.85em;
+}
+.rentabilidad-box strong {
+    color: var(--success-color);
+    font-size: 1em;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Imagen preview */
+.form-campo-imagen-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#imagen-preview {
+    display: block;
+    margin-top: 10px;
+    width: 100px;
+    height: 100px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    object-fit: cover;
+}
+#imagen-preview.imagen-preview-oculta {
+    display: none;
+}
+
+/* === 10. Modales de Diálogo (Ajuste de Precio y Alerta de Margen) === */
+
+/* Modal principal (overlay) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: none; /* Oculto por defecto */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* encima de todo */
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.modal-overlay.visible {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-box {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.modal-box h3 {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.5em;
+}
+
+.modal-box p {
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.modal-actions-full {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+/* Botones dinámicos del modal de ajuste de precio */
+.modal-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.modal-actions-grid button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    padding: 10px;
+    font-size: 1em;
+    font-weight: bold;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.precio-sugerido {
+    font-size: 1.2em;
+    font-weight: 900;
+    color: white;
+    display: block;
+}
+
+/* === 11. Utilidades y Legacy === */
+/* Confirm modal ligero */
+.confirm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    z-index: 1500;
+}
+.confirm-overlay.visible { display: grid; place-items: center; }
+
+.confirm-box {
+    width: 92vw; max-width: 420px;
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    padding: 16px;
+}
+.confirm-box h4 { margin: 0 0 8px; font-size: 1.05rem; }
+.confirm-box p  { margin: 0 0 16px; color: #444; }
+.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Toast */
+.toast { pointer-events: none; }
+
+/* Recomendaciones / utilidades extra (no duplicadas) */
+/* Si necesitas una clase modal alternativa más ligera, defínela aquí */
+
+/* FIN DEL ARCHIVO */
+.modal-overlay {
+  display: none;           /* Oculto por defecto */
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  justify-content: center;
+  align-items: center;
+  z-index: 9000;
+}
+
+.modal-overlay.activo {
+  display: flex;           /* Solo visible cuando JS lo activa */
+}
+
+.fila-bajo-stock {
+  background-color: #fff3cd !important; /* amarillo suave */
+}
+
+.fila-sin-compra {
+  background-color: #e2f0ff !important; /* celeste */
+}
+
+.fila-margen-bajo {
+  background-color: #fde2e2 !important; /* rojo suave */
+}
+
+.alerta-compra {
+  color: #0c5460;
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+}
+
+.alerta-margen {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.form-select-sort {
+    padding: 10px 15px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 5px;
+    font-size: 0.95em;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+    min-width: 180px; /* Para que se lea bien el texto */
+}
+
+.form-select-sort:focus {
+    border-color: var(--primary-color, #007bff);
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+/* === 1. Cabecera y Búsqueda (CORREGIDO) === */
+
+/* Contenedor de las acciones (Select, Input, Botones) */
+.header-actions {
+    display: flex;
+    align-items: center;    /* Centra verticalmente todos los elementos */
+    gap: 10px;              /* Espacio uniforme entre cada elemento */
+    flex-wrap: wrap;        /* Si la pantalla es chica, baja los elementos */
+}
+
+/* Estilo unificado para Inputs y Selects para que tengan la misma altura */
+#search-input, 
+.form-select-sort {
+    padding: 0.6rem 1rem;   /* Padding unificado */
+    height: 42px;           /* Altura fija para alinear con botones */
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 5px;
+    font-size: 0.95em;
+    outline: none;
+    box-sizing: border-box; /* Importante para que el padding no sume ancho */
+}
+
+#search-input {
+    width: 250px; /* Un poco menos ancho para dar lugar a los botones */
+}
+
+.form-select-sort {
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    min-width: 160px;
+}
+
+.form-select-sort:focus,
+#search-input:focus {
+    border-color: var(--primary-color, #007bff);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Ajustes específicos para los botones de la cabecera */
+.header-actions .btn {
+    height: 42px;           /* Misma altura que los inputs */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;    /* Evita que el texto se parta en dos líneas */
+    padding: 0 1.2rem;      /* Padding lateral cómodo */
+    font-weight: 500;
+}
+
+/* Opcional: Ajuste de colores si quieres que coincidan con tu imagen */
+.btn-info {
+    background-color: #3498db; /* Azul */
+    color: white;
+    border: none;
+}
+
+.btn-primario {
+    background-color: #2c3e50; /* Oscuro (como en tu imagen) */
+    color: white;
+    border: none;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px); /* Pequeño efecto visual */
+}
+
+/* El resto de tu CSS sigue igual... */

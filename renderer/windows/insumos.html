@@ -1,0 +1,54 @@
+<!-- insumos.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Insumos</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/productos.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar asíncrono (lo inyecta navbar-loader.js) -->
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content">
+      <header class="main-header">
+        <h2>Gestión de Insumos</h2>
+        <div class="header-actions">
+          <input type="text" id="search-input" placeholder="Buscar por nombre..." />
+          <a href="registrar-compra-insumos.html" class="btn btn-info">Registrar Compra</a>
+          <button id="btn-nuevo-insumo" class="btn btn-primario">+ Nuevo Insumo</button>
+        </div>
+      </header>
+
+      <section class="content-body">
+        <div class="table-container">
+          <table id="insumos-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Familia</th>
+                <th>Stock</th>
+                <th>Unidad</th>
+                <th>Último Costo</th>
+                <th style="text-align:right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="insumos-table-body"><!-- via JS --></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/insumos.js"></script>
+
+  <!-- Toast -->
+  <div id="toast-notification" class="toast"></div>
+</body>
+</html>

@@ -1,0 +1,153 @@
+/* =======================================================
+   Estilos específicos de página — Scope: .main-content
+   No afectan sidebar ni navbar
+   global.css → capa base (prioridad baja)
+   ======================================================= */
+
+@layer base, page;
+
+/* Capa base global */
+@import url("./global.css") layer(base);
+
+/* =======================================================
+   Capa: page
+   ======================================================= */
+@layer page {
+
+/* ---------- Tarjetas ---------- */
+.main-content .card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Filtros ---------- */
+.main-content .filter-container { margin-bottom: 1rem; }
+
+.main-content #filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.main-content .form-field {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 150px;
+}
+
+.main-content .form-field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.main-content .form-field input,
+.main-content .form-field select {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ---------- Botones ---------- */
+.main-content .filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.main-content .btn-primario,
+.main-content .btn-secondary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, background-color 0.2s ease;
+}
+
+.main-content .btn-primario {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.main-content .btn-secondary {
+  background: #6c757d;
+  color: #fff;
+}
+
+.main-content .btn-primario:hover { filter: brightness(110%); }
+.main-content .btn-secondary:hover { background: #5a6268; }
+
+/* ---------- Badges de estado ---------- */
+.main-content .status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.main-content .status-approved { background: #dcfce7; color: #166534; }
+.main-content .status-pending  { background: #fef9c3; color: #854d0e; }
+.main-content .status-rejected { background: #fee2e2; color: #991b1b; }
+.main-content .status-refunded { background: #dbeafe; color: #1e3a8a; }
+
+/* ---------- Tabla ---------- */
+.main-content .table-container {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.main-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.main-content th,
+.main-content td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.main-content th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .main-content #filter-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .main-content .form-field { width: 100%; }
+
+  .main-content .filter-actions {
+    flex-direction: column;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .main-content .btn-primario,
+  .main-content .btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .main-content .table-container { overflow-x: auto; }
+  .main-content table { min-width: 600px; }
+}
+
+} /* fin @layer page */

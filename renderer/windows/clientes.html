@@ -1,0 +1,77 @@
+<!-- renderer/windows/clientes.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Clientes</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+</head>
+<body>
+  <div class="container">
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content" id="main-content">
+      <header class="main-header">
+        <h2>Gestión de Clientes</h2>
+        <div class="header-actions">
+          <button id="btn-nuevo-cliente" class="btn btn-primario">Nuevo Cliente</button>
+        </div>
+      </header>
+
+      <section class="content-body">
+        <div class="table-container">
+          <table id="clientes-table">
+            <thead>
+              <tr>
+                <th>DNI</th>
+                <th>Nombre</th>
+                <th>Descuento (%)</th>
+                <th style="text-align:right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal Cliente -->
+  <div id="cliente-modal" class="modal" aria-hidden="true">
+    <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <h2 id="modal-titulo" class="modal-titulo">Nuevo Cliente</h2>
+
+      <form id="cliente-form" class="modal-cuerpo">
+        <input type="hidden" id="cliente-id" />
+        <div class="form-campo">
+          <label for="dni">DNI</label>
+          <input type="text" id="dni" required />
+        </div>
+        <div class="form-campo">
+          <label for="nombre">Nombre y Apellido</label>
+          <input type="text" id="nombre" required />
+        </div>
+        <div class="form-campo">
+          <label for="descuento">Descuento (%)</label>
+          <input type="number" id="descuento" value="0" step="0.5" />
+        </div>
+      </form>
+
+      <div class="modal-acciones">
+        <button type="button" id="btn-cancelar-modal" class="btn btn-secundario">Cancelar</button>
+        <!-- ID explícito para evitar selectores frágiles -->
+        <button type="submit" id="btn-guardar-cliente" class="btn btn-primario" form="cliente-form">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-notification" class="toast"></div>
+
+  <!-- Scripts -->
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/clientes.js"></script>
+</body>
+</html>

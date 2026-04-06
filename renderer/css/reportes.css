@@ -1,0 +1,270 @@
+/* === ESTRUCTURA GENERAL === */
+.caja-body {
+  background-color: #f8f9fa;
+  color: #222;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* === MAIN CONTENT === */
+.main-content {
+  flex: 1;
+  padding: 1rem 2rem;
+  overflow-y: auto;
+}
+
+.content-body header {
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+/* === TOOLBAR === */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.form-campo {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.form-campo label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.form-campo select,
+.form-campo input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  min-width: 180px;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+}
+
+.btn {
+  cursor: pointer;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.btn-primario {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primario:hover {
+  background-color: #0069d9;
+}
+
+/* === SUMMARY BAR === */
+.summary-bar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  background: #e9ecef;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
+}
+
+/* === TABLA === */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+thead {
+  background: #007bff;
+  color: #fff;
+}
+
+th, td {
+  padding: 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap; /* Evita que el texto se parta en varias líneas */
+}
+
+th.col-total,
+td.col-total {
+  text-align: right;
+  font-weight: bold;
+}
+
+th.col-detalles {
+  text-align: center;
+}
+
+tbody tr:not(.detalles-fila):hover { /* No aplicar hover a la fila de detalles */
+  background-color: #f1f1f1;
+}
+
+.btn-toggle {
+  background: #6c757d;
+  color: #fff;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.btn-toggle:hover {
+  background: #5a6268;
+}
+
+/* === 🟢 INICIO: ESTILOS CORREGIDOS PARA DETALLES === */
+
+/* Fila de venta que está mostrando sus detalles */
+tbody tr.fila-activa {
+  background-color: #f8f9fa;
+  box-shadow: inset 4px 0 0 0 #007bff; /* Borde izquierdo azul */
+}
+
+/* La nueva fila que creamos dinámicamente */
+.detalles-fila td {
+  padding: 0 !important; /* Quitar padding de la celda contenedora */
+  background-color: #ffffff;
+  /* Sombra interna para dar efecto de "adentro" */
+  box-shadow: inset 0 4px 8px -4px rgba(0,0,0,0.1), 
+              inset 0 -4px 8px -4px rgba(0,0,0,0.1);
+}
+
+/* El div dentro de la celda de colspan */
+.detalles-container-expandido {
+  padding: 1rem 1.5rem; /* Espacio interno */
+  overflow-x: auto; /* Scroll si la tabla interna es muy ancha */
+}
+
+/* La tabla anidada de productos */
+.tabla-anidada {
+  width: 100%;
+  min-width: 400px; /* Evita que se colapse */
+  border-collapse: collapse;
+  background-color: #fff;
+  border: 1px solid #eee;
+}
+
+.tabla-anidada th,
+.tabla-anidada td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  font-size: 0.9em;
+  white-space: normal; /* Permitir que el nombre del producto se parta */
+}
+
+.tabla-anidada th {
+  background-color: #f9f9f9;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Alinear números a la derecha en la tabla anidada */
+.tabla-anidada td:nth-child(2),
+.tabla-anidada td:nth-child(3),
+.tabla-anidada td:nth-child(4) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* === FIN: ESTILOS CORREGIDOS === */
+
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 900px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtros {
+    flex-direction: column;
+  }
+
+  .form-campo select,
+  .form-campo input {
+    width: 100%;
+  }
+
+  .summary-bar {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  th, td {
+    padding: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  .btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .table-container {
+    border-radius: 5px;
+  }
+}
+
+/* === SCROLL SUAVE === */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+.table-container::-webkit-scrollbar-thumb {
+  background: #007bff;
+  border-radius: 10px;
+}
+.table-container::-webkit-scrollbar-track {
+  background: #e9ecef;
+}

@@ -1,0 +1,86 @@
+/* Estilos para la página de Cuentas Corrientes */
+
+/* --- Pestañas --- */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 25px;
+}
+
+.tab-button {
+    padding: 15px 25px;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #888;
+    position: relative;
+    top: 2px;
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* --- Contenido de Pestañas --- */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* --- Estilos de Tabla --- */
+.table-container {
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    overflow: hidden; /* Para que el borde redondeado se aplique a la tabla */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+thead th {
+    background-color: var(--light-bg);
+    font-weight: 600;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Colores para la deuda */
+td:nth-child(3) { /* Columna de la deuda */
+    font-weight: bold;
+}
+
+#clientes-deuda-table td:nth-child(3) {
+    color: var(--danger-color, #e74c3c); /* Los clientes nos deben (rojo) */
+}
+
+#proveedores-deuda-table td:nth-child(3) {
+    color: var(--accent-color, #f39c12); /* Nosotros les debemos (naranja/amarillo) */
+}
+
+.empty-row td {
+    text-align: center;
+    padding: 40px;
+    color: #777;
+    font-style: italic;
+}

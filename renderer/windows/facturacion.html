@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Facturación de Ventas</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/reportes.css" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' app: data:; connect-src 'self';">
+</head>
+<body class="caja-body">
+  <div class="container">
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content">
+      <header>
+        <h1>Facturación de Ventas</h1>
+      </header>
+
+      <section>
+        <div class="toolbar">
+          <p>Listado de ventas. Hacé clic en “Facturar” para emitir el comprobante fiscal.</p>
+        </div>
+
+        <div class="table-container">
+          <table id="ventas-table">
+            <thead>
+              <tr>
+                <th>ID Venta</th>
+                <th>Fecha y Hora</th>
+                <th>Cliente (DNI)</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th style="text-align:right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-ventas-facturacion"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal de facturación -->
+  <div id="factura-modal" class="modal">
+    <div class="modal-contenido" style="max-width:420px;">
+      <h2 class="modal-titulo">Facturar Venta</h2>
+      <div class="modal-cuerpo">
+        <p><strong>Venta:</strong> <span id="modal-venta-id">-</span></p>
+        <p><strong>Total:</strong> <span id="modal-venta-total">$0,00</span></p>
+        <div class="form-campo">
+          <label for="modal-tipo-comp">Tipo de Comprobante</label>
+          <select id="modal-tipo-comp">
+            <!-- AFIP: 6=Factura B, 11=Factura C (ejemplos) -->
+            <option value="6">Factura B</option>
+            <option value="11">Factura C</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-acciones">
+        <button id="btn-cancelar-factura" class="btn btn-secundario">Cancelar</button>
+        <button id="btn-confirmar-factura" class="btn btn-primario">Confirmar y Facturar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-notification" class="toast"></div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/facturacion.js"></script>
+</body>
+</html>

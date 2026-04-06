@@ -1,0 +1,52 @@
+/* ================================================= */
+/* ESTILOS PARA LA PÁGINA DE GESTIÓN DE INSUMOS/GASTOS */
+/* ================================================= */
+
+/* Estilos para la tabla de insumos */
+#insumos-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#insumos-table th, 
+#insumos-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#insumos-table th {
+  background-color: var(--light-bg);
+  font-weight: 500;
+}
+
+#insumos-table .empty-cell {
+  text-align: center;
+  padding: 40px;
+  color: #777;
+}
+
+#insumos-table .acciones-btn {
+  text-align: right;
+}
+
+/* Estilos para el modal de nuevo insumo (reutilizados) */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-campo-con-boton {
+  display: flex;
+  gap: 8px;
+}
+
+.form-campo-con-boton select {
+  flex-grow: 1;
+}
+
+.form-campo-con-boton .btn-add {
+  flex-shrink: 0;
+  padding: 0 12px;
+}

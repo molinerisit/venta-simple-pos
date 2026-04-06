@@ -1,0 +1,444 @@
+/* renderer/css/caja.css */
+html {
+  font-size: 125%; /* Ajustá este valor: 105%, 110%, 115%, etc. */
+}
+
+/* Ajuste fino para evitar desbordes en tablas o botones */
+table, button, input, label, p, h2, h3, h4 {
+  font-size: 1em;
+}
+/* --- 1. LAYOUT DE LA CAJA --- */
+.caja-main {
+  display: flex;
+  flex-grow: 1;
+  height: 100vh0;
+  overflow: hidden;
+  position: relative; /* ✅ CRUCIAL: Contiene los elementos posicionados absolutamente */
+}
+.venta-panel {
+  flex: 3;
+  min-width: 480px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #ffffff;
+  border-right: 1px solid var(--border-color);
+  position: relative; /* ✅ CRUCIAL: Para contener el panel de bloqueo */
+}
+.acciones-panel {
+  flex: 2;
+  min-width: 380px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 15px;
+  overflow-y: auto;
+  position: relative; /* Asegura un contexto de apilamiento */
+  z-index: 10; /* ✅ Pone este panel por encima de la superposición de bloqueo */
+}
+
+/* --- 2. PANEL DE VENTA (IZQUIERDO) --- */
+.input-area {
+  flex-shrink: 0;
+  margin-bottom: 15px;
+}
+/* --- Modificar esta regla existente --- */
+.productos-seleccionados {
+  flex-grow: 1;
+  /* CAMBIO: 'scroll' fuerza que la barra siempre esté visible */
+  overflow-y: scroll; 
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  /* Opcional: Scroll suave */
+  scroll-behavior: smooth;
+}
+
+/* --- AGREGAR ESTAS REGLAS NUEVAS PARA ESTILIZAR LA BARRA --- */
+.productos-seleccionados::-webkit-scrollbar {
+  width: 10px; /* Ancho fijo siempre presente */
+}
+
+.productos-seleccionados::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0 5px 5px 0;
+}
+
+.productos-seleccionados::-webkit-scrollbar-thumb {
+  background: #ccc; 
+  border-radius: 5px;
+  border: 2px solid #f1f1f1; /* Para que parezca flotante */
+}
+
+.productos-seleccionados::-webkit-scrollbar-thumb:hover {
+  background: #999; 
+}
+.total-area {
+  position: relative;
+  flex-shrink: 0;
+  padding-top: 15px;
+  margin-top: 15px;
+  text-align: right;
+  border-top: 2px solid var(--primary-color);
+}
+.items-counter {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  font-size: 0.9em;
+  font-weight: 500;
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.total-area h2 {
+  margin: 0;
+  font-size: 1.1em;
+  color: #555;
+  font-weight: 600;
+}
+.total-area p#total-display {
+  margin: 5px 0 0;
+  font-size: 2.8em;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+/* --- 3. PANEL DE ACCIONES (DERECHO) --- */
+.arqueo-actions {
+  position: relative;
+  z-index: 20; /* Asegura que los botones de abrir/cerrar caja estén siempre arriba */
+}
+.cliente-area,
+.resumen-venta,
+.payment-methods,
+.pago-efectivo-area,
+.actions {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+.input-group {
+  display: flex;
+}
+.input-group input {
+  flex-grow: 1;
+  border-radius: 5px 0 0 5px;
+  border-right: none;
+}
+.input-group button {
+  border-radius: 0 5px 5px 0;
+}
+#cliente-info {
+  margin-top: 10px;
+  font-style: italic;
+  color: var(--accent-color);
+  font-weight: 500;
+}
+.resumen-venta p {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+.resumen-venta p:not(:last-child) {
+  border-bottom: 1px dashed #eee;
+}
+.valor-negativo {
+  color: var(--danger-color);
+  font-weight: 500;
+}
+.valor-positivo {
+  color: var(--success-color);
+  font-weight: 500;
+}
+.payment-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.payment-methods button.active {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+}
+
+.actions {
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "registrar registrar"
+    "imprimir cancelar";
+  gap: 10px;
+}
+
+#registrar-venta-btn { grid-area: registrar; }
+#imprimir-ticket-btn { grid-area: imprimir; }
+#cancelar-venta-btn { grid-area: cancelar; }
+
+.actions .btn {
+  padding: 15px;
+  font-size: 1.1em;
+  font-weight: bold;
+  width: 100%;
+}
+
+/* --- 4. RESPONSIVIDAD --- */
+@media (max-width: 900px) {
+  .caja-main {
+    flex-direction: column;
+    overflow-y: auto;
+    height: auto;
+  }
+  .venta-panel,
+  .acciones-panel {
+    min-width: 100%;
+    height: auto;
+  }
+  .acciones-panel {
+    border-top: 2px solid var(--border-color);
+  }
+}
+
+/* --- 5. ESTILOS DE COMPONENTES --- */
+.oculto {
+  display: none !important;
+}
+
+.input-area label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.input-area input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 1.1em;
+  font-family: inherit;
+}
+
+.pago-efectivo-area label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+.pago-efectivo-area input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 1em;
+  margin-bottom: 10px;
+}
+.pago-efectivo-area p {
+  font-weight: bold;
+  font-size: 1.1em;
+  text-align: right;
+}
+.pago-efectivo-area span {
+  color: var(--success-color);
+}
+
+.form-check { margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+.form-check label { margin-bottom: 0; }
+
+/* --- 6. SUPERPOSICIÓN DE BLOQUEO Y MODALES --- */
+.bloqueo-superposicion {
+  position: absolute; /* Se posiciona dentro de '.venta-panel' */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 5; /* Capa intermedia, por debajo del panel de acciones */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  border-radius: 0 0 5px 5px; /* Para que coincida con el borde del panel */
+}
+.bloqueo-mensaje h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+
+/* Contenedor principal del resumen en el modal de cierre */
+#resumen-cierre-caja {
+    background-color: #f9f9f9;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: left; /* Alineamos el texto a la izquierda para mayor legibilidad */
+}
+
+#resumen-cierre-caja p {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 1em;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #ddd;
+}
+
+#resumen-cierre-caja p:last-child {
+    border-bottom: none;
+}
+
+#resumen-cierre-caja strong {
+    font-weight: 600;
+}
+
+/* El contenedor de los botones de acción en los modales */
+.modal-content .form-actions {
+    display: flex; /* Usamos flexbox para alinear */
+    justify-content: flex-end; /* Alinea los botones a la derecha */
+    gap: 10px; /* ✅ Añade un espacio de 10px entre los botones */
+    margin-top: 20px; /* Añade un espacio superior */
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    position: relative; /* Para posicionar el botón de cierre */
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border-top: 5px solid var(--danger-color);
+}
+.modal-content p {
+    font-size: 1.2em;
+    margin: 0 0 25px 0;
+    color: #333;
+}
+.modal-content button.btn-primario {
+    padding: 10px 30px;
+    font-size: 1em;
+}
+.btn-close-modal {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.btn-close-modal:hover {
+  color: #333;
+}
+
+/* --- 7. SIDEBAR COLAPSABLE Y BOTÓN TOGGLE --- */
+.container {
+  display: flex;
+  transition: all 0.3s ease;
+}
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background-color: var(--sidebar-bg, #2f3542);
+  color: #fff;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.container.sidebar-collapsed .sidebar {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border: none;
+}
+
+.toggle-sidebar {
+  position: absolute;
+  bottom: 12px;
+  left: 240px;
+  transform: translateX(0);
+  padding: 6px 10px;
+  background: var(--color-primario, #3f51b5);
+  color: #fff;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+  z-index: 2000;
+}
+.toggle-sidebar:hover {
+  background: var(--color-primario-hover, #2e3c9e);
+}
+.toggle-sidebar span {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.container.sidebar-collapsed .toggle-sidebar {
+  left: 0;
+  border-radius: 0 6px 6px 0;
+}
+.container.sidebar-collapsed .toggle-sidebar span {
+  transform: rotate(180deg);
+}
+
+/* Añadir en tu archivo CSS */
+.modal-header-success {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.modal-header-success .status-icon {
+  width: 60px;
+  height: 60px;
+  color: #4caf50; /* Verde éxito */
+}
+.resumen-venta, .resumen-mp {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+.resumen-venta p, .resumen-mp p {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-size: 1.1em;
+}
+.resumen-mp h4 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+
+.toast.warning {
+    background-color: #f59e0b; /* Naranja */
+    color: #fff;
+    border-left: 5px solid #b45309; /* Borde más oscuro para destacar */
+}

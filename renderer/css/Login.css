@@ -1,0 +1,107 @@
+/* renderer/css/login.css */
+
+/* Importamos las variables de color para mantener la consistencia */
+@import url('./global.css');
+
+/* Reseteamos el overflow y min-width de global.css que no aplican aquí */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--light-bg);
+    margin: 0;
+    height: 100vh;
+    min-width: unset;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 360px;
+    padding: 20px;
+}
+
+.login-container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+}
+
+.form-field {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.form-field input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+    transition: border-color 0.2s;
+}
+
+.form-field input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.login-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    background-color: var(--primary-color);
+    color: var(--text-light);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.login-button:hover {
+    background-color: var(--secondary-color);
+    filter: none; /* Quitamos el filtro de global.css para este botón */
+}
+
+#error-msg {
+    color: var(--danger-color);
+    margin-top: 15px;
+    min-height: 20px; /* Evita que el layout salte cuando aparece el mensaje */
+    font-weight: 500;
+}
+
+.error-text {
+    color: #e53e3e; /* Un color rojo vivo pero no estridente */
+    background-color: #fed7d7; /* Un fondo rojo muy pálido */
+    border: 1px solid #f56565; /* Un borde rojo */
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.9em;
+    display: none; /* Por defecto está oculto */
+}
+
+/* Hacemos que sea visible solo si tiene contenido */
+.error-text:not(:empty) {
+    display: block;
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte de Ventas</title>
+
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/reportes.css" />
+</head>
+
+<body class="caja-body">
+  <div class="container">
+    <aside id="sidebar-placeholder" class="sidebar"></aside>
+
+    <main class="main-content">
+      <div class="content-body">
+        <header>
+          <h1>Reporte de Ventas</h1>
+        </header>
+
+        <section>
+          <div class="toolbar">
+            <div class="filtros">
+              <div class="form-campo">
+                <label for="filtro-fecha">Filtrar por fecha</label>
+                <select id="filtro-fecha">
+                  <option value="hoy">Hoy</option>
+                  <option value="ayer">Ayer</option>
+                  <option value="semana">Esta Semana</option>
+                  <option value="mes">Este Mes</option>
+                  <option value="todos" selected>Todas las Ventas</option>
+                </select>
+              </div>
+
+              <div class="form-campo">
+                <label for="busqueda-producto">Buscar por producto</label>
+                <input
+                  type="text"
+                  id="busqueda-producto"
+                  placeholder="Nombre del producto..."
+                />
+              </div>
+            </div>
+
+            <div class="acciones">
+              <button id="btn-aplicar-filtros" class="btn btn-primario">
+                Aplicar Filtros
+              </button>
+            </div>
+          </div>
+
+          <div class="summary-bar">
+            <div>Total Facturado: <strong id="total-ventas">$0.00</strong></div>
+            <div>Ventas Encontradas: <strong id="cantidad-ventas">0</strong></div>
+          </div>
+
+          <div class="table-container">
+            <table id="ventas-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Fecha y Hora</th>
+                  <th>Cliente (DNI)</th>
+                  <th>Método de Pago</th>
+                  <th>Subtotal</th>
+                  <th>Descuento</th>
+                  <th>Recargo</th>
+                  <th class="col-total">Total</th>
+                  <th>Monto Pagado</th>
+                  <th>Vuelto</th>
+                  <th class="col-detalles">Mercadería</th>
+                </tr>
+              </thead>
+              <tbody id="ventas-table-body">
+                </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script src="../js/reportes.js"></script>
+</body>
+</html>

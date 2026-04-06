@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración Inicial</title>
+    <link rel="stylesheet" href="../css/setup.css">
+</head>
+<body>
+
+    <div class="setup-wrapper">
+        <div class="setup-container">
+            
+            <div class="setup-header">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                </svg>
+                <h1 class="title">Bienvenido</h1>
+                <p class="subtitle">
+                    Crea la cuenta de Administrador para comenzar.
+                </p>
+            </div>
+            
+            <form id="setup-form">
+                <div class="form-field">
+                    <label for="nombre">Nombre de Administrador</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+                <div class="form-field">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="setup-button">
+                    Crear y Empezar
+                </button>
+            </form>
+            
+            <!-- <p id="error-msg"></p> -->
+            <div id="message" class="error-msg"></div>
+
+        </div>
+    </div>
+
+    <script src="../js/setup.js" defer></script>
+
+</body>
+</html>

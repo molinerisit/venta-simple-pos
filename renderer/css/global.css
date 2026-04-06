@@ -1,0 +1,211 @@
+/* =======================================================
+   GLOBAL.CSS — Versión unificada y blindada
+   - Base de diseño y UI
+   - Layout con gutter entre sidebar y contenido
+   - NO define estilos del sidebar (van en navbar.css)
+   ======================================================= */
+
+/* --- 1) VARIABLES --- */
+:root{
+  /* Paleta */
+  --primary-color: #2c3e50;
+  --secondary-color: #34495e;
+  --accent-color: #1abc9c;
+  --danger-color: #e74c3c;
+  --info-color: #3498db;
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+
+  --light-bg: #f4f7fa;
+  --text-light: #ffffff;
+  --text-dark: #333333;
+  --text-muted: #6c757d;
+  --border-color: #dfe4e8;
+
+  --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Medidas layout */
+  --layout-gutter: 12px;            /* separación entre sidebar y contenido */
+
+  /* Variables declaradas para el navbar (fuente de verdad aquí) */
+  --sidebar-width: 15rem;           /* ≈ 240px abierto */
+  --sidebar-collapsed-width: 64px;  /* base colapsado (navbar.css puede ampliarlo visualmente) */
+}
+
+/* --- 2) RESET / BASE --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; }
+body{
+  font-family: var(--body-font);
+  background-color: var(--light-bg);
+  color: var(--text-dark);
+  display: flex;
+  overflow: hidden; /* evita scroll global */
+}
+
+/* --- 3) LAYOUT PRINCIPAL --- */
+.container,
+.container-fluid{
+  position: relative !important;          /* para posicionar el toggle del sidebar */
+  display: flex !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  gap: var(--layout-gutter) !important;   /* gutter visual entre sidebar y contenido */
+}
+/* En colapsado podemos achicar un toque el gutter si querés */
+.container.sidebar-collapsed,
+.container-fluid.sidebar-collapsed{
+  --layout-gutter: 10px;
+}
+
+/* Fallback por si el motor no soporta gap en flex (raro) */
+@supports not (gap: 1rem){
+  .main-content{ margin-left: var(--layout-gutter) !important; }
+}
+
+.main-content{
+  flex: 1 1 auto !important;
+  width: auto !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0 !important;
+}
+
+.main-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.header-actions{ display:flex; gap:.75rem; align-items:center; }
+
+.content-body{
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* Scrollbar contenido */
+.content-body::-webkit-scrollbar{ width:8px; }
+.content-body::-webkit-scrollbar-thumb{ background: var(--secondary-color); border-radius: 6px; }
+.content-body::-webkit-scrollbar-track{ background: transparent; }
+
+/* Separador visual sutil para el sidebar (sin comer espacio útil) */
+.sidebar{
+  border-right: 1px solid rgba(0,0,0,.06) !important;
+  box-shadow:
+    1px 0 0 rgba(255,255,255,.03),
+    8px 0 20px rgba(0,0,0,.06) !important;
+}
+
+/* --- 4) ELEMENTOS COMUNES (UI) --- */
+.btn{
+  border:none; padding:.65rem 1.2rem; border-radius:8px; cursor:pointer;
+  font-size:.9rem; font-weight:500; transition: all .25s ease;
+  text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px; line-height:1.2;
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+.btn:hover{ filter: brightness(110%); }
+.btn:active{ transform: scale(.98); }
+.btn:disabled{ background:#bdc3c7; cursor:not-allowed; filter:none; }
+.btn-primario{ background: var(--primary-color); color: var(--text-light); }
+.btn-secundario{ background: var(--text-muted); color: var(--text-light); }
+.btn-accent{ background: var(--accent-color); color: var(--text-light); }
+.btn-success{ background: var(--success-color); color: var(--text-light); }
+.btn-danger{ background: var(--danger-color); color: var(--text-light); }
+.btn-info{ background: var(--info-color); color: var(--text-light); }
+.btn-sm{ padding:.4rem .8rem; font-size:.8rem; }
+
+/* Formularios */
+.form-campo{ margin-bottom:0; display:flex; flex-direction:column; }
+.form-campo label{ margin-bottom:.25rem; font-weight:600; font-size:.85em; color:var(--text-dark); }
+.form-campo input[type="text"],
+.form-campo input[type="number"],
+.form-campo input[type="password"],
+.form-campo input[type="date"],
+.form-campo select,
+.form-campo textarea{
+  width:100%; padding:.55rem .75rem; border:1px solid var(--border-color);
+  border-radius:6px; font-size:.9em; font-family:inherit; transition: border-color .2s, box-shadow .2s;
+}
+.form-campo input:focus,
+.form-campo select:focus,
+.form-campo textarea:focus{
+  outline:none; border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(44,62,80,.1);
+}
+.form-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+.form-grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem; }
+
+/* Toolbar / resumen */
+.toolbar{ display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+.toolbar .filtros{ display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap; }
+.toolbar .acciones{ display:flex; align-items:flex-end; }
+.summary-bar{
+  display:flex; gap:2rem; justify-content:flex-start;
+  padding:.75rem 1rem; background:#fff; border:1px solid var(--border-color); border-radius:8px; margin-bottom:1rem;
+  font-weight:500; color: var(--text-dark);
+}
+
+/* Tarjetas / tablas */
+.card { background:#fff; border-radius:8px; padding:1.5rem; margin-bottom:20px; box-shadow: 0 4px 6px rgba(0,0,0,.08); }
+.table-container{ background:#fff; border:1px solid var(--border-color); border-radius:8px; overflow:hidden; }
+table{ width:100%; border-collapse:collapse; }
+th, td{ padding:1rem; text-align:left; border-bottom:1px solid var(--border-color); }
+th{ background:#f8f9fa; font-weight:600; font-size:.8em; text-transform:uppercase; color: var(--text-muted); }
+tbody tr:hover{ background:#f1f8ff; }
+tbody tr:last-child td{ border-bottom:none; }
+.acciones-btn{ text-align:right !important; }
+
+/* --- 5) MODAL --- */
+.modal{
+  display:none; position:fixed; z-index:1000; inset:0;
+  background: rgba(0,0,0,.5); justify-content:center; align-items:center;
+  opacity:0; transition: opacity .3s ease;
+}
+.modal.visible{ display:flex; opacity:1; }
+.modal-contenido{
+  background:#fff; padding:2rem; border-radius:12px; width:90%; max-width:500px;
+  box-shadow: 0 5px 15px rgba(0,0,0,.3); transform: scale(.95); transition: transform .3s ease;
+  max-height:90vh; display:flex; flex-direction:column;
+}
+.modal.visible .modal-contenido{ transform: scale(1); }
+.modal-titulo{ margin:0 0 1.5rem 0; font-size:1.5em; border-bottom:1px solid var(--border-color); padding-bottom:1rem; flex-shrink:0; }
+.modal-cuerpo{ flex:1 1 auto; overflow-y:auto; }
+.modal-acciones{ display:flex; justify-content:flex-end; gap:.75rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color); flex-shrink:0; }
+
+/* --- 6) TOAST / NOTIFS --- */
+.notification{
+  position:fixed; bottom:-100px; left:50%; transform:translateX(-50%);
+  padding:12px 25px; border-radius:8px; color:#fff; font-size:1rem; font-weight:500;
+  z-index:2000; opacity:0; transition: bottom .5s ease-in-out, opacity .5s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.notification.show{ bottom:20px; opacity:1; }
+.notification.success{ background:#28a745; }
+.notification.error{ background:#dc3545; }
+
+/* Toast no bloqueante */
+.toast{
+  position:fixed; bottom:16px; left:50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index:9999; pointer-events:none;
+  max-width:92vw; padding:10px 16px; border-radius:8px; color:#fff; background:#333;
+  opacity:0; transition: opacity .15s ease, transform .15s ease; will-change: opacity, transform;
+}
+.toast.visible{ opacity:1; transform: translateX(-50%) translateY(0); }
+.toast.success{ background: var(--success-color); }
+.toast.error{ background: var(--danger-color); }
+
+/* --- 7) CONFIRM OVERLAY --- */
+.confirm-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:2000; }
+.confirm-overlay.visible{ display:grid; place-items:center; }
+.confirm-box{ width:92vw; max-width:420px; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25); padding:16px; }
+.confirm-box h4{ margin:0 0 8px; font-size:1.05rem; }
+.confirm-box p{ margin:0 0 16px; color:#444; }
+.confirm-actions{ display:flex; gap:8px; justify-content:flex-end; }

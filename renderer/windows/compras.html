@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Compras y Gastos</title>
+
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/productos.css" />
+  <link rel="stylesheet" href="../css/compras.css" />
+
+  <!-- Importante: no usar XHR síncrono. El loader llenará el sidebar y emitirá app-ready -->
+</head>
+<body>
+  <div class="container">
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+    <main class="main-content" id="main-content">
+      <header class="main-header">
+        <h2>Gestión de Insumos y Gastos</h2>
+        <div class="header-actions">
+          <button id="btn-nueva-producto" class="btn btn-primario">+ Compra Mercadería</button>
+          <button id="btn-nuevo-insumo" class="btn btn-primario">+ Nuevo Insumo</button>
+        </div>
+      </header>
+
+      <section class="content-body">
+        <div class="table-container">
+          <table id="insumos-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Familia</th>
+                <th>Stock</th>
+                <th>Último Costo</th>
+                <th style="text-align:right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="insumos-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal Insumo -->
+  <div id="insumo-modal" class="modal" aria-hidden="true">
+    <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <h2 id="modal-titulo" class="modal-titulo">Nuevo Insumo</h2>
+
+      <form id="insumo-form" class="modal-cuerpo">
+        <input type="hidden" id="insumo-id" />
+        <div class="form-grid-2">
+          <div class="form-campo">
+            <label for="insumo-nombre">Nombre del Insumo</label>
+            <input type="text" id="insumo-nombre" required />
+          </div>
+          <div class="form-campo">
+            <label for="insumo-unidad">Unidad (kg, u, L)</label>
+            <input type="text" id="insumo-unidad" placeholder="ej: kg, u, L" value="unidad" />
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Clasificación (Opcional)</legend>
+          <div class="form-grid-2">
+            <div class="form-campo-con-boton">
+              <select id="departamento-select"></select>
+              <button type="button" id="btn-nuevo-depto" class="btn btn-info btn-add" title="Crear departamento">+</button>
+            </div>
+            <div class="form-campo-con-boton">
+              <select id="familia-select" disabled></select>
+              <button type="button" id="btn-nueva-familia" class="btn btn-info btn-add" title="Crear familia">+</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Inventario y Costo</legend>
+          <div class="form-grid-2">
+            <div class="form-campo">
+              <label for="insumo-stock">Stock Inicial</label>
+              <input type="number" id="insumo-stock" step="any" value="0" />
+            </div>
+            <div class="form-campo">
+              <label for="insumo-costo">Último Costo Unitario</label>
+              <input type="number" id="insumo-costo" step="0.01" value="0" />
+            </div>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="modal-acciones">
+        <button type="button" id="btn-cancelar-modal" class="btn btn-secundario">Cancelar</button>
+        <button type="submit" id="btn-guardar-insumo" class="btn btn-primario" form="insumo-form">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Input genérico -->
+  <div id="input-modal" class="modal" aria-hidden="true">
+    <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="input-modal-titulo" style="max-width:400px;">
+      <h2 id="input-modal-titulo" class="modal-titulo"></h2>
+      <div class="modal-cuerpo">
+        <div class="form-campo">
+          <label for="input-modal-valor">Nombre:</label>
+          <input type="text" id="input-modal-valor" required />
+        </div>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" id="input-modal-cancelar" class="btn btn-secundario">Cancelar</button>
+        <button type="button" id="input-modal-guardar" class="btn btn-primario">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast global -->
+  <div id="toast-notification" class="toast"></div>
+
+  <!-- Scripts (defer para no bloquear) -->
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/Insumos.js"></script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+/* renderer/css/dashboard.css */
+
+.filter-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap; /* Permite que los elementos se muevan a la siguiente línea si no hay espacio */
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-filter {
+    background-color: var(--light-bg);
+    color: var(--text-dark);
+}
+
+.btn-filter.active {
+    background-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.custom-range {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* 👇 --- REGLA MODIFICADA --- 👇 */
+/* Hacemos que los botones de acción se agrupen y se muevan al final */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-left: auto; /* ¡Esta es la magia! empuja los botones a la derecha */
+}
+
+.custom-range input[type="date"],
+.filter-group select {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 0.9em;
+}
+
+.stats-grid {
+    display: grid;
+    /* Ajustamos para que 6 tarjetas se vean bien */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    background-color: var(--light-bg);
+    padding: 15px;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-info p { margin: 0; color: #6c757d; font-weight: 500; font-size: 0.9em; }
+.stat-info h2 { margin: 5px 0 0 0; font-size: 1.75rem; color: var(--primary-color); }
+
+/* 👇 --- ¡NUEVA REGLA AÑADIDA! --- 👇 */
+/* Damos un color rojo a las tarjetas de gastos para diferenciarlas */
+.stat-card-expense .stat-info h2 {
+    color: var(--danger-color, #e74c3c);
+}
+
+.dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 25px; }
+@media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+.chart-container { position: relative; height: 350px; }
+
+.content-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.top-product-list { list-style: none; padding: 0; margin: 0; }
+.top-product-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+.top-product-list li:last-child { border-bottom: none; }
+.top-product-list .product-name { font-weight: 500; }
+.top-product-list .product-sales { font-weight: bold; color: var(--accent-color); background-color: #e8f5e9; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; }
+
+/* --- Estilos para el Indicador de Salud --- */
+.health-gauge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.health-gauge {
+    width: 200px;
+    height: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.gauge-body {
+    width: 100%;
+    height: 100%;
+    background: #f4f4f4;
+    border-radius: 100px 100px 0 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.gauge-fill {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: inherit;
+    height: 100%;
+    background: linear-gradient(to right, #e74c3c, #f39c12, #2ecc71);
+    transform-origin: 50% 0%;
+    transition: transform 0.5s ease-out;
+}
+
+.gauge-cover {
+    width: 150px;
+    height: 75px;
+    background: #fff;
+    border-radius: 100px 100px 0 0;
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 10px;
+}
+
+.gauge-cover span { font-size: 2rem; font-weight: bold; }
+.gauge-cover small { font-size: 0.8rem; color: #666; }
+
+.health-details {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.9em;
+}
+.health-details p { margin: 5px 0; }

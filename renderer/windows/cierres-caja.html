@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Caja - Sistema de Gestión</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/caja.css" />
+  <!-- Mantengo CSP laxa por carga de app:// e inline requerido para plantillas -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' app: data:; connect-src 'self';">
+</head>
+<body>
+  <div class="container">
+    <!-- sidebar se inyecta async por navbar-loader.js -->
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <button id="toggle-sidebar-btn" class="toggle-sidebar">
+      <span id="toggle-icon">◀</span>
+    </button>
+
+    <main class="caja-main">
+      <!-- Panel izquierdo -->
+      <div class="venta-panel">
+        <!-- Superposición de bloqueo -->
+        <div id="bloqueo-panel-superposicion" class="bloqueo-superposicion oculto">
+          <div class="bloqueo-mensaje">
+            <h2>CAJA CERRADA</h2>
+            <p>El panel de ventas está bloqueado.</p>
+          </div>
+        </div>
+
+        <div class="input-area form-campo">
+          <label for="main-input">Buscar (Nombre/Código) o Ingresar Monto (Enter)</label>
+          <input type="text" id="main-input" placeholder="El sistema detecta el tipo de entrada..." />
+        </div>
+
+        <div class="productos-seleccionados">
+          <table>
+            <thead>
+              <tr>
+                <th>Img.</th>
+                <th>Producto</th>
+                <th>Cant.</th>
+                <th>P. Unit.</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-productos"></tbody>
+          </table>
+        </div>
+
+        <div class="total-area">
+          <div class="items-counter">Ítems: <span id="items-count-display">0</span></div>
+          <h2>TOTAL</h2>
+          <p id="total-display">$ 0.00</p>
+        </div>
+      </div>
+
+      <!-- Panel derecho -->
+      <div class="acciones-panel">
+        <div class="arqueo-actions">
+          <button id="abrir-caja-btn" class="btn btn-success btn-grande oculto">Abrir Caja</button>
+          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto">Cerrar Caja</button>
+        </div>
+
+        <div class="cliente-area">
+          <label for="dni-cliente">Cliente (DNI):</label>
+          <div class="input-group">
+            <input type="text" id="dni-cliente" placeholder="Opcional" />
+            <button id="btn-buscar-cliente" class="btn btn-secundario">Buscar</button>
+          </div>
+          <p id="cliente-info"></p>
+          <div class="form-check">
+            <input type="checkbox" id="generar-factura-check" />
+            <label for="generar-factura-check">Generar Factura Fiscal</label>
+          </div>
+        </div>
+
+        <div class="resumen-venta">
+          <p>Subtotal: <span id="subtotal-display">$0.00</span></p>
+          <p class="descuento-fila oculto">
+            Descuento Cliente: <span id="descuento-display" class="valor-negativo">-$0.00</span>
+          </p>
+          <p class="descuento-efectivo-fila oculto">
+            Desc. Efectivo: <span id="descuento-efectivo-display" class="valor-negativo">-$0.00</span>
+          </p>
+          <p class="recargo-fila oculto">
+            Recargo Crédito: <span id="recargo-display" class="valor-positivo">+$0.00</span>
+          </p>
+        </div>
+
+        <h3>Método de Pago</h3>
+        <div class="payment-methods">
+          <button class="btn" data-metodo="Efectivo">Efectivo</button>
+          <button class="btn" data-metodo="Débito">Débito</button>
+          <button class="btn" data-metodo="Crédito">Crédito</button>
+          <button class="btn" data-metodo="QR">QR</button>
+        </div>
+
+        <div class="pago-efectivo-area oculto form-campo" id="efectivo-area">
+          <label for="monto-pagado">Paga con:</label>
+          <input type="number" id="monto-pagado" placeholder="0.00" />
+          <p>Vuelto: <span id="vuelto-display">$ 0.00</span></p>
+        </div>
+
+        <div class="actions">
+          <button id="registrar-venta-btn" class="btn btn-primario btn-grande">Registrar Venta</button>
+          <button id="imprimir-ticket-btn" class="btn btn-info" disabled>Imprimir Ticket</button>
+          <button id="cancelar-venta-btn" class="btn btn-danger">Cancelar Venta</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modales generales -->
+  <div id="modal-container" class="modal-container oculto">
+    <div class="modal-content">
+      <p id="modal-message">Mensaje de error</p>
+      <button id="modal-accept-btn" class="btn btn-primario">Aceptar (Enter)</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-notification" class="toast"></div>
+
+  <!-- Apertura de caja -->
+  <div id="apertura-caja-modal" class="modal-container oculto">
+    <div class="modal-content">
+      <button type="button" class="btn-close-modal" aria-label="Cerrar">&times;</button>
+      <h2>Apertura de Caja</h2>
+      <p>Ingresa el monto inicial de efectivo.</p>
+      <form id="apertura-caja-form">
+        <div class="form-campo">
+          <label for="monto-inicial">Monto Inicial en Caja ($)</label>
+          <input type="number" id="monto-inicial" step="0.01" required placeholder="0.00" />
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancelar-apertura-btn" class="btn btn-secundario">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Confirmar Apertura</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cierre de caja -->
+  <div id="cierre-caja-modal" class="modal-container oculto">
+    <div class="modal-content">
+      <button type="button" class="btn-close-modal" aria-label="Cerrar">&times;</button>
+      <h2>Cierre de Caja</h2>
+      <p>Cuenta el efectivo y registra el monto para detectar diferencias.</p>
+      <div id="resumen-cierre-caja"></div>
+      <form id="cierre-caja-form">
+        <div class="form-campo">
+          <label for="monto-final-real">Monto Real en Efectivo ($)</label>
+          <input type="number" id="monto-final-real" step="0.01" required placeholder="0.00" />
+        </div>
+        <div class="form-campo">
+          <label for="observaciones-cierre">Observaciones (Opcional)</label>
+          <textarea id="observaciones-cierre" rows="3" placeholder="Ej: Faltante justificado por..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="cancelar-cierre-btn" class="btn btn-secundario">Cancelar</button>
+          <button type="submit" class="btn btn-primario">Confirmar y Cerrar Caja</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de venta exitosa -->
+  <div id="venta-exitosa-modal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header-success">
+        <svg class="status-icon" viewBox="0 0 24 24">
+          <path fill="currentColor"
+            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.09,8.59L17.5,10L11,16.5Z" />
+        </svg>
+        <h2>Venta Registrada Exitosamente</h2>
+      </div>
+
+      <div id="resumen-venta-exitosa" class="resumen-venta">
+        <p><strong>Total Venta:</strong> <span id="ex-total"></span></p>
+        <p><strong>Método de Pago:</strong> <span id="ex-metodo-pago"></span></p>
+      </div>
+
+      <div id="resumen-pago-mp" class="resumen-mp oculto">
+        <h4>Detalles del Pago (Mercado Pago)</h4>
+        <p><strong>ID de Pago:</strong> <span id="ex-mp-id"></span></p>
+        <div class="form-actions" style="justify-content: center; margin-top: 15px;">
+          <button id="ex-btn-imprimir-mp" class="btn btn-info">Imprimir Comprobante MP</button>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top: 25px;">
+        <button id="ex-btn-cerrar" class="btn btn-primario btn-grande">Nueva Venta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/caja.js"></script>
+  <script defer src="../js/sidebar-toggle.js"></script>
+</body>
+</html>

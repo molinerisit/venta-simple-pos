@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Estadísticas y Marketing</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content">
+      <header class="main-header">
+        <h1>Estadísticas y Marketing</h1>
+      </header>
+
+      <div class="content-body">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <button class="btn btn-filter active" data-range="today">Hoy</button>
+            <button class="btn btn-filter" data-range="week">Esta Semana</button>
+            <button class="btn btn-filter" data-range="month">Este Mes</button>
+          </div>
+          <div class="filter-group">
+            <select id="depto-filter" class="form-control">
+              <option value="">Todos los Departamentos</option>
+            </select>
+            <select id="familia-filter" class="form-control" disabled>
+              <option value="">Todas las Familias</option>
+            </select>
+          </div>
+          <div class="custom-range">
+            <input type="date" id="date-from" />
+            <span>-</span>
+            <input type="date" id="date-to" />
+            <button id="btn-apply-custom" class="btn btn-primario">Aplicar</button>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-export-pdf" class="btn btn-info">📄 Exportar a PDF</button>
+            <a href="rentabilidad.html" class="btn btn-accent">📈 Analizar Rentabilidad</a>
+            <a href="cierres-caja.html" class="btn btn-secundario">📋 Ver Cierres de Caja</a>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+              <p>Total Facturado</p>
+              <h2 id="total-facturado">$0.00</h2>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💸</div>
+            <div class="stat-info">
+              <p>Ganancia Bruta</p>
+              <h2 id="ganancia-bruta">$0.00</h2>
+            </div>
+          </div>
+          <div class="stat-card stat-card-expense">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+              <p>Compras Mercadería</p>
+              <h2 id="total-compras">$0.00</h2>
+            </div>
+          </div>
+          <div class="stat-card stat-card-expense">
+            <div class="stat-icon">🔧</div>
+            <div class="stat-info">
+              <p>Gastos Operativos</p>
+              <h2 id="total-gastos">$0.00</h2>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-info">
+              <p>Número de Ventas</p>
+              <h2 id="numero-ventas">0</h2>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-info">
+              <p>Ticket Promedio</p>
+              <h2 id="ticket-promedio">$0.00</h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="content-section">
+            <h2>Ventas del Período</h2>
+            <div class="chart-container">
+              <canvas id="ventas-chart"></canvas>
+            </div>
+          </section>
+
+          <section class="content-section">
+            <h2>Métodos de Pago</h2>
+            <div class="chart-container" style="height: 350px; display: flex; align-items: center; justify-content: center;">
+              <canvas id="payment-methods-chart"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <div class="dashboard-grid" style="margin-top: 25px;">
+          <section class="content-section">
+            <h2>Ventas por Catálogo</h2>
+            <p>Total de ventas por departamento y familia en el período.</p>
+            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Departamento</th>
+                    <th>Familia</th>
+                    <th>Total Vendido</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-by-catalog-tbody">
+                  </tbody>
+              </table>
+            </div>
+          </section>
+          <section class="content-section">
+            <h2>Horarios Pico</h2>
+            <p>Ventas acumuladas por hora del día en el período.</p>
+            <div class="chart-container" style="height: 350px;">
+              <canvas id="peak-hours-chart"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <div class="dashboard-grid" style="margin-top: 25px;">
+        
+          <section class="content-section">
+            <h2>📊 Ranking de Ventas (Completo)</h2>
+            <div class="filter-group" style="margin-bottom: 15px;">
+              <label for="ranking-sort-by" style="margin-right: 10px;">Ordenar por:</label>
+              <select id="ranking-sort-by" class="form-control" style="width: auto;">
+                <option value="cantidad_desc">Más Vendidos (Cantidad)</option>
+                <option value="facturado_desc">Más Vendidos (Monto)</option>
+                <option value="ganancia_desc">Más Rentables (Ganancia)</option> <option value="cantidad_asc">Menos Vendidos (Cantidad)</option>
+                <option value="facturado_asc">Menos Vendidos (Monto)</option>
+                <option value="ganancia_asc">Menos Rentables (Ganancia)</option> </select>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cant. Vendida</th>
+                    <th>$ Facturado</th>
+                    <th>$ Ganancia</th> <th>Stock Actual</th>
+                  </tr>
+                </thead>
+                <tbody id="full-ranking-tbody">
+                  </tbody>
+              </table>
+            </div>
+          </section>
+  
+          <section class="content-section">
+            <h2>⚠️ Alertas (Inactivos)</h2>
+            <p>Productos (con stock) que no registraron ventas en el período seleccionado.</p>
+            
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Stock Actual</th>
+                  </tr>
+                </thead>
+                <tbody id="inactive-products-tbody">
+                  </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        
+      </div> </main>
+  </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/dashboard.js"></script>
+</body>
+</html>

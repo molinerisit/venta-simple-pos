@@ -1,0 +1,124 @@
+<!-- windows/etiquetas-seleccion.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Generar Etiquetas y Listas</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/etiquetas.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar asíncrono (lo inyecta navbar-loader.js) -->
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content">
+      <header class="main-header">
+        <h2 id="main-title">Generar Etiquetas de Góndola</h2>
+        <a href="etiquetas.html" class="btn btn-secundario">Volver</a>
+      </header>
+
+      <div class="content-body">
+        <div class="seleccion-container">
+          <!-- Columna de Selección -->
+          <div class="columna-productos">
+            <h4>1. Selecciona los Productos</h4>
+            <div class="filtros">
+              <input type="text" id="search-input" placeholder="Buscar producto..." />
+              <select id="depto-filter">
+                <option value="all">Todos los Departamentos</option>
+              </select>
+              <select id="familia-filter" disabled>
+                <option value="all">Todas las Familias</option>
+              </select>
+            </div>
+            <div class="filtros-acciones">
+              <button id="select-all" class="btn btn-sm btn-secundario">Seleccionar Visibles</button>
+              <button id="deselect-all" class="btn btn-sm btn-secundario">Deseleccionar Todo</button>
+            </div>
+            <div id="product-list" class="lista-scroll"><!-- via JS --></div>
+          </div>
+
+          <!-- Columna de Configuración -->
+          <div class="columna-configuracion">
+            <h4>2. Configura el Formato</h4>
+
+            <!-- Config Etiquetas -->
+            <div id="config-etiquetas">
+              <fieldset>
+                <legend>Dimensiones (cm)</legend>
+                <div class="form-grid-2">
+                  <div class="form-campo">
+                    <label for="ancho">Ancho</label>
+                    <input type="number" id="ancho" value="6" step="0.1" />
+                  </div>
+                  <div class="form-campo">
+                    <label for="alto">Alto</label>
+                    <input type="number" id="alto" value="4" step="0.1" />
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Colores</legend>
+                <div class="form-grid-2">
+                  <div class="form-campo">
+                    <label for="colorFondo">Fondo</label>
+                    <input type="color" id="colorFondo" value="#ffffff" />
+                  </div>
+                  <div class="form-campo">
+                    <label for="colorBorde">Borde</label>
+                    <input type="color" id="colorBorde" value="#000000" />
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Logotipo</legend>
+                <div class="form-campo">
+                  <label for="logoFile">Subir Logo (opcional)</label>
+                  <input type="file" id="logoFile" accept="image/png, image/jpeg" />
+                </div>
+                <div class="form-campo">
+                  <label for="logoSize">Tamaño del Logo: <span id="logoSizeValue">30</span>%</label>
+                  <input type="range" id="logoSize" min="0" max="100" value="30" step="5" />
+                  <small>Elegí 0 para no mostrar el logo.</small>
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Config Lista de Precios -->
+            <div id="config-lista" style="display:none;">
+              <fieldset>
+                <legend>Información del Documento</legend>
+                <div class="form-campo">
+                  <label for="listaTitulo">Título de la Lista</label>
+                  <input type="text" id="listaTitulo" value="Lista de Precios" />
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Columnas a Incluir</legend>
+                <div class="checkbox-group">
+                  <label><input type="checkbox" name="columnas" value="codigo_barras" /> Código de Barras</label>
+                  <label><input type="checkbox" name="columnas" value="stock" /> Stock</label>
+                  <label><input type="checkbox" name="columnas" value="precioCompra" /> Precio de Compra</label>
+                </div>
+              </fieldset>
+            </div>
+
+            <footer class="main-footer">
+              <button id="btn-generar" class="btn btn-primario">Generar Vista Previa</button>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast global -->
+  <div id="toast-notification" class="toast"></div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/etiquetas.js"></script>
+</body>
+</html>

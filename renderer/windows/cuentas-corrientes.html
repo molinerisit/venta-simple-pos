@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Cuentas Corrientes</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/cuentas-corrientes.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar se inyecta de forma asíncrona por navbar-loader.js -->
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content">
+      <header class="main-header">
+        <h1>Gestión de Cuentas Corrientes</h1>
+      </header>
+
+      <section class="content-body">
+        <!-- Pestañas -->
+        <div class="tabs">
+          <button class="tab-button active" data-tab="clientes">Deudas de Clientes</button>
+          <button class="tab-button" data-tab="proveedores">Deudas a Proveedores</button>
+        </div>
+
+        <!-- Clientes -->
+        <div class="tab-content active" id="tab-clientes">
+          <div class="table-container">
+            <table id="clientes-deuda-table">
+              <thead>
+                <tr>
+                  <th>Cliente (Apellido, Nombre)</th>
+                  <th>DNI</th>
+                  <th>Deuda Total</th>
+                  <th style="text-align:right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="clientes-deuda-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Proveedores -->
+        <div class="tab-content" id="tab-proveedores">
+          <div class="table-container">
+            <table id="proveedores-deuda-table">
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  <th>Repartidor</th>
+                  <th>Deuda Total</th>
+                  <th style="text-align:right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="proveedores-deuda-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal de pago/abono -->
+  <div id="pago-modal" class="modal">
+    <div class="modal-contenido" style="max-width: 460px;">
+      <h2 id="pago-modal-titulo" class="modal-titulo">Registrar Pago</h2>
+      <div class="modal-cuerpo">
+        <p><strong>Entidad:</strong> <span id="pago-modal-entidad"></span></p>
+        <p><strong>Deuda Actual:</strong> <strong id="pago-modal-deuda-actual"></strong></p>
+        <hr />
+        <div class="form-campo">
+          <label for="pago-modal-monto">Monto a registrar:</label>
+          <input type="number" id="pago-modal-monto" step="0.01" inputmode="decimal" min="0" required />
+          <small id="pago-modal-help" class="text-muted"></small>
+        </div>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" id="pago-modal-cancelar" class="btn btn-secundario">Cancelar</button>
+        <button type="button" id="pago-modal-confirmar" class="btn btn-success">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast no bloqueante -->
+  <div id="toast-notification" class="toast"></div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/cuentas-corrientes.js"></script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+/* ======================================================= */
+/* ESTILOS MEJORADOS PARA LA PÁGINA DE REGISTRO DE COMPRA  */
+/* ======================================================= */
+
+/* --- Layout Principal y Solución de Apilamiento --- */
+.main-content {
+  display: flex; /* Habilita flexbox para el contenido interno */
+  flex-direction: column; /* Apila los elementos verticalmente */
+  flex-grow: 1;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  background-color: var(--background-color, #f4f7fa);
+}
+
+/* El content-body ahora es el que crece, permitiendo que el header se mantenga fijo */
+.content-body {
+  flex-grow: 1;
+}
+
+
+/* --- Estructura y Tarjetas --- */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem; /* Separamos más las tarjetas */
+}
+
+.card-header {
+  padding: 1rem 1.5rem; /* Más espaciado horizontal */
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-wrap: wrap; /* Permite que los elementos pasen a la siguiente línea si no caben */
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* --- Grillas Responsivas --- */
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* ¡Magia Responsiva! */
+  gap: 1.5rem;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.mt-3 {
+  margin-top: 1.5rem;
+}
+
+
+/* --- Búsqueda de Productos con Sugerencias --- */
+.card-header .form-campo {
+  position: relative;
+  flex-grow: 1;
+  min-width: 250px; /* Ancho mínimo para el campo de búsqueda */
+}
+
+#producto-search-input {
+  width: 100%;
+}
+
+#search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid var(--border-color, #ddd);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 12px 15px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background-color: #f1f8ff;
+}
+
+
+/* --- Tabla de Productos Responsiva --- */
+.table-container {
+  overflow-x: auto; /* ¡Añade scroll horizontal a la tabla en pantallas pequeñas! */
+  width: 100%;
+}
+
+#compra-table {
+  width: 100%;
+  min-width: 1200px; /* Ancho mínimo antes de que aparezca el scroll */
+  border-collapse: collapse;
+}
+
+#compra-table th, #compra-table td {
+  padding: 10px 12px;
+  white-space: nowrap; /* Evita que el texto de las celdas se parta en varias líneas */
+}
+
+#compra-table input[type="number"] {
+  width: 90px;
+  text-align: right;
+  border: 1px solid transparent;
+  background-color: transparent;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+#compra-table input[type="number"]:focus {
+  outline: none;
+  border-color: var(--info-color);
+  background-color: #fff;
+}
+
+#compra-table .subtotal-input {
+  background-color: #f0f8ff;
+  font-weight: 500;
+}
+
+.input-group-venta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-group-venta input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.variacion-positiva, .margen-bajo {
+  color: var(--danger-color, red);
+  font-weight: bold;
+}
+
+.variacion-negativa {
+  color: var(--success-color, green);
+  font-weight: bold;
+}
+
+.btn-remove-item {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+
+/* --- Sección de Totales y Pago --- */
+.resumen-costos,
+.formulario-pago {
+  padding: 1.5rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.formulario-pago h4 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.resumen-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.resumen-fila:last-child {
+  margin-bottom: 0;
+}
+
+.resumen-fila span {
+  font-size: 1.1em;
+}
+
+.resumen-input {
+  font-size: 1.1em;
+  text-align: right;
+  max-width: 140px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  padding: 5px;
+}
+
+.total-final {
+  font-size: 1.6em;
+  font-weight: bold;
+  color: #333;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #333;
+}
+
+.saldo-pendiente {
+  font-weight: bold;
+  color: #c0392b;
+}
+
+/* En: renderer/css/registrar-compra.css */
+
+/* ... (tus estilos existentes) ... */
+
+/* --- ESTILOS PARA MEJORAS DE UX --- */
+
+/* Clases para feedback visual de texto */
+.text-success {
+    color: #1e854a; /* Un verde más oscuro y legible */
+    font-weight: 500;
+}
+.text-danger {
+    color: #b91c1c; /* Un rojo más oscuro y legible */
+    font-weight: 500;
+}
+
+/* Estilos para la fila de estado vacío en la tabla */
+#empty-state-row td {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Contenedor para el checkbox y el input de nuevo precio */
+.update-price-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espacio entre el checkbox y el input */
+}
+
+.update-price-cell input[type="number"] {
+    flex-grow: 1; /* El input ocupa el espacio restante */
+    min-width: 80px; /* Ancho mínimo para que no se comprima */
+}
+
+/* Estilo para el input de precio cuando está deshabilitado */
+.update-price-cell input[type="number"]:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    border-color: #e0e0e0;
+}
+
+/* Estilo para las sugerencias de búsqueda de productos */
+.suggestions-box {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    z-index: 100;
+    width: 100%; /* Ajusta al ancho del input */
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+
+/* Ocultar las sugerencias por defecto */
+.suggestions-box.hidden {
+    display: none;
+}

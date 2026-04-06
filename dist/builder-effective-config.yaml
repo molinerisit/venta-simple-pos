@@ -1,0 +1,21 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.julianmolineris.sistemagestion
+productName: Sistema de Gestión La Macelleria
+files:
+  - filter:
+      - main.js
+      - src/**/*
+      - renderer/**/*
+      - public/**/*
+      - package.json
+win:
+  target: nsis
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+electronVersion: 28.3.3

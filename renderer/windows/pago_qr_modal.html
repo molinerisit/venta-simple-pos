@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cobro con QR</title>
+    <!-- CORRECCIÓN: La ruta usa ../ para subir desde 'windows' a 'renderer' -->
+    <link rel="stylesheet" href="../css/pago_qr_modal.css" />
+  </head>
+  <body>
+    <div class="modal-container">
+      <div id="status-icon-container">
+        <div id="spinner" class="spinner oculto"></div>
+        <div id="success-icon" class="icon success oculto">✓</div>
+        <div id="error-icon" class="icon error oculto">✗</div>
+      </div>
+
+      <h1>Cobro con Mercado Pago</h1>
+      <p>El cliente debe escanear el QR físico con la app de Mercado Pago.</p>
+
+      <div class="amount-container">
+        <span>Monto a pagar:</span>
+        <p class="amount" id="qr-amount">$ 0.00</p>
+      </div>
+
+      <p class="status" id="status-message">Esperando datos...</p>
+
+      <button id="btn-cancelar-pago" class="btn-cancelar">Cancelar</button>
+    </div>
+
+    <!-- CORRECCIÓN: La ruta usa ../ para subir desde 'windows' a 'renderer' -->
+    <script src="../js/pago_qr_modal.js"></script>
+  </body>
+</html>

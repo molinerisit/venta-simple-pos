@@ -1,0 +1,101 @@
+<!-- insumo-form.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crear/Editar Insumo</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/productos.css" />
+</head>
+<body>
+  <div class="container">
+<aside id="sidebar-placeholder" class="sidebar"></aside>
+
+
+    <main class="main-content">
+      <header class="main-header">
+        <h2 id="form-titulo">Cargando...</h2>
+        <div class="header-actions">
+          <a href="insumos.html" class="btn btn-secundario">← Volver a la Lista</a>
+        </div>
+      </header>
+
+      <section class="content-body">
+        <form id="insumo-form" class="form-container">
+          <input type="hidden" id="insumo-id" />
+
+          <div class="form-campo">
+            <label for="nombre">Nombre del Insumo</label>
+            <input type="text" id="nombre" required />
+          </div>
+
+          <fieldset>
+            <legend>Clasificación (Opcional)</legend>
+            <div class="form-grid-2">
+              <!-- Departamento -->
+              <div class="form-campo-vertical">
+                <div class="form-campo-con-boton">
+                  <select id="departamento-select"></select>
+                  <button type="button" id="btn-nuevo-depto" class="btn btn-info btn-add" title="Crear departamento">+</button>
+                </div>
+                <div id="nuevo-depto-container" class="inline-form-container" style="display:none;">
+                  <input type="text" id="nuevo-depto-nombre" placeholder="Nombre del nuevo depto..." />
+                  <button type="button" id="btn-guardar-depto" class="btn btn-success btn-sm">✔</button>
+                  <button type="button" id="btn-cancelar-depto" class="btn btn-danger btn-sm">✖</button>
+                </div>
+              </div>
+              <!-- Familia -->
+              <div class="form-campo-vertical">
+                <div class="form-campo-con-boton">
+                  <select id="familia-select" disabled></select>
+                  <button type="button" id="btn-nueva-familia" class="btn btn-info btn-add" title="Crear familia">+</button>
+                </div>
+                <div id="nueva-familia-container" class="inline-form-container" style="display:none;">
+                  <input type="text" id="nueva-familia-nombre" placeholder="Nombre de la nueva familia..." />
+                  <button type="button" id="btn-guardar-familia" class="btn btn-success btn-sm">✔</button>
+                  <button type="button" id="btn-cancelar-familia" class="btn btn-danger btn-sm">✖</button>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Inventario y Costo</legend>
+           <!-- dentro del fieldset Inventario y Costo -->
+<div class="form-grid-3">
+  <div class="form-campo">
+    <label for="stock">Stock Actual</label>
+    <input type="number" id="stock" step="any" value="0" />
+    <small>Podés ajustarlo manualmente aquí. (También se actualiza desde Compras)</small>
+  </div>
+  <div class="form-campo">
+    <label for="unidad">Unidad (kg, u, L)</label>
+    <input type="text" id="unidad" placeholder="ej: kg, u, L" value="unidad" />
+    <small>Usá <strong>kg</strong> para pesables, <strong>u</strong> para unidades, <strong>L</strong> para líquidos.</small>
+  </div>
+  <div class="form-campo">
+    <label for="ultimoPrecioCompra">Último Costo</label>
+    <input type="number" id="ultimoPrecioCompra" step="0.01" value="0" />
+    <small>Ingrese el costo <strong>por unidad</strong> de la unidad indicada (ej: $/kg, $/u, $/L).</small>
+  </div>
+</div>
+
+          </fieldset>
+
+          <div class="form-acciones">
+            <a href="insumos.html" class="btn btn-secundario">Cancelar</a>
+            <button type="submit" id="btn-guardar-insumo" class="btn btn-primario">Guardar Insumo</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-notification" class="toast"></div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/insumo-form.js"></script>
+</body>
+</html>

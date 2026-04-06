@@ -1,0 +1,71 @@
+/* renderer/css/proveedores.css */
+
+.productos-fieldset {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.productos-fieldset legend {
+  font-weight: bold;
+  padding: 0 10px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Toast: no empuja layout ni captura eventos --- */
+.toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 9999;
+  pointer-events: none;      /* clave: no bloquea inputs */
+  opacity: 0;
+  transition: opacity .15s ease, transform .15s ease;
+  max-width: 92vw;
+  color: #fff;
+  background: #333;
+  padding: 10px 16px;
+  border-radius: 8px;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast.success { background: #2ecc71; }
+.toast.error   { background: #e74c3c; }
+
+/* --- Modal de confirmación no bloqueante (ligero) --- */
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;
+  z-index: 2000;
+}
+.confirm-overlay.visible { display: grid; place-items: center; }
+
+.confirm-box {
+  width: 92vw; max-width: 420px;
+  background: #fff; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  padding: 16px;
+}
+.confirm-box h4 { margin: 0 0 8px; font-size: 1.05rem; }
+.confirm-box p  { margin: 0 0 16px; color: #444; }
+.confirm-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.confirm-actions .btn { border-radius: 8px; padding: 8px 12px; }

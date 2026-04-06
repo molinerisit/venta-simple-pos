@@ -1,0 +1,125 @@
+/* ============================================== */
+/* === ESTILOS PARA PÁGINA DE RENTABILIDAD === */
+/* ============================================== */
+
+/* El layout principal ya está cubierto por navbar.css y dashboard.css */
+
+.report-grid {
+    display: grid;
+    /* Dos columnas que pueden crecer, con un mínimo de 350px */
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    margin-top: 25px;
+}
+
+.report-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 25px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.report-card h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+    border-bottom: 2px solid;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.report-card.ingresos h3 {
+    border-color: var(--success-color, #2ecc71);
+    color: var(--success-color, #2ecc71);
+}
+
+.report-card.egresos h3 {
+    border-color: var(--danger-color, #e74c3c);
+    color: var(--danger-color, #e74c3c);
+}
+
+.report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.05em;
+    padding: 12px 5px;
+    border-bottom: 1px dashed #eee;
+}
+
+.report-item:last-of-type {
+    border-bottom: none;
+}
+
+/* Estilo para los valores numéricos */
+.report-item strong {
+    font-weight: 600;
+}
+
+/* Diferenciamos los gastos visualmente */
+.report-item.expense strong {
+    color: var(--danger-color, #e74c3c);
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 15px 0;
+}
+
+.report-item.total {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 2px solid #333;
+    border-bottom: none;
+}
+
+.report-card.ingresos .total strong {
+    color: var(--success-color, #2ecc71);
+}
+
+.report-card.egresos .total strong {
+    color: var(--danger-color, #e74c3c);
+}
+
+
+/* --- Tarjeta de Resumen Final --- */
+.summary-card {
+    margin-top: 30px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    text-align: center;
+    padding: 40px;
+    border-radius: 12px;
+}
+
+.summary-card h2 {
+    margin: 0;
+    opacity: 0.8;
+    font-weight: 400;
+    font-size: 1.5rem;
+}
+
+.summary-card h1 {
+    font-size: 4em;
+    margin: 10px 0;
+    letter-spacing: -2px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.summary-card p {
+    max-width: 600px;
+    margin: 10px auto 0;
+    opacity: 0.9;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 900px) {
+    .report-grid {
+        grid-template-columns: 1fr;
+    }
+}
