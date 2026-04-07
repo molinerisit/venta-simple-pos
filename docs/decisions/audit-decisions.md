@@ -19,6 +19,74 @@ Performance and UX findings (pagination, LIKE index, search debounce) are docume
 
 ---
 
+## [AD-003] Upgrade severity of `metodoPago` finding from LOW to MEDIUM
+
+**Date:** 2026-04-07
+**Context:**
+`ventas-handlers.js` audit classified `metodoPago` without allowlist as LOW because it was possible a model-level constraint existed. Model audit confirmed `Venta.metodoPago` is `DataTypes.STRING, allowNull: false` with no `validate.isIn`, no Sequelize ENUM, and no DB-level CHECK constraint.
+
+**Decision:**
+Upgrade the `metodoPago` finding to MEDIUM. The original LOW classification assumed a possible model-level fallback that does not exist.
+
+**Justification:**
+Without any constraint at any layer, arbitrary payment method strings accumulate in the database over the lifetime of the installation. Every financial report that aggregates by payment method (end-of-day, monthly) will silently under-count totals if a non-standard string was ever used. The risk is not theoretical — it compounds with every sale.
+
+**Impact on audit:**
+Review all other findings previously rated LOW that assumed possible model-level mitigation. Treat the absence of any model hooks or validators as a confirmed pattern, not a per-finding question.
+
+---
+
+## [AD-004] Treat the entire validation layer as absent — do not assume mitigation below handler level
+
+**Date:** 2026-04-07
+**Context:**
+Model audit of `Venta.js`, `DetalleVenta.js`, and `Producto.js` found zero Sequelize validators (`validate` blocks), zero hooks (`beforeCreate`, `beforeUpdate`, etc.), and zero database-level constraints beyond NOT NULL and UNIQUE on `Producto.codigo`. The pattern is uniform across all three models.
+
+**Decision:**
+For all remaining handler audits (`caja-handlers.js`, `productos-handlers.js`, and any others), assume by default that **no model-level or DB-level validation exists** for any business rule unless explicitly verified. Do not soften handler-level findings on the assumption that models might catch bad data.
+
+**Justification:**
+The audit of three core models found a consistent absence of domain validation. Applying the same assumption to unaudited models avoids artificially low severity ratings and prevents re-auditing the same question per handler.
+
+**Impact on audit:**
+All future handler findings related to input validation, business rules, and data integrity should be classified as if the handler is the last and only line of defense — because it is.
+
+---
+
+## [AD-005] CSV import path traversal is a second HIGH security finding independent of app:// protocol
+
+**Date:** 2026-04-07
+**Context:**
+`import-productos-csv` reads a file path from the renderer process without any path containment check. This mirrors the `app://` protocol path traversal finding in `main.js` but operates via a different mechanism (IPC parameter vs. protocol handler URL).
+
+**Decision:**
+Classify `import-productos-csv` arbitrary file read as HIGH severity. Track it as a distinct finding from the `app://` traversal — same class of vulnerability, different entry point. Both must be fixed independently.
+
+**Justification:**
+The two vulnerabilities require different fixes. The `app://` fix is a containment guard on the protocol handler. The CSV import fix requires either moving the `fs.readFileSync` call inside the handler that opens the dialog (so the path never crosses the IPC boundary) or adding strict containment validation before the read.
+
+**Impact on audit:**
+The security surface of the application now has at least two confirmed path traversal / arbitrary file read vectors. Any remaining handlers that accept file paths from the renderer should be flagged immediately during audit.
+
+---
+
+## [AD-006] CSV import atomicity failure is a data integrity pattern — check all bulk operations
+
+**Date:** 2026-04-07
+**Context:**
+`import-productos-csv` creates `ProductoDepartamento` and `ProductoFamilia` rows outside the product `bulkCreate` transaction, with `transaction: null` explicit. On rollback, these rows persist as orphaned records.
+
+**Decision:**
+During audit of any remaining handler that performs multi-model writes, explicitly verify whether all writes participate in the same transaction. Treat `transaction: null` as a HIGH-risk code pattern warranting immediate documentation.
+
+**Justification:**
+Partial commitment in multi-step writes is a class of data integrity bug that is invisible in the happy path and only manifests under failure conditions. In a POS system where DB recovery is manual and backups may not exist, orphaned classification data compounds over time and is difficult to clean up retroactively.
+
+**Impact on audit:**
+`caja-handlers.js` and any remaining handler that opens/closes a caja session across multiple models should be scrutinized for the same transaction isolation pattern.
+
+---
+
 ## [AD-002] Audit model layer before further handler analysis
 
 **Date:** 2026-04-07
