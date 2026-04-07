@@ -1,103 +1,70 @@
 # Audit Decisions — Venta Simple POS
 
----
-
-## [AD-001] Prioritize financial integrity findings over UX findings
-
+**Version:** 2.0 (consolidated)
 **Date:** 2026-04-07
-**Context:**
-The audit of `ventas-handlers.js` revealed that `precioUnitario` is accepted from the renderer process without server-side validation, and that stock decrements have no floor guard. Both issues directly affect the correctness of financial records and inventory state.
 
-**Decision:**
-Financial integrity issues (`precioUnitario` trust, negative stock) are classified as HIGH and must be resolved before any UX or performance work.
-
-**Justification:**
-In a POS system, corrupted sale totals or negative inventory values are harder to detect and correct retroactively than a slow render or a UX friction point. The impact compounds over time.
-
-**Impact on audit:**
-Performance and UX findings (pagination, LIKE index, search debounce) are documented but deprioritized until the two HIGH financial integrity issues are resolved.
+> Decisions are ordered chronologically and reflect reasoning that shaped audit methodology and severity classification.
 
 ---
 
-## [AD-003] Upgrade severity of `metodoPago` finding from LOW to MEDIUM
+## AD-001 · Financial integrity takes priority over all other categories
 
 **Date:** 2026-04-07
-**Context:**
-`ventas-handlers.js` audit classified `metodoPago` without allowlist as LOW because it was possible a model-level constraint existed. Model audit confirmed `Venta.metodoPago` is `DataTypes.STRING, allowNull: false` with no `validate.isIn`, no Sequelize ENUM, and no DB-level CHECK constraint.
 
-**Decision:**
-Upgrade the `metodoPago` finding to MEDIUM. The original LOW classification assumed a possible model-level fallback that does not exist.
+**Context:** Early handler analysis revealed that sale prices and quantities are accepted from the renderer without server-side validation, and that stock decrements have no floor guard.
 
-**Justification:**
-Without any constraint at any layer, arbitrary payment method strings accumulate in the database over the lifetime of the installation. Every financial report that aggregates by payment method (end-of-day, monthly) will silently under-count totals if a non-standard string was ever used. The risk is not theoretical — it compounds with every sale.
+**Decision:** Financial integrity findings (tampered prices, negative stock, incorrect closing totals) are classified as HIGH and must be addressed before UX, performance, or code quality work.
 
-**Impact on audit:**
-Review all other findings previously rated LOW that assumed possible model-level mitigation. Treat the absence of any model hooks or validators as a confirmed pattern, not a per-finding question.
+**Justification:** In a POS system, corrupted sale records and inventory state are harder to detect and retroactively correct than slow renders or UX friction. The financial impact compounds with every transaction.
+
+**Impact:** Performance and UX findings (M-1 through M-5, L-series) are documented but deprioritized relative to H-series findings.
 
 ---
 
-## [AD-004] Treat the entire validation layer as absent — do not assume mitigation below handler level
+## AD-002 · Model and database validation layers are effectively absent — do not assume mitigation below handler level
 
 **Date:** 2026-04-07
-**Context:**
-Model audit of `Venta.js`, `DetalleVenta.js`, and `Producto.js` found zero Sequelize validators (`validate` blocks), zero hooks (`beforeCreate`, `beforeUpdate`, etc.), and zero database-level constraints beyond NOT NULL and UNIQUE on `Producto.codigo`. The pattern is uniform across all three models.
 
-**Decision:**
-For all remaining handler audits (`caja-handlers.js`, `productos-handlers.js`, and any others), assume by default that **no model-level or DB-level validation exists** for any business rule unless explicitly verified. Do not soften handler-level findings on the assumption that models might catch bad data.
+**Context:** Model audit of `Venta.js`, `DetalleVenta.js`, `Producto.js`, and `ArqueoCaja.js` found zero Sequelize `validate` blocks and zero `beforeCreate`/`beforeUpdate` hooks across all models. DB-level constraints are limited to NOT NULL and a single UNIQUE on `Producto.codigo`. The only ENUM found (`ArqueoCaja.estado`) may not be enforced on existing installations due to the `sync()` without alter issue.
 
-**Justification:**
-The audit of three core models found a consistent absence of domain validation. Applying the same assumption to unaudited models avoids artificially low severity ratings and prevents re-auditing the same question per handler.
+**Decision:** All handler-level findings are classified as if the handler is the last and only line of defense — because it is. No finding is softened on the assumption that a model or DB constraint might catch bad data.
 
-**Impact on audit:**
-All future handler findings related to input validation, business rules, and data integrity should be classified as if the handler is the last and only line of defense — because it is.
+**Justification:** The consistent absence of domain validation across all audited models confirms this is a systemic pattern, not a per-model omission. Future audits of unreviewed models should apply the same assumption until evidence contradicts it.
 
 ---
 
-## [AD-005] CSV import path traversal is a second HIGH security finding independent of app:// protocol
+## AD-003 · `metodoPago` upgraded to HIGH — confirmed as a financial data loss mechanism
 
 **Date:** 2026-04-07
-**Context:**
-`import-productos-csv` reads a file path from the renderer process without any path containment check. This mirrors the `app://` protocol path traversal finding in `main.js` but operates via a different mechanism (IPC parameter vs. protocol handler URL).
 
-**Decision:**
-Classify `import-productos-csv` arbitrary file read as HIGH severity. Track it as a distinct finding from the `app://` traversal — same class of vulnerability, different entry point. Both must be fixed independently.
+**Context:** `metodoPago` was initially classified as LOW (no allowlist in handler). Model audit confirmed no enum or `isIn` constraint at any layer. Caja handler audit confirmed that `normalizarMetodoPago`'s `return s` fallback causes any unrecognized value to be silently excluded from all daily totals, and that `totalVentasTransferencia` is not stored in the model.
 
-**Justification:**
-The two vulnerabilities require different fixes. The `app://` fix is a containment guard on the protocol handler. The CSV import fix requires either moving the `fs.readFileSync` call inside the handler that opens the dialog (so the path never crosses the IPC boundary) or adding strict containment validation before the read.
+**Decision:** The `metodoPago` root cause is classified as HIGH (finding H-3). The three compounding issues (no allowlist, normalization fallback, missing model field) share the same root cause and are documented as a single finding.
 
-**Impact on audit:**
-The security surface of the application now has at least two confirmed path traversal / arbitrary file read vectors. Any remaining handlers that accept file paths from the renderer should be flagged immediately during audit.
+**Justification:** The impact is not "data quality degrades over time." It is "any sale with an unrecognized payment method is permanently excluded from financial records, with no error, flag, or recovery path within the application."
 
 ---
 
-## [AD-006] CSV import atomicity failure is a data integrity pattern — check all bulk operations
+## AD-004 · Missing-transaction pattern is systemic — all multi-step financial writes must be reviewed
 
 **Date:** 2026-04-07
-**Context:**
-`import-productos-csv` creates `ProductoDepartamento` and `ProductoFamilia` rows outside the product `bulkCreate` transaction, with `transaction: null` explicit. On rollback, these rows persist as orphaned records.
 
-**Decision:**
-During audit of any remaining handler that performs multi-model writes, explicitly verify whether all writes participate in the same transaction. Treat `transaction: null` as a HIGH-risk code pattern warranting immediate documentation.
+**Context:** Three confirmed instances of non-transactional multi-step writes: (1) `import-productos-csv` creates departments/families with `transaction: null` before the product `bulkCreate` transaction; (2) `toggle-producto-activo` uses SELECT + UPDATE without a transaction; (3) `cerrar-caja` reads sales and writes the arqueo across two independent `now()` calls without a wrapping transaction.
 
-**Justification:**
-Partial commitment in multi-step writes is a class of data integrity bug that is invisible in the happy path and only manifests under failure conditions. In a POS system where DB recovery is manual and backups may not exist, orphaned classification data compounds over time and is difficult to clean up retroactively.
+**Decision:** The absence of a wrapping transaction on any multi-step write that involves financial records or inventory state is classified as HIGH. The pattern is documented as systemic, not as isolated per-file incidents.
 
-**Impact on audit:**
-`caja-handlers.js` and any remaining handler that opens/closes a caja session across multiple models should be scrutinized for the same transaction isolation pattern.
+**Justification:** All three instances produce correct results on the happy path and silent inconsistency on the failure or concurrency path. In a POS where DB recovery is manual and backups may not exist, partial commits are high-consequence and difficult to detect.
 
 ---
 
-## [AD-002] Audit model layer before further handler analysis
+## AD-005 · Two independent path traversal vectors confirmed — fix independently
 
 **Date:** 2026-04-07
-**Context:**
-`ventas-handlers.js` destructures `Venta`, `DetalleVenta`, `Producto`, `Cliente`, `Usuario`, `Factura` from `models`. The audit has not yet examined model definitions for validation rules, constraints, or hooks that may partially compensate for the missing input validation in the handler.
 
-**Decision:**
-The next audit target should be the model layer (`src/database/models/`) before auditing remaining IPC handlers (`caja-handlers.js`, `productos-handlers.js`).
+**Context:** Two distinct arbitrary file read vulnerabilities were identified with different entry points and different required fixes: (1) `app://` protocol handler in `main.js`; (2) `import-productos-csv` accepting `filePath` from the renderer.
 
-**Justification:**
-Model-level constraints (e.g., a `min: 0` validator on `Producto.stock`, or `allowedValues` on `Venta.metodoPago`) would affect the actual severity of several MEDIUM/LOW findings. Knowing the model layer prevents over- or under-reporting issue severity in subsequent handler audits.
+**Decision:** Both are classified as HIGH security findings (H-5). They require independent fixes and must both be resolved, as fixing one does not mitigate the other.
 
-**Impact on audit:**
-If models have no validation, HIGH findings in `ventas-handlers.js` remain unchanged. If models partially validate inputs, some findings may be downgraded to MEDIUM. Either way, the model audit is load-bearing for the final severity assessment.
+**Fix guidance:**
+- `app://`: Add a path containment guard (`path.resolve(resolved).startsWith(allowedRoot)`).
+- `import-productos-csv`: Move `fs.readFileSync` inside the handler that calls `dialog.showOpenDialog`, so the file path never crosses the IPC boundary. The renderer should never hold a path that the main process will act on without re-validation.
