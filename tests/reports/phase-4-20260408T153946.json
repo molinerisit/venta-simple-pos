@@ -1,0 +1,117 @@
+{
+  "date": "2026-04-08T15:39:46.947Z",
+  "suite": "phase-4",
+  "total": 18,
+  "passed": 17,
+  "failed": 1,
+  "results": [
+    {
+      "id": "1.1",
+      "name": "H-7: rollback reverts findOrCreate (depts/families) on bulkCreate failure",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.2",
+      "name": "H-7: findOrCreate inside transaction — duplicate rows in same CSV handled correctly",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.3",
+      "name": "H-7: empty CSV returns error without creating orphan records",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.1",
+      "name": "M-6: inactive product NOT returned by barcode search",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.2",
+      "name": "M-6: active product IS returned by barcode search",
+      "status": "FAIL",
+      "error": "2.2 Active product must be returned by barcode lookup\n  Expected truthy, got: false"
+    },
+    {
+      "id": "2.3",
+      "name": "M-6: inactive product NOT returned by nombre search",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.4",
+      "name": "M-6: inactive product NOT returned by codigo search",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.5",
+      "name": "M-6: inactive PLU product NOT returned by scale barcode",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.1",
+      "name": "M-5: busqueda-inteligente works with cached admin config",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.2",
+      "name": "M-5: config-updated channel is registered",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.3",
+      "name": "M-5: cache invalidation via config-updated does not break search",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.1",
+      "name": "M-12: guardar-familia fails gracefully for non-existent DepartamentoId",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.2",
+      "name": "M-12: guardar-familia succeeds with valid DepartamentoId",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.3",
+      "name": "M-12: guardar-familia returns error for missing required fields",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.1",
+      "name": "[Regresión] CSV import sin pisar stock existente",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.2",
+      "name": "[Regresión] Venta normal con producto activo",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.3",
+      "name": "[Regresión] busqueda-inteligente returns active product by barcode",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.4",
+      "name": "[Regresión] guardar-producto create + update sin romper Phase 3 allowlist",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}

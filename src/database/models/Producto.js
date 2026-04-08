@@ -35,9 +35,10 @@ module.exports = (sequelize) => {
     paranoid: true,
     indexes: [
       { fields: ['nombre'] },
-      // 🟢 'codigo' es el nuevo índice único principal
-      // { fields: ['codigo_barras'] }, // Eliminamos índices únicos conflictivos
-      // { fields: ['plu'] },
+      // M-4: non-unique indexes restored — busqueda-inteligente lookups by
+      // codigo_barras and plu now use these indexes instead of full table scans.
+      { fields: ['codigo_barras'] },
+      { fields: ['plu'] },
       { fields: ['activo'] },
       { fields: ['DepartamentoId'] },
       { fields: ['FamiliaId'] },

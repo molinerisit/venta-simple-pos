@@ -245,7 +245,15 @@ function registerProductosHandlers(models, sequelize) {
       if (!nombre || !DepartamentoId) {
         return { success: false, message: "Faltan datos obligatorios." };
       }
-      const [nuevaFamilia, created] = await ProductoFamilia.findOrCreate({
+      // M-12: Validate DepartamentoId exists before creating the family.
+      // Without this check, findOrCreate would silently create a family with a
+      // dangling foreign key (SQLite FK enforcement is on, but the error message
+      // would be cryptic). Fail-fast with a clear business error instead.
+      const deptoExiste = await ProductoDepartamento.findByPk(DepartamentoId);
+      if (!deptoExiste) {
+        return { success: false, message: "El departamento no existe." };
+      }
+      const [nuevaFamilia, created] = await ProductoFamilia.findOrCreate({
         where: { nombre, DepartamentoId },
         defaults: { nombre, DepartamentoId },
       });
@@ -347,86 +355,90 @@ function registerProductosHandlers(models, sequelize) {
         return { success: false, message: "El archivo CSV está vacío o tiene un formato incorrecto." };
       }
 
-      const productosParaGuardar = [];
-      const deptoCache = new Map();
-      const familiaCache = new Map();
+      // H-7: Fully atomic — all findOrCreate (depts/families) and bulkCreate
+      // run inside ONE transaction. A failure at any step rolls back everything,
+      // preventing orphaned department/family records.
+      let procesados = 0;
+      await sequelize.transaction(async (t) => {
+        const deptoCache = new Map();
+        const familiaCache = new Map();
+        const productosParaGuardar = [];
 
-      for (const prod of productosCSV) {
-        if (!prod.codigo || !prod.nombre) {
-          console.warn("Omitiendo fila por falta de 'codigo' o 'nombre':", prod);
-          continue;
-        }
+        for (const prod of productosCSV) {
+          if (!prod.codigo || !prod.nombre) {
+            console.warn("Omitiendo fila por falta de 'codigo' o 'nombre':", prod);
+            continue;
+          }
 
-        let deptoId = null;
-        let familiaId = null;
+          let deptoId = null;
+          let familiaId = null;
 
-        if (prod.departamento) {
-          const nombreDepto = prod.departamento.trim();
-          if (nombreDepto) {
-            if (!deptoCache.has(nombreDepto)) {
-               const [depto] = await ProductoDepartamento.findOrCreate({
-                 where: { nombre: nombreDepto },
-section: "Clasificación (Opcional)",
-                 defaults: { nombre: nombreDepto },
-                 transaction: null 
-               });
-               deptoCache.set(nombreDepto, depto.id);
-            }
-            deptoId = deptoCache.get(nombreDepto);
-          }
-        }
+          if (prod.departamento) {
+            const nombreDepto = prod.departamento.trim();
+            if (nombreDepto) {
+              if (!deptoCache.has(nombreDepto)) {
+                const [depto] = await ProductoDepartamento.findOrCreate({
+                  where: { nombre: nombreDepto },
+                  defaults: { nombre: nombreDepto },
+                  transaction: t,
+                });
+                deptoCache.set(nombreDepto, depto.id);
+              }
+              deptoId = deptoCache.get(nombreDepto);
+            }
+          }
 
-        if (deptoId && prod.familia) {
-          const nombreFamilia = prod.familia.trim();
-          if (nombreFamilia) {
-            const cacheKey = `${deptoId}-${nombreFamilia}`;
-            if (!familiaCache.has(cacheKey)) {
-              const [familia] = await ProductoFamilia.findOrCreate({
-                where: { nombre: nombreFamilia, DepartamentoId: deptoId },
-                defaults: { nombre: nombreFamilia, DepartamentoId: deptoId },
-                transaction: null
-              });
-              familiaCache.set(cacheKey, familia.id);
-            }
-            familiaId = familiaCache.get(cacheKey);
-          }
-        }
-        
-        const parseFloatOrZero = (val) => {
-          if (val === null || val === undefined || val === '') return 0;
-          return parseFloat(String(val).replace(",", ".")) || 0;
-        };
+          if (deptoId && prod.familia) {
+            const nombreFamilia = prod.familia.trim();
+            if (nombreFamilia) {
+              const cacheKey = `${deptoId}-${nombreFamilia}`;
+              if (!familiaCache.has(cacheKey)) {
+                const [familia] = await ProductoFamilia.findOrCreate({
+                  where: { nombre: nombreFamilia, DepartamentoId: deptoId },
+                  defaults: { nombre: nombreFamilia, DepartamentoId: deptoId },
+                  transaction: t,
+                });
+                familiaCache.set(cacheKey, familia.id);
+              }
+              familiaId = familiaCache.get(cacheKey);
+            }
+          }
 
-        productosParaGuardar.push({
-          codigo: String(prod.codigo).trim(),
-          nombre: prod.nombre.trim(),
-          precioCompra: parseFloatOrZero(prod.precioCompra),
-          precioVenta: parseFloatOrZero(prod.precioVenta),
-          stock: parseFloatOrZero(prod.stock),
-          unidad: prod.unidad || 'unidad',
-          pesable: String(prod.pesable).toUpperCase() === 'SI',
-          plu: prod.plu || null,
-          codigo_barras: prod.codigo_barras || null,
-          DepartamentoId: deptoId,
-          FamiliaId: familiaId,
-          activo: true
-        });
-      }
+          const parseFloatOrZero = (val) => {
+            if (val === null || val === undefined || val === '') return 0;
+            return parseFloat(String(val).replace(",", ".")) || 0;
+          };
 
-      await sequelize.transaction(async (t) => {
-        await Producto.bulkCreate(productosParaGuardar, {
-          // H-6: 'stock' excluded — CSV import must not overwrite existing stock.
-          // New products (INSERT path) still receive the stock value from the CSV row.
-          updateOnDuplicate: [
-            'nombre', 'precioCompra', 'precioVenta', 'unidad',
-            'pesable', 'plu', 'codigo_barras', 'DepartamentoId', 'FamiliaId', 'activo'
-          ],
-          conflictAttributes: ['codigo'], 
-          transaction: t
-        });
-      });
+          productosParaGuardar.push({
+            codigo: String(prod.codigo).trim(),
+            nombre: prod.nombre.trim(),
+            precioCompra: parseFloatOrZero(prod.precioCompra),
+            precioVenta: parseFloatOrZero(prod.precioVenta),
+            stock: parseFloatOrZero(prod.stock),
+            unidad: prod.unidad || 'unidad',
+            pesable: String(prod.pesable).toUpperCase() === 'SI',
+            plu: prod.plu || null,
+            codigo_barras: prod.codigo_barras || null,
+            DepartamentoId: deptoId,
+            FamiliaId: familiaId,
+            activo: true,
+          });
+        }
 
-      return { success: true, message: `Se procesaron ${productosParaGuardar.length} productos.` };
+        await Producto.bulkCreate(productosParaGuardar, {
+          // H-6: 'stock' excluded — CSV import must not overwrite existing stock.
+          updateOnDuplicate: [
+            'nombre', 'precioCompra', 'precioVenta', 'unidad',
+            'pesable', 'plu', 'codigo_barras', 'DepartamentoId', 'FamiliaId', 'activo',
+          ],
+          conflictAttributes: ['codigo'],
+          transaction: t,
+        });
+        procesados = productosParaGuardar.length;
+      });
+
+
+      return { success: true, message: `Se procesaron ${procesados} productos.` };
 
     } catch (error) {
       console.error("Error al importar CSV:", error);
