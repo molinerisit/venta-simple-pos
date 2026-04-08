@@ -142,10 +142,14 @@ function registerProductosHandlers(models, sequelize) {
       if (productoId) {
         // Quitamos el ID del payload para evitar que se intente actualizar
         delete payload.id; 
-        await models.Producto.update(payload, { 
-          where: { id: productoId }, 
-          transaction: t 
+        // H-8: Capture affected row count. If 0, the productoId does not exist.
+        const [affectedRows] = await models.Producto.update(payload, {
+          where: { id: productoId },
+          transaction: t,
         });
+        if (affectedRows === 0) {
+          throw new Error(`Producto con id ${productoId} no encontrado.`);
+        }
       } 
       // Si el ID NO existe, es un CREATE
       else {
@@ -391,8 +395,10 @@ section: "Clasificación (Opcional)",
 
       await sequelize.transaction(async (t) => {
         await Producto.bulkCreate(productosParaGuardar, {
+          // H-6: 'stock' excluded — CSV import must not overwrite existing stock.
+          // New products (INSERT path) still receive the stock value from the CSV row.
           updateOnDuplicate: [
-            'nombre', 'precioCompra', 'precioVenta', 'stock', 'unidad', 
+            'nombre', 'precioCompra', 'precioVenta', 'unidad',
             'pesable', 'plu', 'codigo_barras', 'DepartamentoId', 'FamiliaId', 'activo'
           ],
           conflictAttributes: ['codigo'], 

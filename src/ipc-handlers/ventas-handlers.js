@@ -9,6 +9,9 @@ const { Op } = require("sequelize");
 function registerVentasHandlers(models, sequelize) {
   const { Producto, Venta, DetalleVenta, Cliente, Usuario, Factura } = models;
 
+  // Strict allowlist for metodoPago. Any value outside this set is rejected.
+  const METODOS_PAGO_VALIDOS = ['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte'];
+
   // --- Utilidad: crear venta en transacción (para reuso) ---
   const createSaleTx = async (ventaData, t) => {
     const {
@@ -18,14 +21,55 @@ function registerVentasHandlers(models, sequelize) {
       dniCliente,
       UsuarioId,
       montoPagado,
-      // externalReference, // Ya no se usa aquí
     } = ventaData;
 
     if (!detalles || detalles.length === 0) throw new Error("No hay items en la venta.");
 
+    // H-3: Reject any metodoPago not in the strict allowlist. Never auto-correct.
+    if (!METODOS_PAGO_VALIDOS.includes(metodoPago)) {
+      throw new Error(
+        `Método de pago inválido: "${metodoPago}". Valores permitidos: ${METODOS_PAGO_VALIDOS.join(', ')}.`
+      );
+    }
+
+    // H-2: Resolve authoritative prices from DB for every non-manual item.
+    // The renderer-supplied precioUnitario is ignored for DB-backed products.
+    // Quantities must be > 0. Stock must be sufficient before any decrement.
+    const resolvedItems = [];
+    for (const item of detalles) {
+      const cantidad = Number(item.cantidad);
+      if (!Number.isFinite(cantidad) || cantidad <= 0) {
+        throw new Error(
+          `Cantidad inválida para "${item.nombreProducto || item.ProductoId}": debe ser mayor que cero.`
+        );
+      }
+
+      const isManual = !item.ProductoId || String(item.ProductoId).startsWith("manual-");
+
+      if (isManual) {
+        const pUnit = Number(item.precioUnitario);
+        if (!Number.isFinite(pUnit) || pUnit < 0) {
+          throw new Error(`Precio inválido para ítem manual "${item.nombreProducto}".`);
+        }
+        resolvedItems.push({ item, cantidad, pUnit, isManual: true });
+      } else {
+        const producto = await Producto.findByPk(item.ProductoId, { transaction: t });
+        if (!producto) throw new Error(`Producto ${item.ProductoId} no encontrado.`);
+        if (producto.stock < cantidad) {
+          throw new Error(
+            `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}, solicitado: ${cantidad}.`
+          );
+        }
+        // Use offer price when active, otherwise regular price. Renderer price is discarded.
+        const pUnit = producto.precio_oferta != null ? producto.precio_oferta : producto.precioVenta;
+        resolvedItems.push({ item, cantidad, pUnit, isManual: false });
+      }
+    }
+
+    // Compute subtotal from authoritative server-side prices only.
     let subtotal = 0;
-    for (const it of detalles) {
-      subtotal += Number(it.precioUnitario || 0) * Number(it.cantidad || 0);
+    for (const r of resolvedItems) {
+      subtotal += r.pUnit * r.cantidad;
     }
 
     const adminConfig = await Usuario.findOne({
@@ -58,9 +102,7 @@ function registerVentasHandlers(models, sequelize) {
     const descuentoTotal = descCliente + descEfectivo;
 
     const totalTrasDesc = subtotal - descuentoTotal;
-
     const recargo = metodoPago === "Crédito" ? totalTrasDesc * (recargoPorcentaje / 100) : 0;
-
     const totalFinal = totalTrasDesc + recargo;
 
     const montoPagadoFinal = metodoPago === "Efectivo" ? Number(montoPagado || 0) : totalFinal;
@@ -86,20 +128,18 @@ function registerVentasHandlers(models, sequelize) {
       { transaction: t }
     );
 
+    // Build detail rows and decrement stock using already-resolved data.
     const detallesRows = [];
-    for (const item of detalles) {
-      const cantidad = Number(item.cantidad || 0);
-      const pUnit = Number(item.precioUnitario || 0);
+    for (const { item, cantidad, pUnit, isManual } of resolvedItems) {
       detallesRows.push({
         VentaId: venta.id,
-        ProductoId: item.ProductoId,
+        ProductoId: isManual ? null : item.ProductoId,
         cantidad,
         precioUnitario: pUnit,
         subtotal: cantidad * pUnit,
         nombreProducto: item.nombreProducto,
       });
-
-      if (item.ProductoId && !String(item.ProductoId).startsWith("manual-")) {
+      if (!isManual) {
         await Producto.increment(
           { stock: -cantidad },
           { where: { id: item.ProductoId }, transaction: t }
@@ -109,14 +149,16 @@ function registerVentasHandlers(models, sequelize) {
     if (detallesRows.length) {
       await DetalleVenta.bulkCreate(detallesRows, { transaction: t });
     }
-    
-    // --- Lógica de consulta de MP eliminada de aquí ---
-    // (El front-end se encarga de consultar el pago usando el externalReference)
 
     return {
       venta,
       datosRecibo: {
-        items: detalles,
+        // Return authoritative prices so the receipt reflects what was actually charged.
+        items: resolvedItems.map(({ item, cantidad, pUnit }) => ({
+          ...item,
+          precioUnitario: pUnit,
+          subtotal: cantidad * pUnit,
+        })),
         total: totalFinal,
         descuento: descuentoTotal,
         recargo,
@@ -125,7 +167,6 @@ function registerVentasHandlers(models, sequelize) {
         vuelto: vuelto > 0 ? vuelto : 0,
         dniCliente,
       },
-      // datosPagoMP (eliminado de esta respuesta)
     };
   };
 
