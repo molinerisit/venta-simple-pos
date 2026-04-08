@@ -499,29 +499,18 @@ const aplicarOrdenamiento = (productos, criterio) => {
   });
 
   btnImportarCSV?.addEventListener("click", async () => {
+    // H-5b: dialog is now opened inside the main-process handler.
+    // Renderer only triggers the action — no file path crosses the IPC boundary.
     try {
-      const { canceled, filePaths } = await window.electronAPI.invoke(
-        "show-open-dialog",
-        {
-          title: "Seleccionar archivo CSV para importar",
-          properties: ["openFile"],
-          filters: [{ name: "Archivos CSV", extensions: ["csv"] }],
-        }
-      );
-
-      if (canceled || !filePaths || filePaths.length === 0) return;
-
-      const filePath = filePaths[0];
       btnImportarCSV.disabled = true;
       btnImportarCSV.textContent = "Importando...";
-      showNotification("Importando productos... esto puede tardar.", "info");
 
-      const res = await window.electronAPI.invoke("import-productos-csv", filePath);
+      const res = await window.electronAPI.invoke("import-productos-csv");
 
       if (res.success) {
         showNotification(res.message, "success");
         await cargarProductos();
-      } else {
+      } else if (res.message !== "Importación cancelada.") {
         showNotification(res.message, "error");
       }
     } catch (e) {

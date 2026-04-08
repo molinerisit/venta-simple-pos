@@ -395,19 +395,37 @@ app.on("ready", async () => {
     }
 
     // Protocolo "app://"
+    // H-5a: Path traversal fix — resolve and contain within approved roots.
+    // Fail-closed: any path outside the two approved roots returns ACCESS_DENIED.
 
     protocol.registerFileProtocol("app", (request, callback) => {
-      const url = decodeURI(
-        request.url.substring("app://".length).split("?")[0]
-      );
+      try {
+        const rawUrl = decodeURI(
+          request.url.substring("app://".length).split("?")[0]
+        );
 
-      const publicPath = path.join(__dirname, "public", url);
+        const publicRoot   = path.resolve(path.join(__dirname, "public"));
+        const userDataRoot = path.resolve(app.getPath("userData"));
 
-      const userDataPath = path.join(app.getPath("userData"), url);
+        for (const root of [publicRoot, userDataRoot]) {
+          const resolved = path.resolve(path.join(root, rawUrl));
+          // A path is contained in root only if it starts with "<root><sep>" or IS root.
+          // The separator check prevents "/public_evil" from passing a "/public" prefix test.
+          const isContained =
+            resolved === root ||
+            resolved.startsWith(root + path.sep);
 
-      if (fs.existsSync(publicPath)) callback({ path: publicPath });
-      else if (fs.existsSync(userDataPath)) callback({ path: userDataPath });
-      else callback({ error: -6 });
+          if (isContained && fs.existsSync(resolved)) {
+            callback({ path: resolved });
+            return;
+          }
+        }
+
+        // Deny by default — NET_ERR_ACCESS_DENIED
+        callback({ error: -10 });
+      } catch {
+        callback({ error: -10 });
+      }
     });
 
     // === ELIMINADO: Heartbeat recurrente (setInterval) ===

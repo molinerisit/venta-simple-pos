@@ -1,0 +1,123 @@
+{
+  "date": "2026-04-08T15:22:09.402Z",
+  "suite": "phase-3",
+  "total": 19,
+  "passed": 19,
+  "failed": 0,
+  "results": [
+    {
+      "id": "1.1",
+      "name": "H-5a: path traversal básico bloqueado",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.2",
+      "name": "H-5a: prefix spoofing sin separador bloqueado",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.3",
+      "name": "H-5a: URL malformada retorna ACCESS_DENIED (fail-closed)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.4",
+      "name": "H-5a: path legítimo en public/ es servido",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.5",
+      "name": "H-5a: path legítimo en userData/ es servido",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.6",
+      "name": "H-5a: archivo inexistente retorna ACCESS_DENIED (no exception)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.1",
+      "name": "H-5b: show-open-dialog no está registrado en IPC",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.2",
+      "name": "H-5b: import-productos-csv ignora cualquier argumento del renderer",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.3",
+      "name": "H-5b: cancelación del dialog no produce error visible",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.4",
+      "name": "H-5b: flujo completo de import con dialog interno",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.1",
+      "name": "M-7: campos de sistema (createdAt/updatedAt) son descartados",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.2",
+      "name": "M-7: campos de otros modelos son descartados",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.3",
+      "name": "M-7: prototype pollution attempt no causa error",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.4",
+      "name": "M-7: payload null retorna error controlado (no crash)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.5",
+      "name": "M-7: todos los campos del allowlist funcionan en create",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.1",
+      "name": "[Regresión] Venta normal sigue funcionando",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.2",
+      "name": "[Regresión] metodoPago inválido sigue siendo rechazado",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.3",
+      "name": "[Regresión] CSV import sigue sin pisar stock",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.4",
+      "name": "[Regresión] guardar-producto update con ID inexistente retorna success:false",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}
