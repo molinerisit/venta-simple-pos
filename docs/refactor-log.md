@@ -556,3 +556,43 @@ The `throw` inside the `try` block triggers the existing `catch → t.rollback()
 ### All tests passed ✅
 
 **B.1 note:** Concurrent test passed. SQLite's write serialization prevented negative stock in this run, but the read-check-decrement pattern remains theoretically vulnerable under higher concurrency. Consider atomic UPDATE fix.
+
+---
+
+## [2026-04-08] Phase 2 Testing Results
+
+**Runner:** `tests/run-phase-2.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** real production code — no mocks for business logic
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | Manipulación de precio rechazada | ✅ |
+| 1.2 | Stock insuficiente rechazado | ✅ |
+| 1.3 | Cantidad negativa rechazada (stock negativo exploit) | ✅ |
+| 1.4 | metodoPago inválido rechazado | ✅ |
+| 1.5 | Producto inexistente rechazado (sin side effects) | ✅ |
+| 2.1 | Cierre de caja: totales coinciden exactamente con ventas registradas | ✅ |
+| 2.2 | Todos los métodos de pago quedan reflejados en el arqueo | ✅ |
+| 2.3 | Valores de metodoPago legacy normalizados y contabilizados | ✅ |
+| 3.1 | CSV import no sobreescribe stock existente | ✅ |
+| 3.2 | Update con ID inexistente retorna success:false | ✅ |
+| 3.3 | Update con mismos datos no produce error | ✅ |
+| 4.1 | [Regresión] Venta normal con Efectivo | ✅ |
+| 4.2 | [Regresión] Caja abre y cierra sin error | ✅ |
+| 4.3 | [Regresión] Stock baja correctamente en venta de múltiples ítems | ✅ |
+| B.1 | [BONUS] 15 ventas concurrentes con stock=10 — stock no va negativo | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 15 |
+| Pass   | 15 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+**B.1 note:** Concurrent test passed. SQLite's write serialization prevented negative stock in this run, but the read-check-decrement pattern remains theoretically vulnerable under higher concurrency. Consider atomic UPDATE fix.
