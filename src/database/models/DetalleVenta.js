@@ -6,9 +6,10 @@ module.exports = (sequelize) => {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 
     nombreProducto: { type: DataTypes.STRING, allowNull: false },
-    cantidad:       { type: DataTypes.FLOAT, allowNull: false },
-    precioUnitario: { type: DataTypes.FLOAT, allowNull: false },
-    subtotal:       { type: DataTypes.FLOAT, allowNull: false },
+    // Phase 5.2 — ORM-layer validators (defense-in-depth)
+    cantidad:       { type: DataTypes.FLOAT, allowNull: false, validate: { min: 0.001 } },
+    precioUnitario: { type: DataTypes.FLOAT, allowNull: false, validate: { min: 0 } },
+    subtotal:       { type: DataTypes.FLOAT, allowNull: false, validate: { min: 0 } },
 
     // ---- sync/multi-tenant (ELIMINADOS) ----
     // cloud_tenant_id: ELIMINADO

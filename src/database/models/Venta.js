@@ -12,8 +12,9 @@ module.exports = (sequelize) => {
         isIn: [['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte']],
       },
     },
-    total:        { type: DataTypes.FLOAT, allowNull: false },
-    montoPagado:  { type: DataTypes.FLOAT },
+    // Phase 5.3 — ORM-layer validators (defense-in-depth)
+    total:        { type: DataTypes.FLOAT, allowNull: false, validate: { min: 0 } },
+    montoPagado:  { type: DataTypes.FLOAT, allowNull: false },
     vuelto:       { type: DataTypes.FLOAT },
 
     recargo:        { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
