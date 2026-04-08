@@ -14,10 +14,12 @@ module.exports = (sequelize) => {
       montoFinalReal:     { type: DataTypes.FLOAT, allowNull: true },
       diferencia:         { type: DataTypes.FLOAT, allowNull: true },
 
-      totalVentasEfectivo: { type: DataTypes.FLOAT, allowNull: true },
-      totalVentasDebito:   { type: DataTypes.FLOAT, allowNull: true },
-      totalVentasCredito:  { type: DataTypes.FLOAT, allowNull: true },
-      totalVentasQR:       { type: DataTypes.FLOAT, allowNull: true },
+      totalVentasEfectivo:      { type: DataTypes.FLOAT, allowNull: true },
+      totalVentasDebito:        { type: DataTypes.FLOAT, allowNull: true },
+      totalVentasCredito:       { type: DataTypes.FLOAT, allowNull: true },
+      totalVentasQR:            { type: DataTypes.FLOAT, allowNull: true },
+      totalVentasTransferencia: { type: DataTypes.FLOAT, allowNull: true },
+      totalVentasCtaCte:        { type: DataTypes.FLOAT, allowNull: true },
 
       observaciones: { type: DataTypes.TEXT, allowNull: true },
       estado: { type: DataTypes.ENUM("ABIERTA", "CERRADA"), defaultValue: "ABIERTA" },

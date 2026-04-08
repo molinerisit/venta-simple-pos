@@ -211,9 +211,11 @@ app.on("ready", async () => {
 
     console.log("✅ Sesión limpia.");
 
-    // Así guardará en tu carpeta de proyecto
-
-    const dbPath = path.join(__dirname, "database.sqlite");
+    // Production: userData is the OS-designated writable directory for app data.
+    // Development: keep next to the project root for easy inspection.
+    const dbPath = app.isPackaged
+      ? path.join(app.getPath("userData"), "database.sqlite")
+      : path.join(__dirname, "database.sqlite");
 
     sequelize = new Sequelize({
       dialect: "sqlite",
@@ -289,29 +291,8 @@ app.on("ready", async () => {
 
     applyAssociations(models);
 
-    // === BLOQUE DE MIGRACIONES ELIMINADO ===
-
-    // try {
-
-    //   const { runMigrations } = require("./src/migrations/migrator");
-
-    //   await runMigrations(sequelize);
-
-    // } catch (e) {
-
-    //   ...
-
-    // }
-
-    await sequelize.query("PRAGMA foreign_keys = OFF");
-
-    try {
-      //await sequelize.sync({ alter: true });
-
-      await sequelize.sync();
-    } finally {
-      await sequelize.query("PRAGMA foreign_keys = ON");
-    }
+    const { runMigrations } = require("./src/database/migrator");
+    await runMigrations(sequelize);
 
     console.log("✅ Esquema actualizado.");
 
