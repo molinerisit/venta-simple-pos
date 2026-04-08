@@ -5,7 +5,13 @@ module.exports = (sequelize) => {
   const Venta = sequelize.define('Venta', {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 
-    metodoPago:   { type: DataTypes.STRING, allowNull: false }, // Efectivo/Débito/Crédito/QR/CtaCte
+    metodoPago: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isIn: [['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte']],
+      },
+    },
     total:        { type: DataTypes.FLOAT, allowNull: false },
     montoPagado:  { type: DataTypes.FLOAT },
     vuelto:       { type: DataTypes.FLOAT },
