@@ -11,16 +11,25 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = {
   async up(queryInterface) {
-    await queryInterface.addColumn('arqueos_caja', 'totalVentasTransferencia', {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-      defaultValue: null,
-    });
-    await queryInterface.addColumn('arqueos_caja', 'totalVentasCtaCte', {
-      type: DataTypes.FLOAT,
-      allowNull: true,
-      defaultValue: null,
-    });
+    // Guard: on fresh installs the initial sync() already created all columns
+    // from the current model definition. Only add the column if it doesn't exist.
+    const desc = await queryInterface.describeTable('arqueos_caja');
+
+    if (!desc.totalVentasTransferencia) {
+      await queryInterface.addColumn('arqueos_caja', 'totalVentasTransferencia', {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        defaultValue: null,
+      });
+    }
+
+    if (!desc.totalVentasCtaCte) {
+      await queryInterface.addColumn('arqueos_caja', 'totalVentasCtaCte', {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        defaultValue: null,
+      });
+    }
   },
 
   async down(queryInterface) {
