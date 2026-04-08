@@ -59,4 +59,6 @@ function invoke(channel, data) {
   return fn(null, data);
 }
 
-module.exports = { registeredHandlers, invoke };
+// mockDialog is exported so individual tests can temporarily override its methods.
+// Always restore after the test to avoid state leakage between test cases.
+module.exports = { registeredHandlers, invoke, mockDialog };

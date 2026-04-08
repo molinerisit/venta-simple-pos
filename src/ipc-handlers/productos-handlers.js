@@ -95,7 +95,17 @@ function registerProductosHandlers(models, sequelize) {
   ipcMain.handle("guardar-producto", async (_event, productoData) => {
     const t = await sequelize.transaction();
     try {
-      const payload = { ...productoData };
+      // M-7: explicit allowlist — renderer cannot inject arbitrary fields.
+      const ALLOWED_FIELDS = [
+        'id', 'nombre', 'codigo', 'codigo_barras', 'plu',
+        'stock', 'precioCompra', 'precioVenta', 'precio_oferta',
+        'unidad', 'pesable', 'activo',
+        'imagen_base64', 'imagen_url', 'fecha_fin_oferta', 'fecha_vencimiento',
+        'DepartamentoId', 'FamiliaId',
+      ];
+      const payload = Object.fromEntries(
+        Object.entries(productoData || {}).filter(([k]) => ALLOWED_FIELDS.includes(k))
+      );
       payload.nombre = String(payload.nombre || "").trim();
       
       payload.codigo = String(payload.codigo || "").trim() || null;
@@ -254,11 +264,10 @@ function registerProductosHandlers(models, sequelize) {
   // INICIO: FUNCIONES DE CSV
   // ==========================================================
 
-  ipcMain.handle("show-open-dialog", async (event, options) => {
-    return await dialog.showOpenDialog(options);
-  });
+    // H-5b: "show-open-dialog" removed — renderer-controlled generic dialog is an
+  // attack surface. Each handler that needs a dialog opens it internally.
 
-  ipcMain.handle("export-productos-csv", async () => {
+  ipcMain.handle("export-productos-csv", async () => {
     try {
       const { canceled, filePath } = await dialog.showSaveDialog({
         title: "Guardar Plantilla de Productos",
@@ -312,9 +321,20 @@ function registerProductosHandlers(models, sequelize) {
     }
   });
 
-  ipcMain.handle("import-productos-csv", async (_event, filePath) => {
-    try {
-      const fileContent = fs.readFileSync(filePath, 'utf-8');
+  ipcMain.handle("import-productos-csv", async () => {
+    // H-5b: file path never crosses IPC boundary. Main opens the dialog itself.
+    try {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: "Seleccionar archivo CSV para importar",
+        properties: ["openFile"],
+        filters: [{ name: "Archivos CSV", extensions: ["csv"] }],
+      });
+
+      if (canceled || !filePaths || filePaths.length === 0) {
+        return { success: false, message: "Importación cancelada." };
+      }
+
+      const fileContent = await fsPromises.readFile(filePaths[0], 'utf-8');
       
       const parseResult = Papa.parse(fileContent, {
         header: true,

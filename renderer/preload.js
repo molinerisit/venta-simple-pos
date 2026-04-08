@@ -56,9 +56,9 @@ const validInvokeChannels = [
   "guardar-departamento",
   "guardar-familia",
   "guardar-familia",
-  "export-productos-csv",     // <-- El que ya agregaste
-  "import-productos-csv",     // <-- ¡AÑADIR ESTE!
-  "show-open-dialog",         // <-- ¡Y AÑADIR ESTE!
+  "export-productos-csv",
+  "import-productos-csv",
+  // "show-open-dialog" removed — H-5b: generic renderer-controlled dialog was an attack surface
   // Proveedores
   "get-proveedores",
   "get-proveedor-by-id",

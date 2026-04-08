@@ -1,7 +1,7 @@
 'use strict';
 
 // ─── CRITICAL: electron mock must be installed BEFORE any handler require ─────
-const { invoke } = require('./helpers/electron-mock');
+const { invoke, mockDialog } = require('./helpers/electron-mock');
 
 const path  = require('path');
 const fs    = require('fs');
@@ -304,8 +304,13 @@ test('3.1', 'CSV import no sobreescribe stock existente', async () => {
   const tmpFile = path.join(os.tmpdir(), `test-${Date.now()}.csv`);
   fs.writeFileSync(tmpFile, csvContent, 'utf-8');
 
+  // H-5b: import-productos-csv no longer accepts a file path from the renderer.
+  // Override the dialog mock to return the test file path, simulating user file selection.
+  const savedDialog = mockDialog.showOpenDialog;
+  mockDialog.showOpenDialog = async () => ({ canceled: false, filePaths: [tmpFile] });
+
   try {
-    const result = await invoke('import-productos-csv', tmpFile);
+    const result = await invoke('import-productos-csv');
     assertTrue(result.success, '3.1 CSV import should succeed');
 
     const prod = await MODELS.Producto.findOne({ where: { codigo: 'PRODA' } });
@@ -317,6 +322,7 @@ test('3.1', 'CSV import no sobreescribe stock existente', async () => {
     // Price update should have been applied (the non-stock fields)
     assertApprox(prod.precioVenta, 110, 0.01, '3.1 precioVenta should be updated to 110');
   } finally {
+    mockDialog.showOpenDialog = savedDialog; // restore default mock
     try { fs.unlinkSync(tmpFile); } catch (_) {}
   }
 });

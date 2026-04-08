@@ -5,7 +5,10 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "test:phase2": "node tests/run-phase-2.js",
+    "test:phase3": "node tests/run-phase-3.js"
+
   },
   "build": {
     "appId": "com.julianmolineris.sistemagestion",
