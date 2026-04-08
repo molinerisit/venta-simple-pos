@@ -227,19 +227,15 @@ app.on("ready", async () => {
 
     console.log("✅ DB local ok.");
 
-    await sequelize.query(`
-
-      PRAGMA journal_mode = WAL;
-
-      PRAGMA synchronous = NORMAL;
-
-      PRAGMA temp_store = MEMORY;
-
-      PRAGMA cache_size = -20000;      -- ~20MB de cache
-
-      PRAGMA foreign_keys = ON;
-
-    `);
+    // Each PRAGMA must be a separate query call.
+    // The sqlite3 driver (sqlite3_prepare + sqlite3_step) only executes the
+    // first statement in a multi-statement string — all subsequent PRAGMAs
+    // were previously silently ignored, including foreign_keys = ON.
+    await sequelize.query("PRAGMA journal_mode = WAL;");
+    await sequelize.query("PRAGMA synchronous = NORMAL;");
+    await sequelize.query("PRAGMA temp_store = MEMORY;");
+    await sequelize.query("PRAGMA cache_size = -20000;");
+    await sequelize.query("PRAGMA foreign_keys = ON;");
 
     // Modelos
 
