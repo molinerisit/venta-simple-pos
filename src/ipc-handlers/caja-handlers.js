@@ -81,7 +81,7 @@ function registerCajaHandlers(models, sequelize) {
       return { cajaAbierta: cajaAbierta || null };
     } catch (error) {
       console.error("Error al obtener estado de caja:", error);
-      return { error: error.message };
+      return { success: false, message: error.message, error: true };
     }
   });
 
@@ -102,12 +102,13 @@ function registerCajaHandlers(models, sequelize) {
       return { success: true, arqueo: nuevoArqueo.toJSON() };
     } catch (error) {
       console.error("Error al abrir caja:", error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.message, error: true };
     }
   });
 
-  // Historial de cierres (listado)
-  ipcMain.handle("get-all-cierres-caja", async () => {
+  // Historial de cierres (listado) — M-1: supports optional limit/offset pagination
+  ipcMain.handle("get-all-cierres-caja", async (_event, opts) => {
+    const { limit, offset } = opts || {};
     try {
       const cierres = await ArqueoCaja.findAll({
         where: { estado: "CERRADA" },
@@ -119,6 +120,8 @@ function registerCajaHandlers(models, sequelize) {
           },
         ],
         order: [["fechaCierre", "DESC"]],
+        ...(limit != null && { limit: Number(limit) }),
+        ...(offset != null && { offset: Number(offset) }),
       });
       return cierres.map((c) => c.toJSON());
     } catch (error) {
@@ -169,7 +172,7 @@ function registerCajaHandlers(models, sequelize) {
       };
     } catch (error) {
       console.error("Error en 'get-resumen-cierre':", error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.message, error: true };
     }
   });
 
@@ -232,7 +235,7 @@ function registerCajaHandlers(models, sequelize) {
       return { success: true, resultado };
     } catch (error) {
       console.error("Error al cerrar caja:", error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.message, error: true };
     }
   });
 }

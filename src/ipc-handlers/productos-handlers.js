@@ -9,7 +9,9 @@ function registerProductosHandlers(models, sequelize) {
   const { Producto, ProductoDepartamento, ProductoFamilia } = models;
 
   // Lista de productos
-  ipcMain.handle("get-productos", async () => {
+  ipcMain.handle("get-productos", async (_event, opts) => {
+    // M-1: supports optional limit/offset pagination
+    const { limit, offset } = opts || {};
     try {
       const productos = await Producto.findAll({
         include: [
@@ -35,6 +37,8 @@ function registerProductosHandlers(models, sequelize) {
           [{ model: ProductoFamilia, as: "familia" }, "nombre", "ASC"],
           ["nombre", "ASC"],
         ],
+        ...(limit != null && { limit: Number(limit) }),
+        ...(offset != null && { offset: Number(offset) }),
       });
       return productos.map((p) => p.toJSON());
     } catch (error) {
@@ -45,7 +49,6 @@ function registerProductosHandlers(models, sequelize) {
 
   // Obtener un producto por ID
   ipcMain.handle("get-producto-by-id", async (_event, productoId) => {
-    console.log(`[HANDLER: get-producto-by-id] Buscando producto con ID: ${productoId} (Tipo: ${typeof productoId})`);
     try {
       const producto = await Producto.findByPk(productoId, {
         include: [
@@ -68,7 +71,6 @@ function registerProductosHandlers(models, sequelize) {
           }
         ],
       });
-      console.log("[HANDLER: get-producto-by-id] Resultado de findByPk:", JSON.stringify(producto, null, 2));
       return producto ? producto.toJSON() : null;
     } catch (error) {
       console.error("Error en get-producto-by-id:", error);
@@ -107,6 +109,10 @@ function registerProductosHandlers(models, sequelize) {
         Object.entries(productoData || {}).filter(([k]) => ALLOWED_FIELDS.includes(k))
       );
       payload.nombre = String(payload.nombre || "").trim();
+      // L-8: Reject empty nombre early — gives a clearer error than ORM notEmpty.
+      if (!payload.nombre) {
+        throw new Error("El nombre del producto es obligatorio.");
+      }
       
       payload.codigo = String(payload.codigo || "").trim() || null;
       if (!payload.codigo) {
@@ -127,6 +133,11 @@ function registerProductosHandlers(models, sequelize) {
       
       if (!payload.fecha_fin_oferta) payload.fecha_fin_oferta = null;
       if (!payload.fecha_vencimiento) payload.fecha_vencimiento = null;
+
+      // L-2: precio_oferta must be strictly less than precioVenta when both are positive.
+      if (payload.precio_oferta != null && payload.precio_oferta > 0 && payload.precioVenta > 0 && payload.precio_oferta >= payload.precioVenta) {
+        throw new Error("El precio de oferta debe ser menor que el precio de venta regular.");
+      }
 
       if (payload.imagen_base64) {
         const b64 = String(payload.imagen_base64).replace(/^data:image\/\w+;base64,/, "");
@@ -176,11 +187,11 @@ function registerProductosHandlers(models, sequelize) {
       if (error.name === "SequelizeUniqueConstraintError") {
         const campo = Object.keys(error.fields || {})[0];
         if (campo === "codigo") {
-          return { success: false, message: "El 'Código' ya está en uso. Debe ser único." };
+          return { success: false, message: "El 'Código' ya está en uso. Debe ser único." , error: true };
         }
       }
       console.error("Error al guardar producto:", error);
-      return { success: false, message: error.message || "Ocurrió un error inesperado al guardar." };
+      return { success: false, message: error.message || "Ocurrió un error inesperado al guardar." , error: true };
     }
   });
 
@@ -193,29 +204,27 @@ function registerProductosHandlers(models, sequelize) {
         : { success: false, message: "Producto no encontrado." };
     } catch (error) {
       if (error.name === "SequelizeForeignKeyConstraintError") {
-        return { success: false, message: "No se puede eliminar: tiene ventas/compras asociadas." };
+        return { success: false, message: "No se puede eliminar: tiene ventas/compras asociadas." , error: true };
       }
-      return { success: false, message: error.message };
+      return { success: false, message: error.message , error: true };
     }
   });
 
   // Toggle Activo
   ipcMain.handle("toggle-producto-activo", async (_event, productoId) => {
-    console.log(`[HANDLER: toggle-producto-activo] Toggle estado para ID: ${productoId} (Tipo: ${typeof productoId})`);
     try {
-      const producto = await Producto.findByPk(productoId);
-      if (producto) {
-        console.log("[HANDLER: toggle-producto-activo] Producto encontrado. Actualizando estado.");
-        producto.activo = !producto.activo;
-        await producto.save();
-        return { success: true }; 
-      } else {
-        console.log("[HANDLER: toggle-producto-activo] ERROR: Producto NO encontrado con ese ID.");
-        return { success: false, message: "Producto no encontrado" };
-      }
+      // L-4: Single-query toggle — eliminates the SELECT+UPDATE round-trip.
+      const [affectedRows] = await Producto.update(
+        { activo: sequelize.literal("CASE WHEN activo = 1 THEN 0 ELSE 1 END") },
+        { where: { id: productoId } }
+      );
+      if (affectedRows === 0) {
+        return { success: false, message: "Producto no encontrado." };
+      }
+      return { success: true };
     } catch (error) {
       console.error("Error en toggle-producto-activo:", error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.message , error: true };
     }
   });
 
@@ -233,7 +242,7 @@ function registerProductosHandlers(models, sequelize) {
       return { success: true, data: nuevoDepto.toJSON() };
     } catch (error) {
       console.error("Error en guardar-departamento:", error);
-      return { success: false, message: "Error al guardar el departamento." };
+      return { success: false, message: "Error al guardar el departamento." , error: true };
     }
   });
 
@@ -243,7 +252,7 @@ function registerProductosHandlers(models, sequelize) {
       const nombre = String(data?.nombre || "").trim();
       const DepartamentoId = data?.DepartamentoId;
       if (!nombre || !DepartamentoId) {
-        return { success: false, message: "Faltan datos obligatorios." };
+        return { success: false, message: "Faltan datos obligatorios." , error: true };
       }
       // M-12: Validate DepartamentoId exists before creating the family.
       // Without this check, findOrCreate would silently create a family with a
@@ -251,20 +260,20 @@ function registerProductosHandlers(models, sequelize) {
       // would be cryptic). Fail-fast with a clear business error instead.
       const deptoExiste = await ProductoDepartamento.findByPk(DepartamentoId);
       if (!deptoExiste) {
-        return { success: false, message: "El departamento no existe." };
+        return { success: false, message: "El departamento no existe." , error: true };
       }
       const [nuevaFamilia, created] = await ProductoFamilia.findOrCreate({
         where: { nombre, DepartamentoId },
         defaults: { nombre, DepartamentoId },
       });
       if (!created) {
-        return { success: false, message: "La familia ya existe en este departamento." };
+        return { success: false, message: "La familia ya existe en este departamento." , error: true };
       }
       return { success: true, data: nuevaFamilia.toJSON() };
     } catch (error)
     {
       console.error("Error en guardar-familia:", error);
-      return { success: false, message: "Error al guardar la familia." };
+      return { success: false, message: "Error al guardar la familia." , error: true };
     }
   });
 
@@ -284,7 +293,7 @@ function registerProductosHandlers(models, sequelize) {
       });
 
       if (canceled || !filePath) {
-        return { success: false, message: "Exportación cancelada." };
+        return { success: false, message: "Exportación cancelada." , error: true };
       }
 
       const productos = await Producto.findAll({
@@ -319,13 +328,13 @@ function registerProductosHandlers(models, sequelize) {
         ]
       });
       
-      fs.writeFileSync(filePath, csv, 'utf-8');
+      await fsPromises.writeFile(filePath, csv, 'utf-8');
       
       return { success: true, message: `Plantilla exportada en ${filePath}` };
 
     } catch (error) {
       console.error("Error al exportar CSV:", error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.message , error: true };
     }
   });
 
@@ -339,7 +348,7 @@ function registerProductosHandlers(models, sequelize) {
       });
 
       if (canceled || !filePaths || filePaths.length === 0) {
-        return { success: false, message: "Importación cancelada." };
+        return { success: false, message: "Importación cancelada." , error: true };
       }
 
       const fileContent = await fsPromises.readFile(filePaths[0], 'utf-8');
@@ -352,9 +361,13 @@ function registerProductosHandlers(models, sequelize) {
       
       const productosCSV = parseResult.data;
       if (!productosCSV || productosCSV.length === 0) {
-        return { success: false, message: "El archivo CSV está vacío o tiene un formato incorrecto." };
+        return { success: false, message: "El archivo CSV está vacío o tiene un formato incorrecto." , error: true };
       }
 
+      // M-11: Reject oversized imports to prevent memory exhaustion.
+      if (productosCSV.length > 10000) {
+        return { success: false, message: `El CSV tiene ${productosCSV.length} filas. El límite es 10.000 por lote.`, error: true };
+      }
       // H-7: Fully atomic — all findOrCreate (depts/families) and bulkCreate
       // run inside ONE transaction. A failure at any step rolls back everything,
       // preventing orphaned department/family records.
@@ -443,9 +456,9 @@ function registerProductosHandlers(models, sequelize) {
     } catch (error) {
       console.error("Error al importar CSV:", error);
       if (error.name === 'SequelizeUniqueConstraintError') {
-        return { success: false, message: `Error de duplicado: ${error.errors[0].message}` };
+        return { success: false, message: `Error de duplicado: ${error.errors[0].message}` , error: true };
       }
-      return { success: false, message: error.message };
+      return { success: false, message: error.message , error: true };
     }
   });
   // ==========================================================

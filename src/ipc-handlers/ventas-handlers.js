@@ -177,7 +177,7 @@ function registerVentasHandlers(models, sequelize) {
   // Listado de ventas (Sin cambios)
   ipcMain.handle("get-ventas", async (_event, filters) => {
     try {
-      const { fechaInicio, fechaFin } = filters || {};
+      const { fechaInicio, fechaFin, limit, offset } = filters || {};
       const whereClause = {};
       if (fechaInicio && fechaFin) {
         whereClause.createdAt = {
@@ -197,6 +197,8 @@ function registerVentasHandlers(models, sequelize) {
           { model: Factura, as: "factura" },
         ],
         order: [["createdAt", "DESC"]],
+        ...(limit != null && { limit: Number(limit) }),
+        ...(offset != null && { offset: Number(offset) }),
       });
       return ventas.map((v) => v.toJSON());
     } catch (error) {
@@ -211,7 +213,6 @@ function registerVentasHandlers(models, sequelize) {
     if (!texto) return null;
     
     // 🟢 Log de inicio
-    console.log(`[BUSQUEDA] Recibido: ${texto}`);
 
     try {
       // M-5: Use cached admin config — avoids a DB query on every barcode scan.
@@ -228,7 +229,6 @@ function registerVentasHandlers(models, sequelize) {
       if (admin && admin.config_balanza && typeof admin.config_balanza === 'string') {
         try {
           cfg = JSON.parse(admin.config_balanza);
-          console.log("[BUSQUEDA] Config de balanza parseada:", cfg);
         } catch (e) {
           console.error("[BUSQUEDA] Error parseando config_balanza:", e);
           cfg = null;
@@ -236,9 +236,7 @@ function registerVentasHandlers(models, sequelize) {
       } else if (admin && admin.config_balanza) {
         // Ya era un objeto, (por si acaso)
         cfg = admin.config_balanza;
-        console.log("[BUSQUEDA] Config de balanza leída (ya era objeto):", cfg);
       } else {
-        console.log("[BUSQUEDA] No se encontró config_balanza en el admin.");
       }
       // ==========================================================
       // 🟢 FIN DE LA CORRECCIÓN
@@ -248,14 +246,12 @@ function registerVentasHandlers(models, sequelize) {
       // Si es código de balanza
       // (Esta lógica ahora SÍ va a funcionar)
       if (cfg?.prefijo && String(texto).startsWith(cfg.prefijo) && cfg.codigo_inicio) {
-        console.log("[BUSQUEDA] Detectado código de balanza.");
         const ci = Number(cfg.codigo_inicio) - 1;
         const vi = Number(cfg.valor_inicio) - 1;
         const codigoProducto = String(texto).substring(ci, ci + Number(cfg.codigo_longitud));
         const valorStr = String(texto).substring(vi, vi + Number(cfg.valor_longitud));
         const valor = parseFloat(valorStr) / (Number(cfg.valor_divisor) || 1);
 
-        console.log(`[BUSQUEDA] Buscando PLU: ${codigoProducto}`);
         
         // Buscamos por PLU y que sea pesable
         const producto = await Producto.findOne({
@@ -267,7 +263,6 @@ function registerVentasHandlers(models, sequelize) {
         });
 
         if (producto) {
-          console.log(`[BUSQUEDA] Producto encontrado: ${producto.nombre}`);
           const pj = producto.toJSON();
           if (cfg.tipo_valor === "peso") {
             pj.cantidad = valor;
@@ -277,12 +272,10 @@ function registerVentasHandlers(models, sequelize) {
           }
           return pj;
         } else {
-          console.log(`[BUSQUEDA] PLU ${codigoProducto} no encontrado en la base de datos.`);
         }
       }
 
       // Si no, buscar por barcode exacto o nombre like
-      console.log("[BUSQUEDA] Falló búsqueda por PLU. Buscando por código/nombre...");
       const whereClause = {
         activo: true,  // M-6: never return inactive products in search results
         [Op.or]: [
@@ -295,9 +288,7 @@ function registerVentasHandlers(models, sequelize) {
       const producto = await Producto.findOne({ where: whereClause });
       
       if(producto) {
-        console.log(`[BUSQUEDA] Producto encontrado por código/nombre: ${producto.nombre}`);
       } else {
-        console.log("[BUSQUEDA] No se encontró producto por ningún método.");
       }
       
       return producto ? producto.toJSON() : null;
@@ -322,7 +313,7 @@ function registerVentasHandlers(models, sequelize) {
     } catch (error) {
       await t.rollback();
       console.error("Error al registrar la venta:", error);
-      return { success: false, message: error.message || "Error al guardar la venta." };
+      return { success: false, message: error.message || "Error al guardar la venta.", error: true };
     }
   });
 
