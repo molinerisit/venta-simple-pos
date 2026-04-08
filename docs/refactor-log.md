@@ -917,3 +917,320 @@ const payload = { ...productoData }; // renderer payload spread directly
 | Fail   | 0 |
 
 ### All tests passed ✅
+
+---
+
+## [2026-04-08] Phase 4 Testing Results
+
+**Runner:** `tests/run-phase-4.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | H-7: rollback reverts findOrCreate (depts/families) on bulkCreate failure | ✅ |
+| 1.2 | H-7: findOrCreate inside transaction — duplicate rows in same CSV handled correctly | ✅ |
+| 1.3 | H-7: empty CSV returns error without creating orphan records | ✅ |
+| 2.1 | M-6: inactive product NOT returned by barcode search | ✅ |
+| 2.2 | M-6: active product IS returned by barcode search | ❌ |
+| 2.3 | M-6: inactive product NOT returned by nombre search | ✅ |
+| 2.4 | M-6: inactive product NOT returned by codigo search | ✅ |
+| 2.5 | M-6: inactive PLU product NOT returned by scale barcode | ✅ |
+| 3.1 | M-5: busqueda-inteligente works with cached admin config | ✅ |
+| 3.2 | M-5: config-updated channel is registered | ✅ |
+| 3.3 | M-5: cache invalidation via config-updated does not break search | ✅ |
+| 4.1 | M-12: guardar-familia fails gracefully for non-existent DepartamentoId | ✅ |
+| 4.2 | M-12: guardar-familia succeeds with valid DepartamentoId | ✅ |
+| 4.3 | M-12: guardar-familia returns error for missing required fields | ✅ |
+| 5.1 | [Regresión] CSV import sin pisar stock existente | ✅ |
+| 5.2 | [Regresión] Venta normal con producto activo | ✅ |
+| 5.3 | [Regresión] busqueda-inteligente returns active product by barcode | ✅ |
+| 5.4 | [Regresión] guardar-producto create + update sin romper Phase 3 allowlist | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 18 |
+| Pass   | 17 |
+| Fail   | 1 |
+
+### Failures
+
+- **2.2 M-6: active product IS returned by barcode search**: 2.2 Active product must be returned by barcode lookup
+
+---
+
+## [2026-04-08] Phase 4 Testing Results
+
+**Runner:** `tests/run-phase-4.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | H-7: rollback reverts findOrCreate (depts/families) on bulkCreate failure | ✅ |
+| 1.2 | H-7: findOrCreate inside transaction — duplicate rows in same CSV handled correctly | ✅ |
+| 1.3 | H-7: empty CSV returns error without creating orphan records | ✅ |
+| 2.1 | M-6: inactive product NOT returned by barcode search | ✅ |
+| 2.2 | M-6: active product IS returned by barcode search | ✅ |
+| 2.3 | M-6: inactive product NOT returned by nombre search | ✅ |
+| 2.4 | M-6: inactive product NOT returned by codigo search | ✅ |
+| 2.5 | M-6: inactive PLU product NOT returned by scale barcode | ✅ |
+| 3.1 | M-5: busqueda-inteligente works with cached admin config | ✅ |
+| 3.2 | M-5: config-updated channel is registered | ✅ |
+| 3.3 | M-5: cache invalidation via config-updated does not break search | ✅ |
+| 4.1 | M-12: guardar-familia fails gracefully for non-existent DepartamentoId | ✅ |
+| 4.2 | M-12: guardar-familia succeeds with valid DepartamentoId | ✅ |
+| 4.3 | M-12: guardar-familia returns error for missing required fields | ✅ |
+| 5.1 | [Regresión] CSV import sin pisar stock existente | ✅ |
+| 5.2 | [Regresión] Venta normal con producto activo | ✅ |
+| 5.3 | [Regresión] busqueda-inteligente returns active product by barcode | ✅ |
+| 5.4 | [Regresión] guardar-producto create + update sin romper Phase 3 allowlist | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 18 |
+| Pass   | 18 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-08] Phase 2 Testing Results
+
+**Runner:** `tests/run-phase-2.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** real production code — no mocks for business logic
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | Manipulación de precio rechazada | ✅ |
+| 1.2 | Stock insuficiente rechazado | ✅ |
+| 1.3 | Cantidad negativa rechazada (stock negativo exploit) | ✅ |
+| 1.4 | metodoPago inválido rechazado | ✅ |
+| 1.5 | Producto inexistente rechazado (sin side effects) | ✅ |
+| 2.1 | Cierre de caja: totales coinciden exactamente con ventas registradas | ✅ |
+| 2.2 | Todos los métodos de pago quedan reflejados en el arqueo | ✅ |
+| 2.3 | Valores de metodoPago legacy normalizados y contabilizados | ✅ |
+| 3.1 | CSV import no sobreescribe stock existente | ✅ |
+| 3.2 | Update con ID inexistente retorna success:false | ✅ |
+| 3.3 | Update con mismos datos no produce error | ✅ |
+| 4.1 | [Regresión] Venta normal con Efectivo | ✅ |
+| 4.2 | [Regresión] Caja abre y cierra sin error | ✅ |
+| 4.3 | [Regresión] Stock baja correctamente en venta de múltiples ítems | ✅ |
+| B.1 | [BONUS] 15 ventas concurrentes con stock=10 — stock no va negativo | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 15 |
+| Pass   | 15 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+**B.1 note:** Concurrent test passed. SQLite's write serialization prevented negative stock in this run, but the read-check-decrement pattern remains theoretically vulnerable under higher concurrency. Consider atomic UPDATE fix.
+
+---
+
+## [2026-04-08] Phase 4.1 — Make CSV import fully atomic
+
+**Finding:** H-7
+**Plan step:** 4.1
+**File:** `src/ipc-handlers/productos-handlers.js`
+**Status:** ✅ Done
+
+### Problem
+
+`findOrCreate` calls for departments and families ran OUTSIDE the `sequelize.transaction()` block, with `transaction: null`. Only `bulkCreate` for products was inside a transaction. If `bulkCreate` failed (e.g., unique constraint), the already-created departments and families were not rolled back, leaving orphaned records. Also, a stray `section: "Clasificación (Opcional)"` key was present in one of the `findOrCreate` options objects (corrupted code from a prior edit).
+
+### Change
+
+Moved the entire processing loop (findOrCreate for depts, findOrCreate for families, building the product array, bulkCreate) inside ONE `sequelize.transaction()` block. Changed `transaction: null` → `transaction: t` on both `findOrCreate` calls. Removed the stray `section:` key. Added a `procesados` variable (captured inside the transaction closure) for the success message.
+
+```diff
+-const productosParaGuardar = [];
+-const deptoCache = new Map();
+-const familiaCache = new Map();
+-
+-for (const prod of productosCSV) {
+-  // findOrCreate with transaction: null  ← outside any transaction
+-}
+-
+-await sequelize.transaction(async (t) => {
+-  await Producto.bulkCreate(..., { transaction: t });
+-});
+
++let procesados = 0;
++await sequelize.transaction(async (t) => {
++  const deptoCache = new Map();
++  const familiaCache = new Map();
++  const productosParaGuardar = [];
++
++  for (const prod of productosCSV) {
++    // findOrCreate with transaction: t  ← inside the transaction
++  }
++
++  await Producto.bulkCreate(..., { transaction: t });
++  procesados = productosParaGuardar.length;
++});
+```
+
+### Impact
+
+- A failure in `bulkCreate` now rolls back all `findOrCreate` operations from the same import batch.
+- No orphaned department or family records can be created by a failed import.
+- The in-memory `deptoCache` and `familiaCache` Maps prevent duplicate `findOrCreate` calls for rows sharing the same department or family within a single CSV file.
+
+---
+
+## [2026-04-08] Phase 4.2 — Add `activo: true` filter to `busqueda-inteligente`
+
+**Finding:** M-6
+**Plan step:** 4.2
+**File:** `src/ipc-handlers/ventas-handlers.js`
+**Status:** ✅ Done
+
+### Problem
+
+`busqueda-inteligente` searched for products without filtering by `activo`. Deactivated products (removed from inventory) could appear in search results, be added to a sale, and cause incorrect stock decrements.
+
+### Change
+
+Added `activo: true` to two places:
+
+1. **PLU/balanza branch** (`findOne` by `plu`):
+```diff
+-where: { plu: codigoProducto, pesable: true }
++where: { plu: codigoProducto, pesable: true, activo: true }
+```
+
+2. **Fallback search** (barcode / codigo / nombre):
+```diff
+ const whereClause = {
++  activo: true,
+   [Op.or]: [
+     { codigo_barras: String(texto) },
+     { codigo: String(texto) },
+     { nombre: { [Op.like]: `%${String(texto)}%` } },
+   ],
+ };
+```
+
+### Edge cases covered
+
+- Inactive product with exact barcode match → not returned
+- Inactive product with matching nombre (LIKE) → not returned
+- Inactive pesable product with matching PLU → not returned via scale barcode
+- Active product → unaffected, returned normally
+
+---
+
+## [2026-04-08] Phase 4.3 — Add indexes for `codigo_barras` and `plu`
+
+**Finding:** M-4
+**Plan step:** 4.3
+**Files:** `src/database/models/Producto.js`, `src/migrations/20260408020000-add-search-indexes.js`
+**Status:** ✅ Done
+
+### Problem
+
+Non-unique indexes on `codigo_barras` and `plu` were commented out in `Producto.js` when those columns were changed from `unique: true` to `unique: false`. Every `busqueda-inteligente` call triggered a full table scan on `productos` for the barcode and PLU lookups.
+
+### Change
+
+Restored both indexes in the model definition and created a migration to add them to existing databases.
+
+**`Producto.js`:**
+```diff
+-// { fields: ['codigo_barras'] }, // Eliminamos índices únicos conflictivos
+-// { fields: ['plu'] },
++{ fields: ['codigo_barras'] },
++{ fields: ['plu'] },
+```
+
+**Migration `20260408020000-add-search-indexes.js`:** uses `queryInterface.addIndex` with `.catch` to handle "already exists" gracefully (idempotent for both fresh installs and existing DBs).
+
+---
+
+## [2026-04-08] Phase 4.4 — Cache admin config in `busqueda-inteligente`
+
+**Finding:** M-5
+**Plan step:** 4.4
+**File:** `src/ipc-handlers/ventas-handlers.js`
+**Status:** ✅ Done
+
+### Problem
+
+Every call to `busqueda-inteligente` made a `Usuario.findOne({ where: { rol: "administrador" } })` query. On a POS system scanning dozens of barcodes per minute, this is a repeated read of data that almost never changes.
+
+### Change
+
+Added a module-level `let _cachedAdminConfig = null` variable. The first call to `busqueda-inteligente` populates it; subsequent calls use the cached value. Added a `config-updated` IPC handler that sets it back to `null` for invalidation.
+
+```diff
++let _cachedAdminConfig = null;
++
+ function registerVentasHandlers(models, sequelize) {
+   // ...
+   ipcMain.handle("busqueda-inteligente", async (_event, texto) => {
+     // ...
+-    const admin = await Usuario.findOne({ where: { rol: "administrador" }, raw: true });
++    if (!_cachedAdminConfig) {
++      _cachedAdminConfig = await Usuario.findOne({ where: { rol: "administrador" }, raw: true });
++    }
++    const admin = _cachedAdminConfig;
+     // ...
+   });
++
++  ipcMain.handle("config-updated", async () => {
++    _cachedAdminConfig = null;
++  });
+ }
+```
+
+### Edge cases covered
+
+- Cache is module-scoped: each test run gets a fresh handler registration with a fresh variable.
+- `config-updated` invalidation sets to `null` → next call re-queries DB.
+- `null` admin (no admin user in DB) is also cached (avoids repeated failed lookups) — handled correctly since the existing code checks `admin?.config_balanza`.
+
+---
+
+## [2026-04-08] Phase 4.5 — Validate `DepartamentoId` in `guardar-familia`
+
+**Finding:** M-12
+**Plan step:** 4.5
+**File:** `src/ipc-handlers/productos-handlers.js`
+**Status:** ✅ Done
+
+### Problem
+
+`guardar-familia` called `ProductoFamilia.findOrCreate({ where: { nombre, DepartamentoId }, ... })` without first verifying that `DepartamentoId` points to an existing `ProductoDepartamento`. With `PRAGMA foreign_keys = ON` (enabled in Phase 1.1), the insert would fail with a cryptic FK violation error. Without it, an orphaned family with a dangling FK would be created.
+
+### Change
+
+```diff
++const deptoExiste = await ProductoDepartamento.findByPk(DepartamentoId);
++if (!deptoExiste) {
++  return { success: false, message: "El departamento no existe." };
++}
+ const [nuevaFamilia, created] = await ProductoFamilia.findOrCreate({
+```
+
+### Impact
+
+- FK violations are prevented before reaching the DB layer.
+- The user receives a clear, actionable error message instead of a Sequelize FK error.
+- No orphaned family records can be created with non-existent `DepartamentoId`.

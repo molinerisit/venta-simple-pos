@@ -6,6 +6,10 @@ const { Op } = require("sequelize");
 // ELIMINADO: const { findPaymentByReference } = require("../services/mercadoPago-Service");
 // (El servicio de MP fue integrado en el handler de MP)
 
+// M-5: Module-level cache for admin config used in busqueda-inteligente.
+// Invalidated via "config-updated" IPC event.
+let _cachedAdminConfig = null;
+
 function registerVentasHandlers(models, sequelize) {
   const { Producto, Venta, DetalleVenta, Cliente, Usuario, Factura } = models;
 
@@ -210,7 +214,11 @@ function registerVentasHandlers(models, sequelize) {
     console.log(`[BUSQUEDA] Recibido: ${texto}`);
 
     try {
-      const admin = await Usuario.findOne({ where: { rol: "administrador" }, raw: true });
+      // M-5: Use cached admin config — avoids a DB query on every barcode scan.
+      if (!_cachedAdminConfig) {
+        _cachedAdminConfig = await Usuario.findOne({ where: { rol: "administrador" }, raw: true });
+      }
+      const admin = _cachedAdminConfig;
 
       // ==========================================================
       // 🟢 INICIO DE LA CORRECCIÓN
@@ -250,12 +258,13 @@ function registerVentasHandlers(models, sequelize) {
         console.log(`[BUSQUEDA] Buscando PLU: ${codigoProducto}`);
         
         // Buscamos por PLU y que sea pesable
-        const producto = await Producto.findOne({ 
-          where: { 
-            plu: codigoProducto,
-            pesable: true // 🟢 Añadimos esta verificación por seguridad
-          } 
-        });
+        const producto = await Producto.findOne({
+          where: {
+            plu: codigoProducto,
+            pesable: true,
+            activo: true,  // M-6: exclude inactive products from all searches
+          },
+        });
 
         if (producto) {
           console.log(`[BUSQUEDA] Producto encontrado: ${producto.nombre}`);
@@ -275,7 +284,8 @@ function registerVentasHandlers(models, sequelize) {
       // Si no, buscar por barcode exacto o nombre like
       console.log("[BUSQUEDA] Falló búsqueda por PLU. Buscando por código/nombre...");
       const whereClause = {
-        [Op.or]: [
+        activo: true,  // M-6: never return inactive products in search results
+        [Op.or]: [
           { codigo_barras: String(texto) },
           // 🟢 AGREGADO: Buscar también por el campo 'codigo'
           { codigo: String(texto) }, 
@@ -319,6 +329,12 @@ function registerVentasHandlers(models, sequelize) {
   // --- ELIMINADO: registrar-venta-y-facturar ---
   // ipcMain.handle("registrar-venta-y-facturar", ...)
   
+  // M-5: Invalidate admin config cache when settings are saved.
+  // The renderer must invoke "config-updated" after any admin config change.
+  ipcMain.handle("config-updated", async () => {
+    _cachedAdminConfig = null;
+  });
+
 }
 
 module.exports = { registerVentasHandlers };
