@@ -566,6 +566,9 @@ app.on("window-all-closed", () => {
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
+    // L-10: Guard against activation before DB initialization completes.
+    // On macOS, clicking the Dock icon can fire 'activate' before 'ready' finishes.
+    if (!models) return;
     (async () => {
       try {
         const adminExists = await models.Usuario.findOne({

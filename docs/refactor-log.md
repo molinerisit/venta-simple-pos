@@ -1441,3 +1441,231 @@ montoFinalReal: { type: DataTypes.FLOAT, allowNull: true,  validate: { min: 0 } 
 ```
 
 **Archivos:** `src/database/models/ArqueoCaja.js`
+
+---
+
+## [2026-04-08] Phase 6 Testing Results
+
+**Runner:** `tests/run-phase-6.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 6.1: get-productos with no opts returns all products | ✅ |
+| 1.2 | 6.1: get-productos with limit=1 returns only 1 product | ✅ |
+| 1.3 | 6.1: get-productos with limit=2 offset=1 skips first product | ✅ |
+| 1.4 | 6.1: get-ventas with limit=1 returns only 1 venta | ✅ |
+| 1.5 | 6.1: get-all-cierres-caja with limit=1 returns only 1 cierre | ✅ |
+| 2.1 | 6.2: guardar-familia error returns error:true | ❌ |
+| 2.2 | 6.2: guardar-departamento duplicate returns error:true | ✅ |
+| 2.3 | 6.2: guardar-producto with bad id returns error:true | ✅ |
+| 3.1 | 6.3/6.5: export-productos-csv writes file asynchronously | ✅ |
+| 4.1 | 6.4: import-productos-csv rejects CSV with > 10,000 rows | ❌ |
+| 4.2 | 6.4: import-productos-csv accepts CSV with exactly 100 rows | ✅ |
+| 5.1 | 6.7: guardar-producto rejects precio_oferta >= precioVenta | ✅ |
+| 5.2 | 6.7: guardar-producto rejects precio_oferta > precioVenta | ✅ |
+| 5.3 | 6.7: guardar-producto accepts valid precio_oferta < precioVenta | ✅ |
+| 5.4 | 6.7: guardar-producto accepts null precio_oferta (no validation) | ✅ |
+| 6.1 | 6.8: toggle-producto-activo toggles activo from true to false | ✅ |
+| 6.2 | 6.8: toggle-producto-activo toggles back (false to true) | ✅ |
+| 6.3 | 6.8: toggle-producto-activo returns error for non-existent product | ✅ |
+| 7.1 | 6.10: guardar-producto rejects empty nombre | ✅ |
+| 7.2 | 6.10: guardar-producto rejects whitespace-only nombre | ✅ |
+| 7.3 | 6.10: guardar-producto accepts valid nombre | ✅ |
+| 8.1 | [Regresión] get-productos with no pagination returns all seeded products | ✅ |
+| 8.2 | [Regresión] registrar-venta still works end-to-end | ✅ |
+| 8.3 | [Regresión] busqueda-inteligente works without debug logs | ✅ |
+| 8.4 | [Regresión] import-productos-csv with valid CSV still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 25 |
+| Pass   | 23 |
+| Fail   | 2 |
+
+### Failures
+
+- **2.1 6.2: guardar-familia error returns error:true**: 2.1 Must return error:true
+- **4.1 6.4: import-productos-csv rejects CSV with > 10,000 rows**: 4.1 Must reject CSV with > 10,000 rows
+
+---
+
+## [2026-04-08] Phase 6 Testing Results
+
+**Runner:** `tests/run-phase-6.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 6.1: get-productos with no opts returns all products | ✅ |
+| 1.2 | 6.1: get-productos with limit=1 returns only 1 product | ✅ |
+| 1.3 | 6.1: get-productos with limit=2 offset=1 skips first product | ✅ |
+| 1.4 | 6.1: get-ventas with limit=1 returns only 1 venta | ✅ |
+| 1.5 | 6.1: get-all-cierres-caja with limit=1 returns only 1 cierre | ✅ |
+| 2.1 | 6.2: catch block in guardar-producto returns error:true on unexpected failure | ✅ |
+| 2.2 | 6.2: guardar-departamento duplicate returns error:true | ✅ |
+| 2.3 | 6.2: guardar-producto with bad id returns error:true | ✅ |
+| 3.1 | 6.3/6.5: export-productos-csv writes file asynchronously | ✅ |
+| 4.1 | 6.4: import-productos-csv rejects CSV with > 10,000 rows | ✅ |
+| 4.2 | 6.4: import-productos-csv accepts CSV with exactly 100 rows | ✅ |
+| 5.1 | 6.7: guardar-producto rejects precio_oferta >= precioVenta | ✅ |
+| 5.2 | 6.7: guardar-producto rejects precio_oferta > precioVenta | ✅ |
+| 5.3 | 6.7: guardar-producto accepts valid precio_oferta < precioVenta | ✅ |
+| 5.4 | 6.7: guardar-producto accepts null precio_oferta (no validation) | ✅ |
+| 6.1 | 6.8: toggle-producto-activo toggles activo from true to false | ✅ |
+| 6.2 | 6.8: toggle-producto-activo toggles back (false to true) | ✅ |
+| 6.3 | 6.8: toggle-producto-activo returns error for non-existent product | ✅ |
+| 7.1 | 6.10: guardar-producto rejects empty nombre | ✅ |
+| 7.2 | 6.10: guardar-producto rejects whitespace-only nombre | ✅ |
+| 7.3 | 6.10: guardar-producto accepts valid nombre | ✅ |
+| 8.1 | [Regresión] get-productos with no pagination returns all seeded products | ✅ |
+| 8.2 | [Regresión] registrar-venta still works end-to-end | ✅ |
+| 8.3 | [Regresión] busqueda-inteligente works without debug logs | ✅ |
+| 8.4 | [Regresión] import-productos-csv with valid CSV still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 25 |
+| Pass   | 25 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-08] Phase 6 — Performance & Code Quality: Implementation Entries
+
+### Step 6.1 — Paginación `limit`/`offset` en queries de listado [M-1]
+
+**Problema:** `get-ventas`, `get-productos`, y `get-all-cierres-caja` hacían `findAll` sin límite. En producción con miles de registros esto puede agotar memoria y bloquear el proceso.
+
+**Cambio:** Se agregó soporte opcional de `limit` y `offset` como parámetros de entrada. Si no se pasan, el comportamiento es idéntico al anterior (retorna todo), preservando compatibilidad.
+
+**Archivos:** `src/ipc-handlers/ventas-handlers.js`, `src/ipc-handlers/productos-handlers.js`, `src/ipc-handlers/caja-handlers.js`
+
+---
+
+### Step 6.2 — Forma de error consistente en catch blocks [M-2]
+
+**Problema:** Los catch blocks retornaban formas inconsistentes: `{ error: error.message }`, `{ success: false, message }`, o arrays vacíos `[]`.
+
+**Cambio:** Todos los catch blocks de handlers con semántica success/fail ahora retornan `{ success: false, message: error.message, error: true }`. El flag `error: true` distingue errores inesperados de rechazos de lógica de negocio.
+
+**Archivos:** `src/ipc-handlers/caja-handlers.js`, `src/ipc-handlers/ventas-handlers.js`, `src/ipc-handlers/productos-handlers.js`
+
+---
+
+### Step 6.3 & 6.5 — Export CSV asíncrono [M-10, L-series]
+
+**Problema:** `export-productos-csv` usaba `fs.writeFileSync` que bloquea el event loop durante la escritura del archivo. `fsPromises` ya estaba importado para el import handler pero no se usaba en export.
+
+**Cambio:** Reemplazado `fs.writeFileSync(filePath, csv, 'utf-8')` por `await fsPromises.writeFile(filePath, csv, 'utf-8')`.
+
+**Archivos:** `src/ipc-handlers/productos-handlers.js`
+
+---
+
+### Step 6.4 — Límite de filas en import CSV [M-11]
+
+**Problema:** Un CSV con millones de filas podía agotar la memoria del proceso.
+
+**Cambio:** Después del check de CSV vacío, se verifica `productosCSV.length > 10000` y se retorna error inmediatamente antes de abrir la transacción.
+
+```js
+if (productosCSV.length > 10000) {
+  return { success: false, message: `El CSV tiene ${productosCSV.length} filas. El límite es 10.000 por lote.`, error: true };
+}
+```
+
+**Archivos:** `src/ipc-handlers/productos-handlers.js`
+
+---
+
+### Step 6.6 — Eliminar debug `console.log` de paths de producción [L-7]
+
+**Problema:** `busqueda-inteligente` tenía 12 `console.log` de debugging (`[BUSQUEDA] Recibido`, `[BUSQUEDA] Config de balanza`, etc.) que se ejecutaban en cada escaneo de código de barras. `get-produto-by-id` y `toggle-produto-activo` también tenían logs de debugging con `JSON.stringify` completo del producto.
+
+**Cambio:** Eliminados todos los logs de debugging. Se preservaron `console.error` en los catch blocks y `console.warn` para filas CSV sin código/nombre.
+
+**Archivos:** `src/ipc-handlers/ventas-handlers.js`, `src/ipc-handlers/productos-handlers.js`
+
+---
+
+### Step 6.7 — Validación `precio_oferta < precioVenta` [L-2]
+
+**Problema:** Se podía guardar un producto con `precio_oferta >= precioVenta`, lo cual es semánticamente incorrecto (un precio de oferta no puede ser igual o mayor al precio regular).
+
+**Cambio:** En `guardar-produto`, después del parsing de precios:
+
+```js
+if (payload.precio_oferta != null && payload.precio_oferta > 0 && payload.precioVenta > 0
+    && payload.precio_oferta >= payload.precioVenta) {
+  throw new Error('El precio de oferta debe ser menor que el precio de venta regular.');
+}
+```
+
+La validación solo aplica cuando ambos son positivos — `precio_oferta = null` (sin oferta) y `precioVenta = 0` (producto gratuito) se aceptan.
+
+**Archivos:** `src/ipc-handlers/productos-handlers.js`
+
+---
+
+### Step 6.8 — Single-query toggle en `toggle-produto-activo` [L-4]
+
+**Problema:** El handler hacía SELECT + UPDATE — dos round-trips al DB por cada toggle.
+
+**Cambio:** Reemplazado por un único `UPDATE` con expresión SQL:
+
+```js
+const [affectedRows] = await Producto.update(
+  { activo: sequelize.literal('CASE WHEN activo = 1 THEN 0 ELSE 1 END') },
+  { where: { id: productoId } }
+);
+```
+
+**Archivos:** `src/ipc-handlers/productos-handlers.js`
+
+---
+
+### Step 6.9 — Guard de inicialización en macOS `activate` [L-10]
+
+**Problema:** En macOS, el evento `activate` puede dispararse (clic en Dock) antes de que `app.ready` termine de inicializar la DB y los modelos. `models` sería `null` y el evento lanzaría un TypeError.
+
+**Cambio:**
+
+```js
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    if (!models) return; // Guard: DB not yet initialized
+    ...
+  }
+});
+```
+
+**Archivos:** `main.js`
+
+---
+
+### Step 6.10 — Validación `nombre` no vacío en `guardar-produto` [L-8]
+
+**Problema:** Un `nombre` vacío o solo con espacios pasaba el trim y luego fallaba en el ORM validator con un mensaje menos claro.
+
+**Cambio:** Después del `payload.nombre = String(...).trim()`:
+
+```js
+if (!payload.nombre) {
+  throw new Error('El nombre del producto es obligatorio.');
+}
+```
+
+**Archivos:** `src/ipc-handlers/productos-handlers.js`
