@@ -7,14 +7,14 @@ module.exports = (sequelize) => {
 
     // 🟢 'codigo' será la clave única para import/export
     codigo: { type: DataTypes.STRING, allowNull: false, unique: true },
-    nombre: { type: DataTypes.STRING, allowNull: false }, // 🟢 Ya no es único
+    nombre: { type: DataTypes.STRING, allowNull: false, validate: { notEmpty: true } },
     
-    // Tus campos FLOAT (¡están perfectos!)
-    stock:  { type: DataTypes.FLOAT, defaultValue: 0 },
-    unidad: { type: DataTypes.STRING, defaultValue: 'unidad' },
-    precioCompra: { type: DataTypes.FLOAT, defaultValue: 0 },
-    precioVenta:  { type: DataTypes.FLOAT, defaultValue: 0 },
-    precio_oferta:  { type: DataTypes.FLOAT, allowNull: true },
+    // Phase 5.1 — ORM-layer validators (defense-in-depth; handler validation is primary)
+    stock:        { type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0 } },
+    unidad:       { type: DataTypes.STRING, defaultValue: 'unidad' },
+    precioCompra: { type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0 } },
+    precioVenta:  { type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0 } },
+    precio_oferta: { type: DataTypes.FLOAT, allowNull: true, validate: { min: 0 } },
 
     // 🟢 'codigo_barras' y 'plu' ahora pueden ser nulos y no son únicos
     codigo_barras: { type: DataTypes.STRING, allowNull: true, unique: false },

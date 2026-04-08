@@ -8,10 +8,11 @@ module.exports = (sequelize) => {
       id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 
       fechaApertura: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-      montoInicial:  { type: DataTypes.FLOAT, allowNull: false },
+      // Phase 5.4 — ORM-layer validators (defense-in-depth)
+      montoInicial:  { type: DataTypes.FLOAT, allowNull: false, validate: { min: 0 } },
       fechaCierre:   { type: DataTypes.DATE, allowNull: true },
       montoFinalEstimado: { type: DataTypes.FLOAT, allowNull: true },
-      montoFinalReal:     { type: DataTypes.FLOAT, allowNull: true },
+      montoFinalReal:     { type: DataTypes.FLOAT, allowNull: true, validate: { min: 0 } },
       diferencia:         { type: DataTypes.FLOAT, allowNull: true },
 
       totalVentasEfectivo:      { type: DataTypes.FLOAT, allowNull: true },

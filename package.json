@@ -8,7 +8,8 @@
     "dist": "electron-builder",
     "test:phase2": "node tests/run-phase-2.js",
     "test:phase3": "node tests/run-phase-3.js",
-    "test:phase4": "node tests/run-phase-4.js"
+    "test:phase4": "node tests/run-phase-4.js",
+    "test:phase5": "node tests/run-phase-5.js"
   },
   "build": {
     "appId": "com.julianmolineris.sistemagestion",
