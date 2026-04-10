@@ -22,6 +22,10 @@ module.exports = (sequelize) => {
       totalVentasTransferencia: { type: DataTypes.FLOAT, allowNull: true },
       totalVentasCtaCte:        { type: DataTypes.FLOAT, allowNull: true },
 
+      // Movimientos administrativos (no-ventas)
+      totalIngresosExtra: { type: DataTypes.FLOAT, allowNull: true, defaultValue: 0 },
+      totalEgresosExtra:  { type: DataTypes.FLOAT, allowNull: true, defaultValue: 0 },
+
       observaciones: { type: DataTypes.TEXT, allowNull: true },
       estado: { type: DataTypes.ENUM("ABIERTA", "CERRADA"), defaultValue: "ABIERTA" },
 

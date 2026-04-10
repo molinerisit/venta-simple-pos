@@ -23,8 +23,9 @@ module.exports = (sequelize) => {
     imagen_url:       { type: DataTypes.STRING },
     fecha_fin_oferta: { type: DataTypes.DATEONLY },
     fecha_vencimiento: { type: DataTypes.DATEONLY, allowNull: true },
-    activo:  { type: DataTypes.BOOLEAN, defaultValue: true },
-    pesable: { type: DataTypes.BOOLEAN, defaultValue: false },
+    activo:       { type: DataTypes.BOOLEAN, defaultValue: true },
+    pesable:      { type: DataTypes.BOOLEAN, defaultValue: false },
+    acceso_rapido:{ type: DataTypes.BOOLEAN, defaultValue: false },
 
     DepartamentoId: { type: DataTypes.UUID, allowNull: true },
     FamiliaId:      { type: DataTypes.UUID, allowNull: true },

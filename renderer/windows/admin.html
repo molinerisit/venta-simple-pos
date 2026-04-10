@@ -37,7 +37,8 @@
     <!-- ✅ FIN: BLOQUE DE CARGA SÍNCRONA -->
     <main class="main-content">
       <header class="main-header">
-        <h1>Panel de Administración</h1>
+        <h1>Configuración</h1>
+        <div class="header-actions"></div>
       </header>
 <!-- 🔔 Banner Premium -->
 <div id="premium-banner" class="banner banner-info hidden">
@@ -131,6 +132,21 @@
               <input type="checkbox" id="facturacion-toggle">
               <label for="facturacion-toggle"></label>
             </div>
+          </div>
+        </section>
+
+        <!-- ==================================================================== -->
+        <!-- SECCIÓN IMPORTACIÓN MASIVA DE PRODUCTOS (CSV)                       -->
+        <!-- ==================================================================== -->
+        <section class="content-section">
+          <h2>Importación Masiva de Productos</h2>
+          <p style="margin-bottom:1rem;color:var(--text-muted);font-size:.9rem;">
+            Actualizá o cargá productos en bloque usando un archivo CSV.
+            Descargá primero la plantilla con tus productos actuales para ver el formato correcto.
+          </p>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+            <button id="btn-exportar-csv" class="btn btn-secundario">Descargar Plantilla (CSV)</button>
+            <button id="btn-importar-csv" class="btn btn-primario">Importar Productos (CSV)</button>
           </div>
         </section>
 

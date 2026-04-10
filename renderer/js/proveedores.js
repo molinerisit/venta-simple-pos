@@ -59,6 +59,32 @@ document.addEventListener('app-ready', () => {
   // --- 2. FUNCIONES ---
   const buildTipoTexto = (tipo) => ({ producto: 'Mercadería', insumos: 'Insumos', ambos: 'Ambos' }[tipo] || 'No especificado');
 
+  // --- Stat cards ---
+  const actualizarStatCards = (lista) => {
+    const total = document.getElementById('stat-total-proveedores');
+    const tipoProducto = document.getElementById('stat-tipo-producto');
+    const tipoInsumo = document.getElementById('stat-tipo-insumo');
+    if (total) total.textContent = lista.length;
+    if (tipoProducto) tipoProducto.textContent = lista.filter((p) => p.tipo === 'producto' || p.tipo === 'ambos').length;
+    if (tipoInsumo) tipoInsumo.textContent = lista.filter((p) => p.tipo === 'insumos' || p.tipo === 'ambos').length;
+  };
+
+  // --- Search filter ---
+  const searchInput = document.getElementById('search-input');
+
+  const filtrarTabla = (termino) => {
+    const term = termino.toLowerCase().trim();
+    const rows = tablaBody.querySelectorAll('tr');
+    rows.forEach((tr) => {
+      const texto = tr.textContent.toLowerCase();
+      tr.style.display = !term || texto.includes(term) ? '' : 'none';
+    });
+  };
+
+  searchInput?.addEventListener('input', (e) => {
+    filtrarTabla(e.target.value);
+  });
+
   const renderTabla = async (lista) => {
     if (!tablaBody) return;
     tablaBody.innerHTML = ''; // limpiar rápido
@@ -85,6 +111,8 @@ document.addEventListener('app-ready', () => {
 
     tablaBody.appendChild(frag);
     await idle(); // dar respiro tras DOM insert
+    // Re-apply active search filter after render
+    if (searchInput?.value) filtrarTabla(searchInput.value);
   };
 
   const cargarProveedores = async () => {
@@ -95,8 +123,10 @@ document.addEventListener('app-ready', () => {
       const lista = await window.electronAPI.invoke('get-proveedores');
       if (!lista || lista.length === 0) {
         tablaBody.innerHTML = '<tr><td colspan="7" class="text-center">No hay proveedores registrados.</td></tr>';
+        actualizarStatCards([]);
         return;
       }
+      actualizarStatCards(lista);
       await renderTabla(lista);
     } catch (err) {
       console.error('Error al cargar proveedores:', err);

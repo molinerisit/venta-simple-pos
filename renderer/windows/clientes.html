@@ -6,6 +6,7 @@
   <title>Gestión de Clientes</title>
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/productos.css" />
 </head>
 <body>
   <div class="container">
@@ -16,11 +17,47 @@
       <header class="main-header">
         <h2>Gestión de Clientes</h2>
         <div class="header-actions">
+          <input type="text" id="search-input" placeholder="Buscar cliente..." />
           <button id="btn-nuevo-cliente" class="btn btn-primario">Nuevo Cliente</button>
         </div>
       </header>
+      <nav class="module-tabs">
+        <a href="clientes.html" class="mod-tab active">Clientes</a>
+        <a href="cuentas-corrientes.html" class="mod-tab">Cuentas Corrientes</a>
+      </nav>
 
       <section class="content-body">
+        <!-- Stat cards -->
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Total clientes</p>
+              <p class="stat-card-value" id="stat-total-clientes">—</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Con descuento</p>
+              <p class="stat-card-value" id="stat-con-descuento">—</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Con Cta. Cte.</p>
+              <p class="stat-card-value" id="stat-con-cta-cte">—</p>
+            </div>
+          </div>
+        </div>
+
         <div class="table-container">
           <table id="clientes-table">
             <thead>
@@ -72,6 +109,7 @@
 
   <!-- Scripts -->
   <script defer src="../js/navbar-loader.js"></script>
+  <script src="../js/form-enter-nav.js"></script>
   <script defer src="../js/clientes.js"></script>
 </body>
 </html>

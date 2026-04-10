@@ -1,107 +1,227 @@
 /* renderer/css/login.css */
-
-/* Importamos las variables de color para mantener la consistencia */
 @import url('./global.css');
 
-/* Reseteamos el overflow y min-width de global.css que no aplican aquí */
+/* ─── Layout ─────────────────────────────────────────────── */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--light-bg);
-    margin: 0;
-    height: 100vh;
-    min-width: unset;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  height: 100vh;
+  min-width: unset;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  background: #F8FAFC;
 }
 
-.login-wrapper {
-    width: 100%;
-    max-width: 360px;
-    padding: 20px;
+/* ─── Card ───────────────────────────────────────────────── */
+.auth-card {
+  background: #fff;
+  width: 100%;
+  max-width: 360px;
+  padding: 40px 36px 36px;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 4px 16px rgba(15, 23, 42, 0.08);
+  margin: 0 20px;
 }
 
-.login-container {
-    background-color: white;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    text-align: center;
+/* ─── Logo ───────────────────────────────────────────────── */
+.auth-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
 }
 
-.title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 30px;
+.auth-logo {
+  width: 56px;
+  height: 56px;
+  background: #EFF6FF;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563EB;
 }
 
-.form-field {
-    margin-bottom: 20px;
-    text-align: left;
+.auth-logo svg {
+  width: 28px;
+  height: 28px;
 }
 
-.form-field label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-dark);
+/* ─── Typography ─────────────────────────────────────────── */
+.auth-brand {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #0F172A;
+  text-align: center;
+  margin: 0 0 6px;
+  letter-spacing: -0.2px;
 }
 
-.form-field input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
-    transition: border-color 0.2s;
+.auth-subtitle {
+  font-size: 0.875rem;
+  color: #64748B;
+  text-align: center;
+  margin: 0 0 28px;
+  line-height: 1.5;
 }
 
-.form-field input:focus {
-    outline: none;
-    border-color: var(--primary-color);
+/* ─── Form fields ────────────────────────────────────────── */
+.field-group {
+  margin-bottom: 16px;
 }
 
+.field-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.field-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: #0F172A;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.field-group input:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.field-group input::placeholder {
+  color: #94A3B8;
+}
+
+/* ─── Password toggle ────────────────────────────────────── */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 42px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.toggle-password:hover {
+  color: #475569;
+}
+
+.toggle-password svg {
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+}
+
+.toggle-password .eye-hide {
+  display: none;
+}
+
+/* ─── Error messages ─────────────────────────────────────── */
+.auth-error {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  color: #DC2626;
+  font-weight: 500;
+  text-align: center;
+  min-height: 0;
+}
+
+.auth-error:empty {
+  display: none;
+  margin: 0;
+}
+
+.auth-error:not(:empty) {
+  padding: 9px 12px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+}
+
+/* Legacy compat */
+.error-text { display: none; }
+
+/* ─── Submit button ──────────────────────────────────────── */
 .login-button {
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-radius: 6px;
-    background-color: var(--primary-color);
-    color: var(--text-light);
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  width: 100%;
+  padding: 11px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #2563EB;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s, transform 0.1s;
+  font-family: inherit;
 }
 
 .login-button:hover {
-    background-color: var(--secondary-color);
-    filter: none; /* Quitamos el filtro de global.css para este botón */
+  background: #1D4ED8;
+  filter: none;
 }
 
-#error-msg {
-    color: var(--danger-color);
-    margin-top: 15px;
-    min-height: 20px; /* Evita que el layout salte cuando aparece el mensaje */
-    font-weight: 500;
+.login-button:active {
+  transform: scale(0.98);
 }
 
-.error-text {
-    color: #e53e3e; /* Un color rojo vivo pero no estridente */
-    background-color: #fed7d7; /* Un fondo rojo muy pálido */
-    border: 1px solid #f56565; /* Un borde rojo */
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 15px;
-    text-align: center;
-    font-size: 0.9em;
-    display: none; /* Por defecto está oculto */
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* Hacemos que sea visible solo si tiene contenido */
-.error-text:not(:empty) {
-    display: block;
+.login-button:disabled::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: auth-spin 0.7s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Footer ─────────────────────────────────────────────── */
+.auth-footer {
+  font-size: 0.78rem;
+  color: #94A3B8;
+  text-align: center;
+  margin: 0;
+  letter-spacing: 0.1px;
 }

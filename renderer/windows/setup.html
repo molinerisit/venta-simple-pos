@@ -1,47 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Configuración Inicial</title>
-    <link rel="stylesheet" href="../css/setup.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Venta Simple — Configuración Inicial</title>
+  <link rel="stylesheet" href="../css/setup.css" />
 </head>
 <body>
-
-    <div class="setup-wrapper">
-        <div class="setup-container">
-            
-            <div class="setup-header">
-                <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
-                </svg>
-                <h1 class="title">Bienvenido</h1>
-                <p class="subtitle">
-                    Crea la cuenta de Administrador para comenzar.
-                </p>
-            </div>
-            
-            <form id="setup-form">
-                <div class="form-field">
-                    <label for="nombre">Nombre de Administrador</label>
-                    <input type="text" id="nombre" name="nombre" required>
-                </div>
-                <div class="form-field">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                
-                <button type="submit" class="setup-button">
-                    Crear y Empezar
-                </button>
-            </form>
-            
-            <!-- <p id="error-msg"></p> -->
-            <div id="message" class="error-msg"></div>
-
-        </div>
+  <div class="auth-card">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </div>
     </div>
 
-    <script src="../js/setup.js" defer></script>
+    <h1 class="auth-brand">Configuración Inicial</h1>
+    <p class="auth-subtitle">Creá la cuenta del administrador para comenzar a usar el sistema</p>
 
+    <form id="setup-form" autocomplete="off" novalidate>
+      <div class="field-group">
+        <label for="nombre">Nombre de usuario</label>
+        <input
+          type="text"
+          id="nombre"
+          name="nombre"
+          placeholder="Ej: admin"
+          autofocus
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="password">Contraseña</label>
+        <div class="password-wrapper">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Elegí una contraseña segura"
+            autocomplete="new-password"
+          />
+          <button type="button" class="toggle-password" tabindex="-1" aria-label="Mostrar contraseña">
+            <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="message" class="auth-message" role="alert"></div>
+
+      <button type="submit" class="setup-button">Crear y Empezar</button>
+    </form>
+  </div>
+  <p class="auth-footer">Venta Simple · Sistema de Punto de Venta</p>
+  <script src="../js/form-enter-nav.js"></script>
+  <script src="../js/setup.js" defer></script>
 </body>
 </html>

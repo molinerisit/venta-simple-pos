@@ -284,7 +284,9 @@ app.on("ready", async () => {
 
       ArqueoCaja: require("./src/database/models/ArqueoCaja")(sequelize),
 
-      // Subscription: require(...)  <-- ELIMINADO
+      Lote: require("./src/database/models/Lote")(sequelize),
+
+      MovimientoCaja: require("./src/database/models/MovimientoCaja")(sequelize),
     };
 
     const { applyAssociations } = require("./src/database/associations");
@@ -339,6 +341,8 @@ app.on("ready", async () => {
       { name: "proveedores-handlers", needsSequelize: true },
 
       { name: "ventas-handlers", needsSequelize: true },
+
+      { name: "lotes-handlers", needsSequelize: false },
     ];
 
     const toRegisterFn = (name) =>

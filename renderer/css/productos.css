@@ -5,7 +5,8 @@
     padding: 10px 15px;
     border: 1px solid var(--border-color);
     border-radius: 5px;
-    width: 300px;
+    width: 280px;
+    max-width: 100%;
     font-size: 1em;
 }
 
@@ -23,7 +24,8 @@
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
+    overflow-x: auto;   /* wide tables scroll, not clip */
+    overflow-y: hidden;
 }
 
 /* === 3. Estilos Generales de la Tabla === */
@@ -437,7 +439,8 @@ fieldset legend {
 }
 
 #search-input {
-    width: 250px; /* Un poco menos ancho para dar lugar a los botones */
+    width: 220px;
+    max-width: 100%;
 }
 
 .form-select-sort {
@@ -483,3 +486,234 @@ fieldset legend {
 }
 
 /* El resto de tu CSS sigue igual... */
+
+/* =====================================================
+   HOVER-REVEAL ACTIONS (productos e insumos)
+   ===================================================== */
+#productos-table tbody tr .acciones-btn,
+#insumos-table tbody tr .acciones-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+#productos-table tbody tr:hover .acciones-btn,
+#insumos-table tbody tr:hover .acciones-btn {
+  opacity: 1;
+}
+
+/* =====================================================
+   STAT CARDS (insumos)
+   ===================================================== */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.stat-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.stat-card-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stat-card-icon--green { background: #dcfce7; color: #16a34a; }
+.stat-card-icon--amber { background: #fef3c7; color: #d97706; }
+.stat-card-icon--blue  { background: #dbeafe; color: #2563eb; }
+
+.stat-card-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 2px;
+}
+
+.stat-card-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.stat-card-value.value-warning { color: #d97706; }
+
+/* =====================================================
+   STOCK BADGES (insumos)
+   ===================================================== */
+.badge-stock {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.badge-stock--ok {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #86efac;
+}
+
+.badge-stock--sin {
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fcd34d;
+}
+
+/* =====================================================
+   PRODUCT FORM — 2-column card layout
+   ===================================================== */
+.pf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 900px) {
+  .pf-grid { grid-template-columns: 1fr; }
+}
+
+.pf-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.pf-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pf-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+  margin-bottom: -4px;
+}
+
+.pf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pf-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #fff;
+  font-family: inherit;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+}
+.pf-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  background: #fff;
+}
+
+.pf-margin-display {
+  height: 40px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  font-weight: 600;
+  color: #16a34a;
+  font-size: 0.875rem;
+}
+.pf-margin-sep { color: #cbd5e1; }
+
+.pf-checkbox-campo .pf-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.pf-optional {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.pf-imagen-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Keep .form-campo consistent inside pf-card */
+.pf-card .form-campo {
+  margin-bottom: 0;
+}
+.pf-card .form-campo label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+}
+.pf-card .form-campo small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 3px;
+  display: block;
+}
+.pf-card .form-campo-con-boton select {
+  height: 40px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #fff;
+  font-family: inherit;
+}
+.pf-card .form-campo-con-boton select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}

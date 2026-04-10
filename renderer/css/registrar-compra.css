@@ -3,17 +3,14 @@
 /* ======================================================= */
 
 /* --- Layout Principal y Solución de Apilamiento --- */
+/* Note: main-content layout (flex, overflow: hidden) is defined in global.css.
+   Only page-specific additions go here. */
 .main-content {
-  display: flex; /* Habilita flexbox para el contenido interno */
-  flex-direction: column; /* Apila los elementos verticalmente */
-  flex-grow: 1;
-  overflow-y: auto;
   position: relative;
   z-index: 1;
-  background-color: var(--background-color, #f4f7fa);
 }
 
-/* El content-body ahora es el que crece, permitiendo que el header se mantenga fijo */
+/* El content-body ya tiene overflow-y:auto en global.css — aquí solo reforzamos */
 .content-body {
   flex-grow: 1;
 }

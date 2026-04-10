@@ -53,17 +53,48 @@ document.addEventListener("app-ready", () => {
 
   const formatCurrency = (n) => (n || 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
 
+  // --- Stat cards ---
+  const actualizarStatCards = (insumos) => {
+    const total     = insumos.length;
+    const sinStock  = insumos.filter(i => Number(i.stock || 0) <= 0).length;
+    const sinPrecio = insumos.filter(i => !i.ultimoPrecioCompra).length;
+
+    const elTotal    = document.getElementById("stat-total");
+    const elSinStock = document.getElementById("stat-sin-stock");
+    const elSinPrecio = document.getElementById("stat-sin-precio");
+    const iconSinStock = document.getElementById("stat-sin-stock-icon");
+
+    if (elTotal)    elTotal.textContent    = total;
+    if (elSinStock) {
+      elSinStock.textContent = sinStock;
+      if (sinStock > 0) elSinStock.classList.add("value-warning");
+      else              elSinStock.classList.remove("value-warning");
+      if (iconSinStock) {
+        iconSinStock.className = sinStock > 0
+          ? "stat-card-icon stat-card-icon--amber"
+          : "stat-card-icon stat-card-icon--green";
+      }
+    }
+    if (elSinPrecio) elSinPrecio.textContent = sinPrecio;
+  };
+
   const renderizarTabla = async (insumos) => {
     tablaBody.innerHTML = "";
     await nextFrame();
 
+    actualizarStatCards(Array.isArray(insumos) ? insumos : []);
+
     if (!insumos || insumos.length === 0) {
-      tablaBody.innerHTML = `<tr><td colspan="7" class="text-center">No se encontraron insumos.</td></tr>`;
+      tablaBody.innerHTML = `<tr><td colspan="8" class="text-center">No se encontraron insumos.</td></tr>`;
       return;
     }
 
     const frag = document.createDocumentFragment();
     insumos.forEach((i) => {
+      const sinStock = Number(i.stock || 0) <= 0;
+      const badgeCls = sinStock ? "badge-stock badge-stock--sin" : "badge-stock badge-stock--ok";
+      const badgeTxt = sinStock ? "Sin stock" : "Normal";
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${i.nombre}</td>
@@ -72,6 +103,7 @@ document.addEventListener("app-ready", () => {
         <td>${i.stock}</td>
         <td>${i.unidad || ""}</td>
         <td>${formatCurrency(i.ultimoPrecioCompra)}</td>
+        <td><span class="${badgeCls}">${badgeTxt}</span></td>
         <td class="acciones-btn">
           <button class="btn-edit btn btn-info" data-id="${i.id}" title="Editar">✏️</button>
           <button class="btn-delete btn btn-danger" data-id="${i.id}" title="Eliminar">🗑️</button>
@@ -85,13 +117,13 @@ document.addEventListener("app-ready", () => {
 
   const cargarInsumos = async (filtro = "") => {
     try {
-      tablaBody.innerHTML = '<tr><td colspan="7" class="text-center">Cargando…</td></tr>';
+      tablaBody.innerHTML = '<tr><td colspan="8" class="text-center">Cargando…</td></tr>';
       const data = await window.electronAPI.invoke("get-insumos", filtro);
       await renderizarTabla(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("Error al cargar insumos:", e);
       showNotification("No se pudieron cargar los insumos.", "error");
-      tablaBody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:red;">Error al cargar.</td></tr>';
+      tablaBody.innerHTML = '<tr><td colspan="8" class="text-center" style="color:red;">Error al cargar.</td></tr>';
     }
   };
 

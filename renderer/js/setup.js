@@ -7,10 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageDiv = document.getElementById('message'); 
     const submitButton = setupForm.querySelector('button[type="submit"]');
 
+    // Password visibility toggle
+    const toggleBtn = document.querySelector('.toggle-password');
+    if (toggleBtn && passwordInput) {
+      toggleBtn.addEventListener('click', () => {
+        const isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        toggleBtn.querySelector('.eye-show').style.display = isHidden ? 'none' : '';
+        toggleBtn.querySelector('.eye-hide').style.display = isHidden ? '' : 'none';
+      });
+    }
+
     if (!setupForm) {
         console.error("El formulario de setup no fue encontrado en el DOM.");
         return;
     }
+
+    attachEnterNav(setupForm);
 
     setupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -19,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.disabled = true;
         submitButton.textContent = 'Creando...';
         messageDiv.textContent = ''; // Limpiar mensajes anteriores
+        messageDiv.className = 'auth-message';
 
         const nombre = nombreInput.value;
         const password = passwordInput.value;
@@ -28,8 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 messageDiv.textContent = '¡Administrador creado con éxito! Redirigiendo al login...';
-                messageDiv.style.color = 'green';
-                
+                messageDiv.className = 'auth-message success';
+
                 // Esperamos un momento para que el usuario vea el mensaje
                 setTimeout(() => {
                     // ✅ Enviamos el mensaje al proceso principal para que cambie de ventana
@@ -39,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // El error viene del backend (ej: usuario duplicado)
                 messageDiv.textContent = `Error: ${result.message}`;
-                messageDiv.style.color = 'red';
+                messageDiv.className = 'auth-message error';
                 submitButton.disabled = false; // Habilitar el botón de nuevo si hay error
                 submitButton.textContent = 'Crear y Empezar';
             }
@@ -47,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Error de comunicación con el backend
             console.error("Error en el invoke de 'submit-setup':", error);
             messageDiv.textContent = 'Error de comunicación. Intente de nuevo.';
-            messageDiv.style.color = 'red';
+            messageDiv.className = 'auth-message error';
             submitButton.disabled = false;
             submitButton.textContent = 'Crear y Empezar';
         }

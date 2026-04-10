@@ -1,8 +1,6 @@
-// Carga el sidebar, aplica permisos, inyecta/mueve el botón toggle como hermano del sidebar,
-// y dispara 'app-ready' una sola vez. Incluye persistencia en localStorage.
+// Carga el sidebar, aplica permisos y dispara 'app-ready' una sola vez.
 
 let __NAVBAR_INIT_DONE__ = false;
-const SIDEBAR_COLLAPSED_KEY = "sidebarCollapsed";
 
 (() => {
   // Evitar drag & drop accidental que trabe la UI
@@ -29,9 +27,8 @@ const SIDEBAR_COLLAPSED_KEY = "sidebarCollapsed";
 
       window.APP_SESSION = { user, config: config || {} };
 
-      // 3) Inicializar UI y toggle
+      // 3) Inicializar UI
       inicializarSidebarUI(window.APP_SESSION);
-      inicializarSidebarToggle();
     } catch (err) {
       console.error("[NavbarLoader] Error inicializando:", err);
       const ph = document.getElementById("sidebar-placeholder");
@@ -70,28 +67,35 @@ async function cargarSidebarHTML() {
 }
 
 function inicializarSidebarUI({ user, config }) {
-  // Resaltar link activo
+  // Resaltar link activo por página actual
   try {
     const currentPage = window.location.pathname.split("/").pop();
     const activeLink = document.querySelector(`nav li a[href="${currentPage}"]`);
     if (activeLink) {
       activeLink.setAttribute("aria-current", "page");
-      activeLink.closest("li")?.classList.add("active");
     }
   } catch {}
 
   // Referencias
-  const sidebarUsername = document.getElementById("sidebar-username");
-  const sidebarUserRole = document.getElementById("sidebar-user-role");
-  const sidebarLogo = document.getElementById("sidebar-logo");
-  const sidebarBusinessName = document.getElementById("sidebar-business-name");
-  const sidebarLogoutBtn = document.getElementById("sidebar-logout-btn");
-  const sidebarAdminBtn = document.getElementById("sidebar-admin-btn");
+  const sidebarUsername   = document.getElementById("sidebar-username");
+  const sidebarUserAvatar = document.getElementById("sidebar-user-avatar");
+  const sidebarLogoBadge  = document.getElementById("sidebar-logo-badge");
+  const sidebarLogoutBtn  = document.getElementById("sidebar-logout-btn");
+  const sidebarAdminBtn   = document.getElementById("sidebar-admin-btn");
 
   // Datos de usuario
-  if (sidebarUsername) sidebarUsername.textContent = user.nombre || "Usuario";
-  if (sidebarUserRole) sidebarUserRole.textContent = user.rol || "";
+  const displayName = user.nombre || "Usuario";
+  if (sidebarUsername) sidebarUsername.textContent = displayName;
+  if (sidebarUserAvatar) sidebarUserAvatar.textContent = displayName.charAt(0).toUpperCase();
   if (sidebarAdminBtn && user.rol !== "administrador") sidebarAdminBtn.style.display = "none";
+
+  // Badge: iniciales del negocio (ej. "Mi Negocio" → "MN")
+  if (sidebarLogoBadge && config && config.nombre_negocio) {
+    const words = config.nombre_negocio.trim().split(/\s+/);
+    sidebarLogoBadge.textContent = words.length >= 2
+      ? (words[0][0] + words[1][0]).toUpperCase()
+      : config.nombre_negocio.substring(0, 2).toUpperCase();
+  }
 
   // Permisos
   let userPermissions = [];
@@ -113,96 +117,27 @@ function inicializarSidebarUI({ user, config }) {
       visible = false;
     }
     if (li) li.style.display = visible ? "" : "none";
+    else if (!visible) link.style.display = "none";
   });
-
-  // Datos del negocio
-  if (sidebarBusinessName) {
-    sidebarBusinessName.textContent = (config && config.nombre_negocio) || "Mi Negocio";
-  }
-  if (sidebarLogo && config && config.logo_url) {
-    const logoPath = String(config.logo_url).replace(/\\/g, "/");
-    sidebarLogo.src = `app://${logoPath}?v=${Date.now()}`;
-    sidebarLogo.style.display = "block";
-  }
 
   // Logout
   sidebarLogoutBtn?.addEventListener("click", () => window.electronAPI.send("logout"));
 }
 
-// Reemplazá SOLO esta función en tu navbar-loader.js
-function inicializarSidebarToggle() {
-  const container = document.querySelector(".container, .container-fluid") || document.querySelector(".container");
-  const sidebar = document.querySelector(".sidebar");
-  if (!container || !sidebar) return;
+// ─── Sonido de ingreso de pago por transferencia MP ──────────────────────────
+// Se registra en cada página que carga navbar-loader.js.
+// El canal mp-payment-approved se dispara desde main.js cuando el pago QR es aprobado.
+(function () {
+  if (!window.electronAPI?.on) return;
 
-  // Evitar duplicados
-  let toggleBtn = document.getElementById("toggle-sidebar-btn");
-  let toggleIcon;
-
-  if (!toggleBtn) {
-    toggleBtn = document.createElement("button");
-    toggleBtn.id = "toggle-sidebar-btn";
-    toggleBtn.className = "sidebar-toggle";
-    toggleBtn.type = "button";
-
-    toggleIcon = document.createElement("span");
-    toggleIcon.id = "toggle-icon";
-    toggleIcon.textContent = container.classList.contains("sidebar-collapsed") ? "▶" : "◀";
-    toggleBtn.appendChild(toggleIcon);
-
-    // Asegurar que el botón quede como HERMANO del sidebar
-    sidebar.parentElement.insertBefore(toggleBtn, sidebar.nextSibling);
-  } else {
-    toggleIcon =
-      document.getElementById("toggle-icon") ||
-      toggleBtn.querySelector("span") ||
-      document.createElement("span");
-    if (!toggleIcon.id) toggleIcon.id = "toggle-icon";
-  }
-
-  // Fija la posición del toggle según ancho real del sidebar
-  const getOverlap = () => {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue('--toggle-overlap') || '2px';
-    const n = parseFloat(raw);
-    return Number.isFinite(n) ? n : 2;
-  };
-
-  const updateTogglePos = () => {
-    const overlap = getOverlap();
-    const w = Math.round(sidebar.getBoundingClientRect().width);
-    // Colocar el botón exactamente en el borde (monta "overlap" px)
-    toggleBtn.style.left = (w - overlap) + 'px';
-  };
-
-  // Estado inicial (desde localStorage si lo usás en otro lado)
-  const SIDEBAR_COLLAPSED_KEY = "sidebarCollapsed";
-  const collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
-  container.classList.toggle("sidebar-collapsed", collapsed);
-  toggleIcon.textContent = collapsed ? "▶" : "◀";
-  // Posicionamiento inicial
-  requestAnimationFrame(updateTogglePos);
-
-  // Click: alternar clase, icono y posición
-  toggleBtn.addEventListener("click", () => {
-    container.classList.toggle("sidebar-collapsed");
-    const isCollapsed = container.classList.contains("sidebar-collapsed");
-    toggleIcon.textContent = isCollapsed ? "▶" : "◀";
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isCollapsed ? "1" : "0");
-
-    // Actualizar posición durante y al final de la animación
-    updateTogglePos();
-    setTimeout(updateTogglePos, 60);
-    setTimeout(updateTogglePos, 180);
-    setTimeout(updateTogglePos, 320);
-  }, { passive: true });
-
-  // Reposicionar en resize y cuando termina la transición de ancho
-  window.addEventListener("resize", updateTogglePos, { passive: true });
-  sidebar.addEventListener("transitionend", (e) => {
-    if (e.propertyName === "width" || e.propertyName === "min-width" || e.propertyName === "flex-basis") {
-      updateTogglePos();
-    }
+  window.electronAPI.on("mp-payment-approved", function () {
+    try {
+      const snd = new Audio("../sounds/ingresopagomp.mp3");
+      snd.volume = 1.0;
+      snd.play().catch(function () {
+        // Algunos contextos requieren interacción previa del usuario;
+        // si falla silenciosamente no queremos romper nada.
+      });
+    } catch (_) {}
   });
-}
-
-
+})();

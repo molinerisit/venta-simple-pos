@@ -6,7 +6,7 @@ function applyAssociations(models) {
     Producto, ProductoDepartamento, ProductoFamilia, Proveedor, Venta,
     DetalleVenta, Usuario, Cliente, Factura, Empleado, GastoFijo, Insumo,
     InsumoDepartamento, InsumoFamilia, Compra, DetalleCompra, MovimientoCuentaCorriente,
-    ArqueoCaja
+    ArqueoCaja, Lote, MovimientoCaja
   } = models;
 
   // --- 1) Clasificación de PRODUCTOS ---
@@ -209,7 +209,20 @@ function applyAssociations(models) {
     as: "venta",
   });
 
-  // --- 9) Arqueo de Caja ---
+  // --- 9) Lotes de productos ---
+  if (Lote) {
+    Producto.hasMany(Lote, {
+      foreignKey: { name: 'ProductoId', type: DataTypes.UUID },
+      as: 'lotes',
+      onDelete: 'CASCADE',
+    });
+    Lote.belongsTo(Producto, {
+      foreignKey: { name: 'ProductoId', type: DataTypes.UUID },
+      as: 'producto',
+    });
+  }
+
+  // --- 10) Arqueo de Caja ---
   Usuario.hasMany(ArqueoCaja, {
     as: "arqueos",
     foreignKey: { name: "UsuarioId", type: DataTypes.UUID },
@@ -218,6 +231,19 @@ function applyAssociations(models) {
     as: "usuario",
     foreignKey: { name: "UsuarioId", type: DataTypes.UUID },
   });
+
+  // --- 11) Movimientos administrativos de Caja ---
+  if (MovimientoCaja) {
+    ArqueoCaja.hasMany(MovimientoCaja, {
+      foreignKey: { name: 'ArqueoCajaId', type: DataTypes.UUID },
+      as: 'movimientos',
+      onDelete: 'CASCADE',
+    });
+    MovimientoCaja.belongsTo(ArqueoCaja, {
+      foreignKey: { name: 'ArqueoCajaId', type: DataTypes.UUID },
+      as: 'arqueo',
+    });
+  }
 }
 
 module.exports = { applyAssociations };

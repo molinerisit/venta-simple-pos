@@ -10,9 +10,7 @@
 </head>
 <body>
   <div class="container">
-    <!-- Sidebar asíncrono (lo inyecta navbar-loader.js) -->
-<aside id="sidebar-placeholder" class="sidebar"></aside>
-
+    <aside id="sidebar-placeholder" class="sidebar"></aside>
 
     <main class="main-content">
       <header class="main-header">
@@ -23,8 +21,60 @@
           <button id="btn-nuevo-insumo" class="btn btn-primario">+ Nuevo Insumo</button>
         </div>
       </header>
+      <nav class="module-tabs">
+        <a href="productos.html" class="mod-tab">Productos</a>
+        <a href="etiquetas.html" class="mod-tab">Etiquetas</a>
+        <a href="insumos.html" class="mod-tab active">Insumos</a>
+        <a href="lotes.html" class="mod-tab">Lotes</a>
+      </nav>
 
       <section class="content-body">
+
+        <!-- Tarjetas de resumen -->
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--green">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Total insumos</p>
+              <p class="stat-card-value" id="stat-total">—</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--amber" id="stat-sin-stock-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <path d="M12 9v4"/><path d="M12 17h.01"/>
+              </svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Sin stock</p>
+              <p class="stat-card-value" id="stat-sin-stock">—</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--blue">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Sin precio carga</p>
+              <p class="stat-card-value" id="stat-sin-precio">—</p>
+            </div>
+          </div>
+        </div>
+
         <div class="table-container">
           <table id="insumos-table">
             <thead>
@@ -35,6 +85,7 @@
                 <th>Stock</th>
                 <th>Unidad</th>
                 <th>Último Costo</th>
+                <th>Estado</th>
                 <th style="text-align:right;">Acciones</th>
               </tr>
             </thead>
@@ -47,8 +98,13 @@
 
   <script defer src="../js/navbar-loader.js"></script>
   <script defer src="../js/insumos.js"></script>
+  <script>
+    document.addEventListener('app-ready', () => {
+      const link = document.querySelector('nav a[href="productos.html"]');
+      if (link) link.setAttribute('aria-current', 'page');
+    });
+  </script>
 
-  <!-- Toast -->
   <div id="toast-notification" class="toast"></div>
 </body>
 </html>

@@ -3,7 +3,7 @@ const { ipcMain } = require("electron");
 const { getActiveUserId } = require("./session-handlers");
 
 function registerComprasHandlers(models, sequelize) {
-  const { Compra, DetalleCompra, Producto, Insumo, Proveedor } = models;
+  const { Compra, DetalleCompra, Producto, Insumo, Proveedor, ArqueoCaja, MovimientoCaja } = models;
 
   // Helpers
   const toNum = (v, d = 0) => (Number.isFinite(+v) ? +v : d);
@@ -104,6 +104,26 @@ function registerComprasHandlers(models, sequelize) {
         await Proveedor.increment({ deuda: deudaGenerada }, { where: { id: proveedorId }, transaction: t });
       }
 
+      // Registrar egreso de caja si hay monto abonado y caja abierta
+      if (montoAbonado > 0 && ArqueoCaja && MovimientoCaja) {
+        const arqueoActivo = await ArqueoCaja.findOne({ where: { estado: 'ABIERTA' } });
+        if (arqueoActivo) {
+          const proveedor = await Proveedor.findByPk(proveedorId);
+          const nombreProv = proveedor?.nombreEmpresa || `Proveedor #${proveedorId}`;
+          const concepto = nroFactura
+            ? `Compra mercadería - ${nombreProv} - Fact. ${nroFactura}`
+            : `Compra mercadería - ${nombreProv}`;
+          const comprobante = nroFactura || `Compra-${nuevaCompra.id}`;
+          await MovimientoCaja.create({
+            ArqueoCajaId: arqueoActivo.id,
+            tipo: 'EGRESO',
+            monto: montoAbonado,
+            concepto,
+            comprobante,
+          }, { transaction: t });
+        }
+      }
+
       await t.commit();
       return { success: true, message: `Compra #${nuevaCompra.id} registrada con éxito.` };
     } catch (error) {
@@ -188,6 +208,26 @@ function registerComprasHandlers(models, sequelize) {
 
       if (deudaGenerada > 0) {
         await Proveedor.increment({ deuda: deudaGenerada }, { where: { id: proveedorId }, transaction: t });
+      }
+
+      // Registrar egreso de caja si hay monto abonado y caja abierta
+      if (montoAbonado > 0 && ArqueoCaja && MovimientoCaja) {
+        const arqueoActivo = await ArqueoCaja.findOne({ where: { estado: 'ABIERTA' } });
+        if (arqueoActivo) {
+          const proveedor = await Proveedor.findByPk(proveedorId);
+          const nombreProv = proveedor?.nombreEmpresa || `Proveedor #${proveedorId}`;
+          const concepto = nroFactura
+            ? `Compra insumos - ${nombreProv} - Fact. ${nroFactura}`
+            : `Compra insumos - ${nombreProv}`;
+          const comprobante = nroFactura || `Compra-${nuevaCompra.id}`;
+          await MovimientoCaja.create({
+            ArqueoCajaId: arqueoActivo.id,
+            tipo: 'EGRESO',
+            monto: montoAbonado,
+            concepto,
+            comprobante,
+          }, { transaction: t });
+        }
       }
 
       await t.commit();

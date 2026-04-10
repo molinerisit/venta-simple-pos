@@ -23,108 +23,116 @@
         <form id="producto-form" class="form-container">
           <input type="hidden" id="producto-id" />
 
-          <div class="form-grid-2">
-            <div class="form-campo">
-              <label for="codigo">Código (Único)</label>
-              <input type="text" id="codigo" required />
-              <small>Identificador único para import/export (ej: 1001, SKU-001).</small>
-            </div>
-            <div class="form-campo">
-              <label for="nombre">Nombre del Producto</label>
-              <input type="text" id="nombre" required />
-            </div>
-          </div>
+          <div class="pf-grid">
+            <!-- Columna izquierda: Identificación -->
+            <div class="pf-card">
+              <h3 class="pf-card-title">Identificación</h3>
 
-          <div class="form-grid-2">
-            <div class="form-campo">
-              <label for="codigo_barras">Código de Barras (Opcional)</label>
-              <input type="text" id="codigo_barras" />
-            </div>
-            <div class="form-campo" id="plu-row">
-              <label for="plu">PLU (Opcional, para balanza)</label>
-              <input type="text" id="plu" inputmode="numeric" />
-              <small id="plu-help"></small>
-            </div>
-          </div>
-
-          <fieldset>
-            <legend>Clasificación (Opcional)</legend>
-            <div class="form-grid-2">
-              <div class="form-campo-vertical">
-                <div class="form-campo-con-boton">
-                  <select id="departamento-select"></select>
-                  <button type="button" id="btn-nuevo-depto" class="btn btn-info btn-add" title="Crear departamento">+</button>
-                </div>
-                <div id="nuevo-depto-container" class="inline-form-container" style="display:none;">
-                  <input type="text" id="nuevo-depto-nombre" placeholder="Nombre del nuevo depto..." />
-                  <button type="button" id="btn-guardar-depto" class="btn btn-success btn-sm">✔</button>
-                  <button type="button" id="btn-cancelar-depto" class="btn btn-danger btn-sm">✖</button>
-                </div>
+              <div class="form-campo">
+                <label for="nombre">Nombre del Producto</label>
+                <input type="text" id="nombre" required class="pf-input" />
               </div>
 
-              <div class="form-campo-vertical">
-                <div class="form-campo-con-boton">
-                  <select id="familia-select" disabled></select>
-                  <button type="button" id="btn-nueva-familia" class="btn btn-info btn-add" title="Crear familia">+</button>
-                </div>
-                <div id="nueva-familia-container" class="inline-form-container" style="display:none;">
-                  <input type="text" id="nueva-familia-nombre" placeholder="Nombre de la nueva familia..." />
-                  <button type="button" id="btn-guardar-familia" class="btn btn-success btn-sm">✔</button>
-                  <button type="button" id="btn-cancelar-familia" class="btn btn-danger btn-sm">✖</button>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-
-          <div class="form-grid-2">
-            <fieldset>
-              <legend>Inventario</legend>
-              <div class="form-grid-2">
+              <div class="pf-row">
                 <div class="form-campo">
-                  <label for="stock">Stock</label>
-                  <input type="number" id="stock" step="any" value="0" />
+                  <label for="codigo">Código</label>
+                  <input type="text" id="codigo" required class="pf-input" />
+                  <small>Identificador único (ej: SKU-001)</small>
                 </div>
                 <div class="form-campo">
-                  <label for="unidad">Unidad (kg, u)</label>
-                  <input type="text" id="unidad" placeholder="ej: kg, u, L" value="unidad" />
+                  <label for="codigo_barras">Cód. de Barras</label>
+                  <input type="text" id="codigo_barras" class="pf-input" />
                 </div>
               </div>
-              <div class="form-campo">
-                <label for="fecha_vencimiento">Fecha Vencimiento (Opcional)</label>
-                <input type="date" id="fecha_vencimiento" />
-              </div>
-              <div class="form-campo">
-                <label>
-                  <input type="checkbox" id="pesable" />
-                  Producto pesable (balanza)
-                </label>
-                <small>Si está activo, se aplicará la estrategia de PLU de Admin → Balanza.</small>
-              </div>
-            </fieldset>
 
-            <fieldset>
-              <legend>Precios</legend>
-              <div class="form-grid-2">
+              <div class="form-campo" id="plu-row">
+                <label for="plu">PLU <span class="pf-optional">(Balanza)</span></label>
+                <input type="text" id="plu" inputmode="numeric" class="pf-input" />
+                <small id="plu-help"></small>
+              </div>
+
+              <div class="pf-section-label">Clasificación</div>
+
+              <div class="pf-row">
+                <div class="form-campo-vertical">
+                  <div class="form-campo-con-boton">
+                    <select id="departamento-select"></select>
+                    <button type="button" id="btn-nuevo-depto" class="btn btn-info btn-add" title="Crear departamento">+</button>
+                  </div>
+                  <div id="nuevo-depto-container" class="inline-form-container" style="display:none;">
+                    <input type="text" id="nuevo-depto-nombre" placeholder="Nombre del nuevo depto..." />
+                    <button type="button" id="btn-guardar-depto" class="btn btn-success btn-sm">✔</button>
+                    <button type="button" id="btn-cancelar-depto" class="btn btn-danger btn-sm">✖</button>
+                  </div>
+                </div>
+
+                <div class="form-campo-vertical">
+                  <div class="form-campo-con-boton">
+                    <select id="familia-select" disabled></select>
+                    <button type="button" id="btn-nueva-familia" class="btn btn-info btn-add" title="Crear familia">+</button>
+                  </div>
+                  <div id="nueva-familia-container" class="inline-form-container" style="display:none;">
+                    <input type="text" id="nueva-familia-nombre" placeholder="Nombre de la nueva familia..." />
+                    <button type="button" id="btn-guardar-familia" class="btn btn-success btn-sm">✔</button>
+                    <button type="button" id="btn-cancelar-familia" class="btn btn-danger btn-sm">✖</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna derecha: Precios e Inventario -->
+            <div class="pf-card">
+              <h3 class="pf-card-title">Precios e Inventario</h3>
+
+              <div class="pf-row">
                 <div class="form-campo">
                   <label for="precioCompra">Precio Compra</label>
-                  <input type="number" id="precioCompra" step="0.01" value="0" />
+                  <input type="number" id="precioCompra" step="0.01" value="0" class="pf-input" />
                 </div>
                 <div class="form-campo">
                   <label for="precioVenta">Precio Venta</label>
-                  <input type="number" id="precioVenta" step="0.01" value="0" />
+                  <input type="number" id="precioVenta" step="0.01" value="0" class="pf-input" />
                 </div>
               </div>
-              <div class="rentabilidad-box">
-                <span>Ganancia: <strong id="ganancia-unidad">$0.00</strong></span>
-                <span>Margen: <strong id="margen-ganancia">0%</strong></span>
-              </div>
-            </fieldset>
-          </div>
 
-          <div class="form-campo form-campo-imagen-container">
-            <label for="imagen_producto">Foto del Producto (Opcional)</label>
-            <input type="file" id="imagen_producto" accept="image/*" />
-            <img id="imagen-preview" src="#" alt="Previsualización" class="imagen-preview-oculta" />
+              <div class="form-campo">
+                <label>Margen / Ganancia</label>
+                <div class="pf-margin-display">
+                  <span id="ganancia-unidad">$0.00</span>
+                  <span class="pf-margin-sep">·</span>
+                  <span id="margen-ganancia">0%</span>
+                </div>
+              </div>
+
+              <div class="pf-row">
+                <div class="form-campo">
+                  <label for="stock">Stock</label>
+                  <input type="number" id="stock" step="any" value="0" class="pf-input" />
+                </div>
+                <div class="form-campo">
+                  <label for="unidad">Unidad</label>
+                  <input type="text" id="unidad" placeholder="kg, u, L" value="unidad" class="pf-input" />
+                </div>
+              </div>
+
+              <div class="form-campo">
+                <label for="fecha_vencimiento">Fecha Vencimiento <span class="pf-optional">(Opcional)</span></label>
+                <input type="date" id="fecha_vencimiento" class="pf-input" />
+              </div>
+
+              <div class="form-campo pf-checkbox-campo">
+                <label class="pf-checkbox-label">
+                  <input type="checkbox" id="pesable" />
+                  <span>Producto pesable (balanza)</span>
+                </label>
+              </div>
+
+              <div class="form-campo pf-imagen-campo">
+                <label for="imagen_producto">Foto del Producto <span class="pf-optional">(Opcional)</span></label>
+                <input type="file" id="imagen_producto" accept="image/*" />
+                <img id="imagen-preview" src="#" alt="Previsualización" class="imagen-preview-oculta" />
+              </div>
+            </div>
           </div>
 
           <div class="form-acciones">
@@ -137,6 +145,7 @@
   </div>
 
   <script defer src="../js/navbar-loader.js"></script>
+  <script src="../js/form-enter-nav.js"></script>
   <script defer src="../js/producto-form.js"></script>
 
   <div id="toast-notification" class="toast"></div>

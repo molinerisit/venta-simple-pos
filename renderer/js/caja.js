@@ -68,8 +68,9 @@ document.addEventListener("app-ready", () => {
   const exBtnCerrar = document.getElementById("ex-btn-cerrar");
 
   // Arqueo
-  const abrirCajaBtn = document.getElementById("abrir-caja-btn");
-  const cerrarCajaBtn = document.getElementById("cerrar-caja-btn");
+  const abrirCajaBtn   = document.getElementById("abrir-caja-btn");
+  const cerrarCajaBtn  = document.getElementById("cerrar-caja-btn");
+  const movimientoBtn  = document.getElementById("movimiento-caja-btn");
   const aperturaCajaModal = document.getElementById("apertura-caja-modal");
   const aperturaCajaForm = document.getElementById("apertura-caja-form");
   const montoInicialInput = document.getElementById("monto-inicial");
@@ -210,16 +211,19 @@ document.addEventListener("app-ready", () => {
     if (!cfg.arqueo.habilitado) {
       abrirCajaBtn?.classList.add("oculto");
       cerrarCajaBtn?.classList.add("oculto");
+      movimientoBtn?.classList.add("oculto");
       desbloquearUI();
       return;
     }
     if (CajaState.arqueoActual) {
       abrirCajaBtn?.classList.add("oculto");
       cerrarCajaBtn?.classList.remove("oculto");
+      movimientoBtn?.classList.remove("oculto");
       desbloquearUI();
     } else {
       abrirCajaBtn?.classList.remove("oculto");
       cerrarCajaBtn?.classList.add("oculto");
+      movimientoBtn?.classList.add("oculto");
       bloquearUI("Debes realizar la apertura de caja para comenzar a vender.");
     }
   };
@@ -418,17 +422,12 @@ document.addEventListener("app-ready", () => {
   const procesarEntrada = async (valor) => {
     if (!valor) return;
     try {
-      const numero = parseFloat(valor);
       const esNumeroValido = /^[0-9]+(\.[0-9]+)?$/.test(valor);
+      const numero = parseFloat(valor);
 
-      // si es un número entre 1 y 999999 → monto manual
-      if (esNumeroValido && numero > 0 && numero <= 999999) {
-        agregarIngresoManual(numero);
-        mainInput.value = "";
-        return;
-      }
-
-      // si no es número o está fuera del rango → buscar producto
+      // Siempre buscar producto primero (barcode o nombre).
+      // Un número puede ser tanto un código de barras como un precio manual,
+      // por lo que la búsqueda tiene prioridad sobre el ingreso manual.
       const encontrado = await window.electronAPI.invoke(
         "busqueda-inteligente",
         valor
@@ -440,6 +439,9 @@ document.addEventListener("app-ready", () => {
           encontrado.cantidad || 1,
           encontrado.precioVenta
         );
+      } else if (esNumeroValido && numero > 0 && numero <= 999999) {
+        // Fallback: no hay producto con ese código → tratar como monto manual
+        agregarIngresoManual(numero);
       } else {
         showErrorModal(`Producto no encontrado para: "${valor}"`);
       }
@@ -1135,26 +1137,48 @@ if (event.key === "Enter") {
     );
 
     if (result?.success) {
-      const { resumen } = result;
+      const r = result.resumen;
+      const mov = Array.isArray(r.movimientos) ? r.movimientos : [];
+      const ingresos = mov.filter(m => m.tipo === 'INGRESO');
+      const egresos  = mov.filter(m => m.tipo === 'EGRESO');
+
+      // Detalle de movimientos
+      const fmtMov = (list) => list.length === 0
+        ? '<li style="color:#94a3b8;">Sin movimientos</li>'
+        : list.map(m => {
+            const hora = new Date(m.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            const comp = m.comprobante ? ` <em style="color:#64748b;">(${m.comprobante})</em>` : '';
+            return `<li><strong>${formatCurrency(m.monto)}</strong> — ${m.concepto}${comp} <span style="color:#94a3b8;font-size:.8em;">${hora}</span></li>`;
+          }).join('');
+
+      const otrosMetodos = (r.totalDebito || 0) + (r.totalCredito || 0) + (r.totalQR || 0) + (r.totalTransfer || 0) + (r.totalCtaCte || 0);
+
       resumenCierreCaja.innerHTML = `
-        <p><strong>Monto Inicial:</strong> <span>${formatCurrency(
-          resumen.montoInicial
-        )}</span></p>
-        <p><strong>Ventas en Efectivo:</strong> <span>${formatCurrency(
-          resumen.totalEfectivo
-        )}</span></p>
-        <p><strong>Total Estimado en Caja:</strong> <span>${formatCurrency(
-          resumen.montoEstimado
-        )}</span></p>
-        <hr>
-        <p><strong>Ventas (Otros Métodos):</strong> <span>${formatCurrency(
-          (resumen.totalDebito || 0) +
-            (resumen.totalCredito || 0) +
-            (resumen.totalQR || 0)
-        )}</span></p>
+        <table class="resumen-cierre-table">
+          <tr><td>Fondo inicial</td><td>${formatCurrency(r.montoInicial)}</td></tr>
+          <tr><td>+ Ventas efectivo</td><td>${formatCurrency(r.totalEfectivo)}</td></tr>
+          <tr><td>+ Ingresos extra (${ingresos.length})</td><td>${formatCurrency(r.totalIngresosExtra || 0)}</td></tr>
+          <tr><td>− Egresos / Pagos (${egresos.length})</td><td style="color:#ef4444;">−${formatCurrency(r.totalEgresosExtra || 0)}</td></tr>
+          <tr class="resumen-total-row"><td><strong>= Efectivo esperado</strong></td><td><strong>${formatCurrency(r.montoEstimado)}</strong></td></tr>
+        </table>
+        ${mov.length > 0 ? `
+        <div class="resumen-movimientos">
+          <p style="font-weight:600;margin:.75rem 0 .35rem;">Movimientos administrativos</p>
+          ${ingresos.length > 0 ? `<p style="font-size:.8em;color:#16a34a;margin:.2rem 0;">↑ Ingresos</p><ul class="mov-list">${fmtMov(ingresos)}</ul>` : ''}
+          ${egresos.length > 0  ? `<p style="font-size:.8em;color:#ef4444;margin:.2rem 0;">↓ Egresos</p><ul class="mov-list">${fmtMov(egresos)}</ul>` : ''}
+        </div>` : ''}
+        <hr style="margin:.75rem 0;">
+        <p style="font-size:.88em;color:#64748b;">
+          <strong>Otros métodos:</strong>
+          Déb. ${formatCurrency(r.totalDebito || 0)} &nbsp;·&nbsp;
+          Cré. ${formatCurrency(r.totalCredito || 0)} &nbsp;·&nbsp;
+          QR ${formatCurrency(r.totalQR || 0)}
+          ${r.totalTransfer ? ` &nbsp;·&nbsp; Transfer. ${formatCurrency(r.totalTransfer)}` : ''}
+          ${r.totalCtaCte ? ` &nbsp;·&nbsp; CtaCte ${formatCurrency(r.totalCtaCte)}` : ''}
+        </p>
       `;
       if (montoFinalRealInput)
-        montoFinalRealInput.value = (resumen.montoEstimado || 0).toFixed(2);
+        montoFinalRealInput.value = (r.montoEstimado || 0).toFixed(2);
     } else {
       resumenCierreCaja.innerHTML = `<p style="color:red;">Error al calcular: ${
         result?.message || "desconocido"
@@ -1163,6 +1187,134 @@ if (event.key === "Enter") {
     montoFinalRealInput?.focus();
   });
 
+  // --- 5b. MOVIMIENTOS ADMINISTRATIVOS DE CAJA ---
+  const movimientoModal      = document.getElementById("movimiento-caja-modal");
+  const movimientoForm       = document.getElementById("movimiento-caja-form");
+  const cerrarMovimientoBtn  = document.getElementById("cerrar-movimiento-modal-btn");
+  const cancelarMovimientoBtn = document.getElementById("cancelar-movimiento-btn");
+  const submitMovimientoBtn  = document.getElementById("submit-movimiento-btn");
+  const movMontoInput        = document.getElementById("movimiento-monto");
+  const movConceptoInput     = document.getElementById("movimiento-concepto");
+  const movComprobanteInput  = document.getElementById("movimiento-comprobante");
+  const movComprobanteWrap   = document.getElementById("movimiento-comprobante-wrap");
+  const movTipoRadios        = document.querySelectorAll('input[name="movimiento-tipo"]');
+
+  const abrirMovimientoModal = () => {
+    if (!movimientoModal) return;
+    movimientoForm?.reset();
+    if (movComprobanteWrap) movComprobanteWrap.style.display = "none";
+    movimientoModal.classList.remove("oculto");
+    movMontoInput?.focus();
+  };
+
+  const cerrarMovimientoModal = () => {
+    movimientoModal?.classList.add("oculto");
+    mainInput?.focus();
+  };
+
+  // Mostrar/ocultar campo comprobante según tipo
+  movTipoRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      const esEgreso = radio.value === "EGRESO" && radio.checked;
+      if (movComprobanteWrap) {
+        movComprobanteWrap.style.display = esEgreso ? "block" : "none";
+        if (movComprobanteInput) movComprobanteInput.required = esEgreso;
+      }
+    });
+  });
+
+  movimientoBtn?.addEventListener("click", abrirMovimientoModal);
+  cerrarMovimientoBtn?.addEventListener("click", cerrarMovimientoModal);
+  cancelarMovimientoBtn?.addEventListener("click", cerrarMovimientoModal);
+
+  movimientoForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!CajaState.arqueoActual?.id) {
+      showToast("No hay una caja abierta.", "error");
+      return;
+    }
+
+    const tipo       = document.querySelector('input[name="movimiento-tipo"]:checked')?.value || "INGRESO";
+    const monto      = parseFloat(movMontoInput?.value);
+    const concepto   = (movConceptoInput?.value || "").trim();
+    const comprobante = (movComprobanteInput?.value || "").trim();
+
+    if (!monto || monto <= 0) {
+      showToast("El monto debe ser mayor a cero.", "error");
+      return;
+    }
+    if (!concepto) {
+      showToast("El concepto es obligatorio.", "error");
+      return;
+    }
+    if (tipo === "EGRESO" && !comprobante) {
+      showToast("El número de comprobante es obligatorio para egresos.", "error");
+      return;
+    }
+
+    if (submitMovimientoBtn) submitMovimientoBtn.disabled = true;
+
+    try {
+      const result = await window.electronAPI.invoke("registrar-movimiento-caja", {
+        arqueoId: CajaState.arqueoActual.id,
+        tipo,
+        monto,
+        concepto,
+        comprobante,
+      });
+
+      if (result?.success) {
+        const tipoLabel = tipo === "INGRESO" ? "Ingreso" : "Egreso";
+        showToast(`${tipoLabel} registrado: ${formatCurrency(monto)}`);
+        cerrarMovimientoModal();
+      } else {
+        showToast(result?.message || "No se pudo registrar el movimiento.", "error");
+      }
+    } catch (err) {
+      console.error("registrar-movimiento-caja:", err);
+      showToast("Error al registrar el movimiento.", "error");
+    } finally {
+      if (submitMovimientoBtn) submitMovimientoBtn.disabled = false;
+    }
+  });
+
+  // --- 6. ACCESO RÁPIDO ---
+  // Carga y renderiza los productos marcados como acceso_rapido: true.
+  // No toca ninguna lógica de venta existente; usa agregarProductoALaVenta() directamente.
+  const cargarAccesoRapido = async () => {
+    const section = document.getElementById("quick-access-section");
+    const list    = document.getElementById("quick-access-products");
+    if (!section || !list) return;
+
+    try {
+      const productos = await window.electronAPI.invoke("get-quick-access-products");
+
+      if (!productos || productos.length === 0) {
+        section.classList.add("oculto");
+        return;
+      }
+
+      list.innerHTML = "";
+      productos.forEach((p) => {
+        const btn = document.createElement("button");
+        btn.className = "quick-access-btn";
+        btn.textContent = p.nombre;
+        btn.title = `${p.nombre}  •  ${formatCurrency(p.precioVenta)}`;
+        btn.addEventListener("click", () => {
+          agregarProductoALaVenta(p, 1, null);
+          mainInput?.focus();
+        });
+        list.appendChild(btn);
+      });
+
+      section.classList.remove("oculto");
+    } catch (e) {
+      console.error("[AccesoRápido] Error:", e);
+      section.classList.add("oculto");
+    }
+  };
+
   // --- ARRANQUE ---
   inicializarPagina();
+  cargarAccesoRapido();
 });

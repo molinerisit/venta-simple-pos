@@ -46,6 +46,8 @@ const validInvokeChannels = [
   "cerrar-caja",
   "get-resumen-cierre",
   "get-all-cierres-caja",
+  "registrar-movimiento-caja",
+  "get-movimientos-caja",
   // Productos y sus Clasificaciones
   "get-productos",
   "get-producto-by-id",
@@ -107,7 +109,14 @@ const validInvokeChannels = [
   "get-mp-transactions",
 
   // 🔹 Balanza / Kretz
-  "scale-upsert-plu" // <-- agregado para sincronizar PLU desde producto-form
+  "scale-upsert-plu",
+
+  // Lotes (gestión de vencimientos)
+  "get-lotes",
+  "get-lotes-by-producto",
+  "crear-lote",
+  "actualizar-lote",
+  "eliminar-lote",
 ];
 
 const validSendChannels = [

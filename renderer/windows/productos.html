@@ -56,31 +56,6 @@
       opacity: 1
     }
 
-    .import-section {
-      background-color: #fff;
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .import-section h3 {
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-    }
-
-    .import-section p {
-      margin-top: 0;
-      margin-bottom: 1rem;
-      font-size: 0.9em;
-      color: #555;
-    }
-
-    .import-section .form-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-start;
-    }
   </style>
 </head>
 
@@ -111,24 +86,14 @@
           <button id="btn-nuevo-producto" class="btn btn-primario">+ Nuevo Producto</button>
         </div>
       </header>
+      <nav class="module-tabs">
+        <a href="productos.html" class="mod-tab active">Productos</a>
+        <a href="etiquetas.html" class="mod-tab">Etiquetas</a>
+        <a href="insumos.html" class="mod-tab">Insumos</a>
+        <a href="lotes.html" class="mod-tab">Lotes</a>
+      </nav>
 
       <section class="content-body">
-
-        <section class="card import-section">
-          <h3>Importación Masiva (CSV)</h3>
-          <p>
-            Sube o actualiza productos masivamente usando un archivo CSV.
-            Usa el botón "Descargar" para obtener una plantilla con tus productos actuales.
-          </p>
-          <div class="form-actions">
-            <button id="btn-exportar-csv" class="btn btn-secondary">
-              Descargar Plantilla (CSV)
-            </button>
-            <button id="btn-importar-csv" class="btn btn-primario">
-              Importar Productos (CSV)
-            </button>
-          </div>
-        </section>
 
         <div class="table-container">
           <table id="productos-table">
