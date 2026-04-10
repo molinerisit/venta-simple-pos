@@ -353,13 +353,16 @@ function registerMercadoPagoHandlers(models) {
   /** --------- Guardar Config MP --------- */
   ipcMain.handle("save-mp-config", async (_event, data) => {
     try {
+      // B-8h: target specific admin UUID rather than all rows with rol=administrador
+      const admin = await Usuario.findOne({ where: { rol: "administrador" }, attributes: ["id"] });
+      if (!admin) return { success: false, message: "No se encontró usuario administrador." };
       await models.Usuario.update(
         {
           mp_access_token: data?.accessToken || null,
           mp_user_id: data?.userId || null,
           mp_pos_id: data?.posId || null,
         },
-        { where: { rol: "administrador" } }
+        { where: { id: admin.id } }
       );
       return { success: true };
     } catch (error) {

@@ -4,10 +4,19 @@ const { ipcMain } = require("electron");
 function registerProveedoresHandlers(models, sequelize) {
   const { Proveedor, Producto, Insumo } = models;
 
+  // Explicit allowlist for proveedor fields that the renderer may set.
+  // W3-M7: Prevents mass-assignment of protected fields (deuda, createdAt, etc.)
+  const PROVEEDOR_ALLOWED_FIELDS = [
+    'nombreEmpresa', 'telefono', 'email', 'direccion', 'cuit', 'contacto', 'notas',
+  ];
+
   // Lista principal
-  ipcMain.handle("get-proveedores", async () => {
+  // W3-H2: Added default limit of 500 to prevent unbounded query.
+  ipcMain.handle("get-proveedores", async (_event, opts) => {
     try {
-      return await Proveedor.findAll({ order: [["nombreEmpresa", "ASC"]], raw: true });
+      const limit = Math.min(500, Math.max(1, parseInt(opts?.limit) || 500));
+      const offset = Math.max(0, parseInt(opts?.offset) || 0);
+      return await Proveedor.findAll({ order: [["nombreEmpresa", "ASC"]], limit, offset, raw: true });
     } catch (error) {
       console.error("Error en get-proveedores:", error);
       return [];
@@ -48,6 +57,11 @@ function registerProveedoresHandlers(models, sequelize) {
         return { success: false, message: "Falta nombre de empresa." };
       }
 
+      // W3-M7: Strip protected fields — only allowlisted keys forwarded to ORM.
+      const safePayload = Object.fromEntries(
+        Object.entries(proveedorData).filter(([k]) => PROVEEDOR_ALLOWED_FIELDS.includes(k))
+      );
+
       let proveedor;
       if (proveedorData.id) {
         proveedor = await Proveedor.findByPk(proveedorData.id, { transaction: t });
@@ -55,9 +69,9 @@ function registerProveedoresHandlers(models, sequelize) {
           await t.rollback();
           return { success: false, message: "El proveedor a editar no existe." };
         }
-        await proveedor.update(proveedorData, { transaction: t });
+        await proveedor.update(safePayload, { transaction: t });
       } else {
-        proveedor = await Proveedor.create(proveedorData, { transaction: t });
+        proveedor = await Proveedor.create(safePayload, { transaction: t });
       }
 
       await proveedor.setProductos(productoIds || [], { transaction: t });

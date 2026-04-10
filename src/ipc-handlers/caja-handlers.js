@@ -1,6 +1,7 @@
 // src/ipc-handlers/caja-handlers.js
 const { ipcMain } = require("electron");
 const { Op } = require("sequelize");
+const { getActiveUserId } = require("./session-handlers");
 
 function registerCajaHandlers(models, sequelize) {
   const { ArqueoCaja, Venta, Usuario } = models;
@@ -86,8 +87,18 @@ function registerCajaHandlers(models, sequelize) {
   });
 
   // Abrir caja
-  ipcMain.handle("abrir-caja", async (_event, { montoInicial, usuarioId }) => {
+  // W3-H7: UsuarioId taken from server-side session, not renderer payload.
+  // W3-L6: montoInicial must be >= 0.
+  ipcMain.handle("abrir-caja", async (_event, { montoInicial } = {}) => {
     try {
+      const sessionUserId = getActiveUserId();
+      const monto = Number(montoInicial);
+      // W3-L6: reject negative opening balance
+      if (Number.isFinite(monto) && monto < 0) {
+        return { success: false, message: "El monto inicial no puede ser negativo.", error: true };
+      }
+      const montoSafe = Number.isFinite(monto) && monto >= 0 ? monto : 0;
+
       const existente = await ArqueoCaja.findOne({ where: { estado: "ABIERTA" } });
       if (existente) {
         return {
@@ -96,8 +107,9 @@ function registerCajaHandlers(models, sequelize) {
         };
       }
       const nuevoArqueo = await ArqueoCaja.create({
-        montoInicial: Number(montoInicial) || 0,
-        UsuarioId: usuarioId,
+        montoInicial: montoSafe,
+        // W3-H7: Always use server-side session userId; ignore any renderer-supplied value.
+        UsuarioId: sessionUserId,
       });
       return { success: true, arqueo: nuevoArqueo.toJSON() };
     } catch (error) {

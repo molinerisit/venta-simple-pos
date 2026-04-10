@@ -10,6 +10,12 @@ const { PosPrinter } = require("electron-pos-printer");
 // S-1: valid role values (explicit allowlist)
 const VALID_ROLES = ["administrador", "empleado", "vendedor"];
 
+// B-8d: known module IDs (mirrors get-app-modules); "all" is a wildcard for admins
+const KNOWN_MODULE_IDS = new Set([
+  "all", "caja", "reportes", "productos", "insumos", "proveedores",
+  "clientes", "cuentas_corrientes", "etiquetas", "mp_transactions", "dashboard",
+]);
+
 function registerAdminHandlers(models) {
   const { Usuario, Empleado, GastoFijo } = models;
 
@@ -80,6 +86,11 @@ function registerAdminHandlers(models) {
       }
 
       const permsArray = Array.isArray(permisos) ? permisos : [];
+      // B-8d: validate each permission against known module IDs
+      const invalidPerms = permsArray.filter(p => !KNOWN_MODULE_IDS.has(String(p)));
+      if (invalidPerms.length > 0) {
+        return { success: false, message: `Permisos inválidos: ${invalidPerms.join(", ")}.` };
+      }
 
       if (id) {
         const userToUpdate = await Usuario.findByPk(id);

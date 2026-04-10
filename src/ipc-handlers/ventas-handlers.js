@@ -174,10 +174,15 @@ function registerVentasHandlers(models, sequelize) {
     };
   };
 
-  // Listado de ventas (Sin cambios)
+  // Listado de ventas
+  // W3-M2: Enforce a default limit of 200 when neither limit nor offset is supplied,
+  // to prevent unbounded full-table scans with heavy includes on large installations.
   ipcMain.handle("get-ventas", async (_event, filters) => {
     try {
-      const { fechaInicio, fechaFin, limit, offset } = filters || {};
+      const { fechaInicio, fechaFin } = filters || {};
+      // Use caller-supplied limit/offset when provided; default to limit=200, offset=0.
+      const limit = filters?.limit != null ? Number(filters.limit) : 200;
+      const offset = filters?.offset != null ? Number(filters.offset) : 0;
       const whereClause = {};
       if (fechaInicio && fechaFin) {
         whereClause.createdAt = {
@@ -197,8 +202,8 @@ function registerVentasHandlers(models, sequelize) {
           { model: Factura, as: "factura" },
         ],
         order: [["createdAt", "DESC"]],
-        ...(limit != null && { limit: Number(limit) }),
-        ...(offset != null && { offset: Number(offset) }),
+        limit,
+        offset,
       });
       return ventas.map((v) => v.toJSON());
     } catch (error) {

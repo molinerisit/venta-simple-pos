@@ -7,8 +7,12 @@ function registerReportesHandlers(models, sequelize) {
     "get-rentabilidad-report",
     async (_event, { dateFrom, dateTo, familiaId, departamentoId }) => {
       try {
+        // W3-M5: Validate dates before use — Invalid Date produces NaN in all queries.
         const startDate = new Date(dateFrom);
         const endDate = new Date(dateTo);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return { success: false, message: "Fechas inválidas. Proporcione dateFrom y dateTo válidos." };
+        }
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
 

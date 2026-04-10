@@ -11,7 +11,8 @@
     "test:phase4": "node tests/run-phase-4.js",
     "test:phase5": "node tests/run-phase-5.js",
     "test:phase6": "node tests/run-phase-6.js",
-    "test:phase7": "node tests/run-phase-7.js"
+    "test:phase7": "node tests/run-phase-7.js",
+    "test:phase8": "node tests/run-phase-8.js"
   },
   "build": {
     "appId": "com.julianmolineris.sistemagestion",

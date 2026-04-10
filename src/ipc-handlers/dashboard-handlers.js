@@ -6,8 +6,12 @@ function registerDashboardHandlers(models, sequelize) {
   // 1. Obtener Estadísticas Principales
   ipcMain.handle("get-dashboard-stats", async (_event, { dateFrom, dateTo, familiaId, departamentoId }) => {
     try {
+      // W3-M4: Validate dates before use — Invalid Date produces NaN in all queries.
       const startDate = new Date(dateFrom);
       const endDate = new Date(dateTo);
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return { success: false, message: "Fechas inválidas. Proporcione dateFrom y dateTo válidos." };
+      }
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999);
 
@@ -208,7 +212,8 @@ function registerDashboardHandlers(models, sequelize) {
       const totalFacturadoAnterior = (await models.Venta.sum("total", { where: { id: { [Op.in]: ventaIdsAnteriores } } })) || 0;
       
       const totalComprasproducto = (await models.Compra.sum("total", { where: { fecha: { [Op.gte]: startDate, [Op.lte]: endDate } } })) || 0;
-      const totalGastosFijos = (await models.GastoFijo.sum("monto")) || 0;
+      // W3-L5: Apply the same date window to gastos fijos — previously summed all time.
+      const totalGastosFijos = (await models.GastoFijo.sum("monto", { where: { createdAt: { [Op.gte]: startDate, [Op.lte]: endDate } } })) || 0;
 
       return {
         success: true,

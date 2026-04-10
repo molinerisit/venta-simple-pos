@@ -1,6 +1,7 @@
 // src/ipc-handlers/ctascorrientes-handlers.js
 const { ipcMain } = require("electron");
 const { Op } = require("sequelize");
+const { getActiveUserId } = require("./session-handlers");
 
 function registerCtascorrientesHandlers(models, sequelize) {
   const { Cliente, Proveedor, MovimientoCuentaCorriente } = models;
@@ -29,11 +30,14 @@ function registerCtascorrientesHandlers(models, sequelize) {
   });
 
   // --- Proveedores con deuda > 0 ---
-  ipcMain.handle("get-proveedores-con-deuda", async () => {
+  // W3-H3: Added default limit of 500 to prevent unbounded query.
+  ipcMain.handle("get-proveedores-con-deuda", async (_e, { limit = 500 } = {}) => {
     try {
+      const safeLimit = Math.min(500, Math.max(1, parseInt(limit) || 500));
       const proveedores = await Proveedor.findAll({
         where: { deuda: { [Op.gt]: 0 } },
         order: [["nombreEmpresa", "ASC"]],
+        limit: safeLimit,
         raw: true,
       });
       return { success: true, data: proveedores };
@@ -62,11 +66,15 @@ function registerCtascorrientesHandlers(models, sequelize) {
   });
 
   // --- Registrar pago de un cliente (disminuye deuda del cliente) ---
+  // W3-H6: Session guard — requires active server-side session before mutating financial data.
   ipcMain.handle("registrar-pago-cliente", async (_event, { clienteId, monto, concepto }) => {
+    if (!getActiveUserId()) return { success: false, message: "Sesión no activa." };
     const t = await sequelize.transaction();
     try {
       const m = Number(monto);
       if (!clienteId || !(m > 0)) throw new Error("Datos de pago inválidos.");
+      // W3-L7: Truncate concepto to 500 chars to prevent unbounded data storage.
+      const conceptoSafe = concepto ? String(concepto).slice(0, 500) : "Pago en caja";
 
       const cliente = await Cliente.findByPk(clienteId, { transaction: t, lock: t.LOCK.UPDATE });
       if (!cliente) throw new Error("Cliente no encontrado.");
@@ -88,7 +96,7 @@ function registerCtascorrientesHandlers(models, sequelize) {
             fecha: new Date(),
             tipo: "CREDITO", // pago que reduce deuda
             monto: by,
-            concepto: concepto || "Pago en caja",
+            concepto: conceptoSafe,
             saldoAnterior,
             saldoNuevo,
             ClienteId: cliente.id,
@@ -107,7 +115,9 @@ function registerCtascorrientesHandlers(models, sequelize) {
   });
 
   // --- Registrar abono a proveedor (disminuye deuda con proveedor) ---
+  // W3-H6: Session guard — requires active server-side session before mutating financial data.
   ipcMain.handle("registrar-abono-proveedor", async (_event, { proveedorId, monto, concepto }) => {
+    if (!getActiveUserId()) return { success: false, message: "Sesión no activa." };
     const t = await sequelize.transaction();
     try {
       const m = Number(monto);

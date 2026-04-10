@@ -1,0 +1,225 @@
+{
+  "date": "2026-04-10T12:57:36.608Z",
+  "suite": "phase-8",
+  "total": 36,
+  "passed": 36,
+  "failed": 0,
+  "results": [
+    {
+      "id": "1.1",
+      "name": "8.1: registrar-pago-cliente fails without active session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.2",
+      "name": "8.1: registrar-pago-cliente succeeds with active session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.3",
+      "name": "8.1: registrar-abono-proveedor fails without active session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.4",
+      "name": "8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.1",
+      "name": "8.2: guardar-insumo update on non-existent ID returns success:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.2",
+      "name": "8.2: guardar-insumo create works with valid data",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.3",
+      "name": "8.2: guardar-insumo update with allowed fields succeeds",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.4",
+      "name": "8.2: guardar-insumo rejects empty nombre",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.1",
+      "name": "8.3: get-clientes returns bounded result by default",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.2",
+      "name": "8.3: get-clientes respects limit=1",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.3",
+      "name": "8.3: get-insumos returns bounded result by default",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.4",
+      "name": "8.3: get-insumos respects limit=1",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.5",
+      "name": "8.3: get-ventas enforces default limit",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.1",
+      "name": "8.4: guardar-cliente rejects descuento > 100",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.2",
+      "name": "8.4: guardar-cliente rejects descuento < 0",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.3",
+      "name": "8.4: guardar-cliente accepts descuento: 100",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.4",
+      "name": "8.4: guardar-cliente accepts descuento: 0",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.1",
+      "name": "8.5: guardar-proveedor create works with valid nombreEmpresa",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.2",
+      "name": "8.5: guardar-proveedor cannot overwrite deuda via payload injection",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.3",
+      "name": "8.5: guardar-proveedor rejects missing nombreEmpresa",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.1",
+      "name": "8.6: get-dashboard-stats with garbage dateFrom returns success:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.2",
+      "name": "8.6: get-dashboard-stats with garbage dateTo returns success:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.3",
+      "name": "8.6: get-dashboard-stats with valid dates returns success:true",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.4",
+      "name": "8.6: get-rentabilidad-report with invalid dates returns success:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.5",
+      "name": "8.6: get-rentabilidad-report with valid dates returns success:true",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "7.1",
+      "name": "8.7: abrir-caja rejects negative montoInicial",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "7.2",
+      "name": "8.7: abrir-caja accepts montoInicial: 0",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "8.1",
+      "name": "8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "8.2",
+      "name": "8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.1",
+      "name": "[Regression] guardar-cliente create still works",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.2",
+      "name": "[Regression] eliminar-cliente still works",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.3",
+      "name": "[Regression] get-clientes returns seeded clients",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.4",
+      "name": "[Regression] guardar-proveedor create end-to-end still works",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.5",
+      "name": "[Regression] registrar-venta still works end-to-end",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.6",
+      "name": "[Regression] get-insumos returns all insumos (no filter)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.7",
+      "name": "[Regression] get-ctacte-resumen returns totals",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}
