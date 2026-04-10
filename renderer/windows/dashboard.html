@@ -7,7 +7,7 @@
                  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
                  img-src 'self' app: data:;
                  connect-src 'self';">
-  <title>Estadísticas y Marketing</title>
+  <title>Estadísticas del Negocio</title>
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/navbar.css" />
   <link rel="stylesheet" href="../css/dashboard.css" />
@@ -18,13 +18,37 @@
     <aside id="sidebar-placeholder" class="sidebar"></aside>
 
     <main class="main-content">
-      <header class="main-header">
-        <h1>Estadísticas y Marketing</h1>
+
+      <!-- ── Header ─────────────────────────────────────────── -->
+      <header class="dash-page-header">
+        <div class="dash-page-header-left">
+          <div class="dash-page-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6"  y1="20" x2="6"  y2="14"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="dash-page-title">Estadísticas del Negocio</h1>
+            <p class="dash-page-sub">Panel de control en tiempo real</p>
+          </div>
+        </div>
+        <div class="dash-page-actions">
+          <button id="btn-export-pdf" class="btn-dash-action btn-dash-action--neutral">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Exportar PDF
+          </button>
+          <a href="cierres-caja.html" id="btn-goto-cierres" class="btn-dash-action btn-dash-action--neutral">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Cierres de Caja
+          </a>
+        </div>
       </header>
 
       <div class="content-body">
 
-        <!-- Filter bar -->
+        <!-- ── Filter bar ──────────────────────────────────── -->
         <div class="dash-filter-bar">
           <div class="filter-segment">
             <button class="btn-filter active" data-range="today">Hoy</button>
@@ -39,107 +63,92 @@
             <select id="familia-filter" class="form-control" disabled>
               <option value="">Todas las Familias</option>
             </select>
-            <input type="date" id="date-from" />
-            <span style="color:#94a3b8; font-size:0.85rem;">—</span>
-            <input type="date" id="date-to" />
-            <button id="btn-apply-custom" class="btn btn-primario" style="height:34px; padding:0 12px; font-size:0.85rem;">Aplicar</button>
           </div>
 
-          <div class="filter-actions">
-            <button id="btn-export-pdf" class="btn btn-info" style="font-size:0.85rem; padding:6px 12px;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Exportar PDF
-            </button>
-            <a href="rentabilidad.html" id="btn-goto-rentabilidad" class="btn btn-accent" style="font-size:0.85rem; padding:6px 12px;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-              Rentabilidad
-            </a>
-            <a href="cierres-caja.html" id="btn-goto-cierres" class="btn btn-secundario" style="font-size:0.85rem; padding:6px 12px;">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              Cierres de Caja
-            </a>
+          <div class="custom-range" style="display:none;">
+            <input type="date" id="date-from" />
+            <span class="date-sep">—</span>
+            <input type="date" id="date-to" />
+            <button id="btn-apply-custom" class="btn-dash-action btn-dash-action--primary">Aplicar</button>
           </div>
         </div>
 
-        <!-- Metrics grid -->
+        <!-- ── Metrics grid ────────────────────────────────── -->
         <div class="metrics-grid">
-          <!-- Total Facturado -->
-          <div class="metric-card">
+
+          <div class="metric-card metric-card--revenue">
             <p class="metric-label">Total Facturado</p>
             <p class="metric-value" id="total-facturado">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
 
-          <!-- Ganancia Bruta -->
-          <div class="metric-card">
+          <div class="metric-card metric-card--revenue">
             <p class="metric-label">Ganancia Bruta</p>
             <p class="metric-value" id="ganancia-bruta">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
 
-          <!-- Compras Mercadería -->
           <div class="metric-card metric-card--expense">
             <p class="metric-label">Compras Mercadería</p>
             <p class="metric-value" id="total-compras">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
 
-          <!-- Gastos Operativos -->
           <div class="metric-card metric-card--expense">
             <p class="metric-label">Gastos Operativos</p>
             <p class="metric-value" id="total-gastos">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
 
-          <!-- Número de Ventas -->
-          <div class="metric-card">
+          <div class="metric-card metric-card--revenue">
             <p class="metric-label">Número de Ventas</p>
             <p class="metric-value" id="numero-ventas">0</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
 
-          <!-- Ticket Promedio -->
-          <div class="metric-card">
+          <div class="metric-card metric-card--revenue">
             <p class="metric-label">Ticket Promedio</p>
             <p class="metric-value" id="ticket-promedio">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
+
         </div>
 
-        <!-- Insights bar -->
+        <!-- ── Insights bar ────────────────────────────────── -->
         <div class="insights-bar">
           <div class="insights-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6"/><path d="M10 22h4"/>
+              <path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7.4V18H9v-2.6l-.7-.4A7 7 0 0 1 12 2z"/>
             </svg>
           </div>
           <div class="insights-content">
             <h3>Resumen del período</h3>
-            <ul class="insights-list">
+            <ul class="insights-list" id="insights-list">
               <li>Analizá la evolución de ventas por período para detectar tendencias</li>
               <li>Los productos sin ventas con stock representan capital inmovilizado</li>
               <li>Compará los métodos de pago para entender el comportamiento de tus clientes</li>
@@ -147,7 +156,7 @@
           </div>
         </div>
 
-        <!-- Charts row -->
+        <!-- ── Fila 1: Ventas del Período + Métodos de Pago ── -->
         <div class="dash-grid-2">
           <div class="dash-card">
             <div class="dash-card-header">
@@ -178,7 +187,7 @@
           </div>
         </div>
 
-        <!-- Performance tables row -->
+        <!-- ── Fila 2: Ranking + Productos sin Ventas ──────── -->
         <div class="dash-grid-2">
           <div class="dash-card">
             <div class="dash-card-header">
@@ -187,12 +196,12 @@
                 Ranking de Ventas
               </h3>
               <select id="ranking-sort-by">
-                <option value="cantidad_desc">Más Vendidos (Cantidad)</option>
+                <option value="cantidad_desc">Más Vendidos (Cant.)</option>
                 <option value="facturado_desc">Más Vendidos (Monto)</option>
-                <option value="ganancia_desc">Más Rentables (Ganancia)</option>
-                <option value="cantidad_asc">Menos Vendidos (Cantidad)</option>
+                <option value="ganancia_desc">Más Rentables</option>
+                <option value="cantidad_asc">Menos Vendidos (Cant.)</option>
                 <option value="facturado_asc">Menos Vendidos (Monto)</option>
-                <option value="ganancia_asc">Menos Rentables (Ganancia)</option>
+                <option value="ganancia_asc">Menos Rentables</option>
               </select>
             </div>
             <div class="dash-card-body no-pad">
@@ -211,16 +220,13 @@
             </div>
           </div>
 
-          <div class="dash-card">
+          <div class="dash-card dash-card--alert">
             <div class="dash-card-header">
               <h3>
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="color:#f59e0b;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                Alertas · Productos Inactivos
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="color:#d97706"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Productos sin Ventas
               </h3>
-              <span class="dash-alert-badge">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                sin ventas
-              </span>
+              <span class="dash-alert-badge" id="inactive-count-badge">con stock</span>
             </div>
             <div class="dash-card-body no-pad">
               <table>
@@ -236,7 +242,7 @@
           </div>
         </div>
 
-        <!-- Secondary row -->
+        <!-- ── Fila 3: Ventas por Catálogo + Horarios Pico ── -->
         <div class="dash-grid-2">
           <div class="dash-card">
             <div class="dash-card-header">
@@ -265,6 +271,10 @@
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 Horarios Pico
               </h3>
+              <span class="badge-peak" id="peak-hour-badge" style="display:none;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Hora pico: <span id="peak-hour-value">—</span>
+              </span>
             </div>
             <div class="dash-card-body">
               <div class="chart-container">
@@ -274,7 +284,7 @@
           </div>
         </div>
 
-      </div>
+      </div><!-- /.content-body -->
     </main>
   </div>
 
