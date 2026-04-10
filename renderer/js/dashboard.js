@@ -61,6 +61,11 @@ document.addEventListener("app-ready", () => {
       new Date(v.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })
     );
     const data = ventasPorDia.map((v) => v.total_diario);
+
+    const gradient = ventasChartCtx.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, "rgba(14,165,233,0.28)");
+    gradient.addColorStop(1, "rgba(14,165,233,0.00)");
+
     ventasChartInstance = new Chart(ventasChartCtx, {
       type: "line",
       data: {
@@ -68,13 +73,24 @@ document.addEventListener("app-ready", () => {
         datasets: [{
           label: "Ventas por Día",
           data,
-          borderColor: "rgba(75,192,192,1)",
-          backgroundColor: "rgba(75,192,192,0.2)",
+          borderColor: "#0ea5e9",
+          borderWidth: 2,
+          backgroundColor: gradient,
           fill: true,
-          tension: 0.1,
+          tension: 0.35,
+          pointRadius: 3,
+          pointBackgroundColor: "#0ea5e9",
         }],
       },
-      options: { responsive: true, maintainAspectRatio: false },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#64748b" } },
+          y: { grid: { color: "#e2e8f0" }, border: { dash: [3,3] }, ticks: { font: { size: 11 }, color: "#64748b" } },
+        },
+      },
     });
   };
 
@@ -130,8 +146,15 @@ document.addEventListener("app-ready", () => {
 
   const renderInactiveProducts = (productos) => {
     if (!inactiveProductsBody) return;
+
+    // Actualizar badge de cantidad
+    const badge = document.getElementById("inactive-count-badge");
+    if (badge) {
+      badge.textContent = productos?.length > 0 ? `${productos.length} sin ventas` : "sin ventas";
+    }
+
     if (!productos || productos.length === 0) {
-      inactiveProductsBody.innerHTML = "<tr><td colspan='2'>🎉 ¡Todo se está vendiendo! (O no hay productos con stock en este filtro).</td></tr>";
+      inactiveProductsBody.innerHTML = "<tr><td colspan='2' style='text-align:center;color:#64748b;'>¡Todo se está vendiendo!</td></tr>";
       return;
     }
     inactiveProductsBody.innerHTML = productos
@@ -139,7 +162,7 @@ document.addEventListener("app-ready", () => {
       .map(p => `
       <tr>
         <td>${p.nombre}</td>
-        <td><strong>${Number(p.stock || 0).toFixed(2)}</strong></td>
+        <td><strong style="color:#d97706">${Number(p.stock || 0).toFixed(2)}</strong></td>
       </tr>
     `).join("");
   };
@@ -175,24 +198,44 @@ document.addEventListener("app-ready", () => {
       }
     });
     const labels = hours.map(h => `${h.toString().padStart(2, '0')}:00`);
+
+    // Calcular hora pico y actualizar badge
+    const maxVal = Math.max(...data);
+    const peakBadge = document.getElementById("peak-hour-badge");
+    const peakValue = document.getElementById("peak-hour-value");
+    if (maxVal > 0 && peakBadge && peakValue) {
+      const peakIdx = data.indexOf(maxVal);
+      peakValue.textContent = labels[peakIdx];
+      peakBadge.style.display = "inline-flex";
+    } else if (peakBadge) {
+      peakBadge.style.display = "none";
+    }
+
+    // Colores: destacar la barra de hora pico en ámbar, resto en sky
+    const bgColors = data.map((v) => v === maxVal && maxVal > 0 ? "#f59e0b" : "#0ea5e9");
+    const alphas   = data.map((v) => v === maxVal && maxVal > 0 ? "cc" : "55");
+    const barBg    = bgColors.map((c, i) => c + alphas[i]);
+
     peakHoursChartInstance = new Chart(peakHoursCtx, {
       type: "bar",
       data: {
-        labels: labels,
+        labels,
         datasets: [{
           label: "Total Vendido",
-          data: data,
-          backgroundColor: "rgba(255, 159, 64, 0.5)",
-          borderColor: "rgba(255, 159, 64, 1)",
-          borderWidth: 1,
+          data,
+          backgroundColor: barBg,
           borderRadius: 4,
+          borderSkipped: false,
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true }, x: { ticks: { autoSkip: true, maxTicksLimit: 12 } } },
-        plugins: { legend: { display: false } }
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: "#e2e8f0" }, ticks: { font: { size: 10 }, color: "#64748b" } },
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 12, font: { size: 10 }, color: "#64748b" } },
+        },
       },
     });
   };
@@ -200,38 +243,33 @@ document.addEventListener("app-ready", () => {
   const renderPaymentMethodsChart = (paymentData) => {
     if (!paymentMethodsCtx) return;
     if (paymentMethodsChartInstance) paymentMethodsChartInstance.destroy();
-    
+
     const labels = paymentData.map(p => p.metodoPago || "N/A");
     const data = paymentData.map(p => p.total_por_metodo);
 
     paymentMethodsChartInstance = new Chart(paymentMethodsCtx, {
       type: "doughnut",
       data: {
-        labels: labels,
+        labels,
         datasets: [{
           label: "Total por Método",
-          data: data,
-          backgroundColor: [
-            'rgba(54, 162, 235, 0.7)', // Azul
-            'rgba(75, 192, 192, 0.7)', // Verde
-            'rgba(255, 206, 86, 0.7)', // Amarillo
-            'rgba(255, 99, 132, 0.7)', // Rojo
-            'rgba(153, 102, 255, 0.7)', // Violeta
-            'rgba(255, 159, 64, 0.7)'  // Naranja
-          ],
-          borderColor: '#fff',
+          data,
+          backgroundColor: ["#10b981","#0ea5e9","#8b5cf6","#f59e0b","#ec4899","#ef4444"],
+          borderColor: "#fff",
           borderWidth: 2,
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: "60%",
         plugins: {
           legend: {
-            position: 'top',
+            position: "bottom",
+            labels: { font: { size: 11 }, padding: 10, color: "#374151", boxWidth: 12, boxHeight: 12 },
           },
-        }
-      }
+        },
+      },
     });
   };
 
