@@ -1,6 +1,9 @@
 // src/ipc-handlers/mercadoPago-handlers.js
-const fetch = require("node-fetch"); // 🔴 (npm install node-fetch@2)
+const fetch = require("node-fetch");
 const { ipcMain } = require("electron");
+
+// B-6: global request timeout for all MP API calls
+const MP_FETCH_TIMEOUT_MS = 15_000;
 
 // ===================================================================
 // INICIO DEL REGISTRO DE HANDLERS
@@ -22,16 +25,24 @@ function registerMercadoPagoHandlers(models) {
     };
   }
 
-  /** Utilidad: hace fetch y devuelve { ok, data|error } uniforme */
+  /** Utilidad: hace fetch y devuelve { ok, data|error } uniforme.
+   *  B-6: includes AbortController-based timeout (MP_FETCH_TIMEOUT_MS). */
   async function doFetch(url, init) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MP_FETCH_TIMEOUT_MS);
     try {
-      const r = await fetch(url, init);
+      const r = await fetch(url, { ...init, signal: controller.signal });
+      clearTimeout(timer);
       if (r.status === 204 && init?.method === 'DELETE') {
         return { ok: true, data: { deleted: true } };
       }
       const data = await r.json().catch(() => ({}));
       return r.ok ? { ok: true, data } : { ok: false, error: data?.message || data?.error || `HTTP ${r.status}` };
     } catch(e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') {
+        return { ok: false, error: "Timeout: MP API no respondió." };
+      }
       console.error("Error en doFetch:", e);
       return { ok: false, error: e.message || "Error de red" };
     }
@@ -59,8 +70,15 @@ function registerMercadoPagoHandlers(models) {
     };
   }
 
+  // S-6: allowed query parameters for payment search
+  const ALLOWED_PAYMENT_SEARCH_PARAMS = new Set([
+    "status", "begin_date", "end_date", "external_reference",
+    "sort", "criteria", "limit", "offset",
+  ]);
+
   /**
    * Lógica central para buscar PAGOS en la API de MP.
+   * S-6: only whitelisted query params are forwarded.
    */
   async function _internal_searchPayments(models, query = {}) {
     try {
@@ -69,7 +87,13 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
-      const params = new URLSearchParams(query || {});
+      // S-6: filter to allowlist
+      const safeQuery = {};
+      for (const key of Object.keys(query || {})) {
+        if (ALLOWED_PAYMENT_SEARCH_PARAMS.has(key)) safeQuery[key] = query[key];
+      }
+
+      const params = new URLSearchParams(safeQuery);
       const url = `https://api.mercadopago.com/v1/payments/search?${params.toString()}`;
       return await doFetch(url, { headers: authHeaders(accessToken, { "Content-Type": undefined }) });
     } catch (e) {
@@ -118,11 +142,21 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
+      // S-5: reconstruct preference from explicit allowlist — never forward
+      // renderer-controlled fields like notification_url, marketplace_fee, etc.
+      const p = preference || {};
+      const safePreference = {};
+      if (p.title !== undefined)              safePreference.title = p.title;
+      if (p.description !== undefined)        safePreference.description = p.description;
+      if (p.items !== undefined)              safePreference.items = p.items;
+      if (p.external_reference !== undefined) safePreference.external_reference = p.external_reference;
+      if (p.total_amount !== undefined)       safePreference.total_amount = p.total_amount;
+
       const url = "https://api.mercadopago.com/checkout/preferences";
       return await doFetch(url, {
         method: "POST",
         headers: authHeaders(accessToken),
-        body: JSON.stringify(preference || {}),
+        body: JSON.stringify(safePreference),
       });
     } catch (e) {
       return { ok: false, error: e?.message || "Error creando preferencia" };
@@ -148,17 +182,23 @@ function registerMercadoPagoHandlers(models) {
   ipcMain.handle("mp:refund-payment", async (_evt, { paymentId, amount }) => {
     try {
       if (!paymentId) return { ok: false, error: "paymentId requerido" };
+
+      // I-4: reject falsy/non-positive amount to prevent accidental full refund
+      const numAmount = Number(amount);
+      if (!amount || !Number.isFinite(numAmount) || numAmount <= 0) {
+        return { ok: false, error: "amount must be a positive number" };
+      }
+
       const res = await resolveActiveMpContext(models);
       if (!res.ok) return { ok: false, error: res.error };
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
       const url = `https://api.mercadopago.com/v1/payments/${paymentId}/refunds`;
-      const body = amount ? { amount: Number(amount) } : {};
       return await doFetch(url, {
         method: "POST",
         headers: authHeaders(accessToken),
-        body: JSON.stringify(body),
+        body: JSON.stringify({ amount: numAmount }),
       });
     } catch (e) {
       return { ok: false, error: e?.message || "Error al reembolsar pago" };
@@ -187,11 +227,14 @@ function registerMercadoPagoHandlers(models) {
   });
 
   /** --------- POS (Cajas) --------- */
-  ipcMain.handle("get-mp-pos-list", async (_evt, { accessToken }) => {
-    if (!accessToken) {
-      return { success: false, message: "Se requiere Access Token." };
-    }
+  ipcMain.handle("get-mp-pos-list", async () => {
+    // S-4: always use stored credentials; renderer-supplied token is ignored
     try {
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { success: false, message: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { success: false, message: "Access Token no configurado." };
+
       const url = `https://api.mercadopago.com/pos?limit=50&offset=0`;
       const fetchRes = await doFetch(url, { headers: authHeaders(accessToken, { "Content-Type": undefined }) });
 
@@ -208,51 +251,31 @@ function registerMercadoPagoHandlers(models) {
   });
 
   /** --------- Crear QR (Para la caja) --------- */
+  // B-5: removed all console.log from hot path; only console.error on genuine failures
   ipcMain.handle("create-mp-order", async (_evt, { title, description, external_reference, notification_url, total_amount, items }) => {
-    
-    console.log("==============================================");
-    console.log("[create-mp-order] INICIANDO CREACIÓN DE QR");
-    console.log(`[create-mp-order] Monto recibido: ${total_amount} (Tipo: ${typeof total_amount})`);
-
     try {
-      const res = await resolveActiveMpContext(models); 
-      if (!res.ok) {
-        console.error("[create-mp-order] ERROR: Falló resolveActiveMpContext:", res.error);
-        return { ok: false, error: res.error }; 
-      }
-      
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+
       const { accessToken, userId, posId } = res.ctx;
-      console.log(`[create-mp-order] Contexto: UserID=${userId}, PosID=${posId}, Token=...${accessToken ? accessToken.slice(-4) : 'NULL'}`);
 
-      if (!accessToken) {
-        console.error("[create-mp-order] ERROR: Access Token no configurado.");
-        return { ok: false, error: "Access Token no configurado." };
-      }
-      if (!userId) {
-        console.error("[create-mp-order] ERROR: Falta mp_user_id en la configuración.");
-        return { ok: false, error: "Falta mp_user_id en la configuración del administrador." };
-      }
-      if (!posId) {
-        console.error("[create-mp-order] ERROR: Falta posId (caja) en la configuración.");
-        return { ok: false, error: "No hay POS (caja) configurado en el administrador." };
-      }
-
-      const url = `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${encodeURIComponent(
-        userId
-      )}/pos/${encodeURIComponent(posId)}/qrs`;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+      if (!userId)      return { ok: false, error: "Falta mp_user_id en la configuración del administrador." };
+      if (!posId)       return { ok: false, error: "No hay POS (caja) configurado en el administrador." };
 
       const numericAmount = Number(total_amount);
       if (isNaN(numericAmount) || numericAmount <= 0) {
-          console.error(`[create-mp-order] ERROR: Monto inválido. Se recibió '${total_amount}' que resultó en '${numericAmount}'`);
-          return { ok: false, error: `Monto inválido: ${total_amount}. Debe ser un número mayor a 0.` };
+        return { ok: false, error: `Monto inválido: ${total_amount}. Debe ser un número mayor a 0.` };
       }
 
-      const processedItems = items.map(item => ({
+      const url = `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${encodeURIComponent(userId)}/pos/${encodeURIComponent(posId)}/qrs`;
+
+      const processedItems = (items || []).map(item => ({
         title: item.title || "Producto",
         quantity: item.quantity || 1,
         unit_price: item.unit_price || 0,
         total_amount: (item.quantity || 1) * (item.unit_price || 0),
-        unit_measure: "unit"
+        unit_measure: "unit",
       }));
 
       const body = {
@@ -260,14 +283,11 @@ function registerMercadoPagoHandlers(models) {
         description: description || "Cobro en mostrador",
         external_reference: external_reference || `local-${Date.now()}`,
         notification_url: notification_url || undefined,
-        total_amount: numericAmount, 
+        total_amount: numericAmount,
         items: processedItems,
-        cash_out: {
-          amount: 0
-        }
+        cash_out: { amount: 0 },
       };
 
-      console.log("[create-mp-order] Enviando a MP:", JSON.stringify(body));
       const apiResponse = await doFetch(url, {
         method: "POST",
         headers: authHeaders(accessToken),
@@ -275,17 +295,12 @@ function registerMercadoPagoHandlers(models) {
       });
 
       if (!apiResponse.ok) {
-          console.error("[create-mp-order] ERROR: La API de MP devolvió un error:", JSON.stringify(apiResponse.error));
-      } else {
-          console.log("[create-mp-order] ÉXITO: QR creado correctamente.");
+        console.error("[create-mp-order] MP API error:", apiResponse.error);
       }
-      console.log("==============================================");
-      
-      return apiResponse; 
+      return apiResponse;
 
     } catch (e) {
-      console.error("[create-mp-order] ERROR: Fallo catastrófico en try/catch:", e);
-      console.log("==============================================");
+      console.error("[create-mp-order] Unexpected error:", e);
       return { ok: false, error: e?.message || "Error creando QR" };
     }
   });
@@ -358,10 +373,11 @@ function registerMercadoPagoHandlers(models) {
     try {
       console.log("[MP] Buscando transacciones con filtros:", filters);
       
+      // B-8i: limit as integer (was "400" string), capped at MP-documented max 300
       const params = {
         sort: "date_created",
         criteria: "desc",
-        limit: "400", 
+        limit: 300,
       };
 
       if (filters?.status) params.status = filters.status;

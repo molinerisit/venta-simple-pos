@@ -464,6 +464,10 @@ app.on("ready", async () => {
 // ====== LISTENERS IPC GLOBALES ======
 
 const handleLogout = () => {
+  // I-1: clear server-side session state before opening login window
+  const { clearSession } = require("./src/ipc-handlers/session-handlers");
+  clearSession();
+
   if (mainWindow) mainWindow.close();
 
   // (Se mantiene la referencia a qrWindow)
