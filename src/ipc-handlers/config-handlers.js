@@ -2,8 +2,12 @@
 const { ipcMain, app, BrowserWindow } = require("electron");
 const { SerialPort } = require("serialport");
 const fs = require("fs");
+const fsPromises = require("fs").promises;
 const path = require("path");
-const bcrypt = require("bcrypt"); // 👈 Asegúrate de que bcrypt esté importado
+
+// B-7: max logo payload size (5 MB decoded ≈ 6.8 M base64 chars)
+const MAX_LOGO_B64_CHARS = Math.ceil(5 * 1024 * 1024 / 0.75);
+const bcrypt = require("bcryptjs"); // B-1: pure-JS, no native rebuild needed
 
 // Importamos el manager de la balanza
 const { getScaleManager } = require("../scale/scale-manager");
@@ -19,15 +23,17 @@ function registerConfigHandlers(models, sequelize) {
   ipcMain.handle("submit-setup", async (_event, { nombre, password }) => {
     try {
       const cleanName = String(nombre || "").trim();
-      if (!cleanName || !password) {
-        return {
-          success: false,
-          message: "Nombre y contraseña son obligatorios.",
-        };
+      const cleanPassword = String(password || "").trim();
+      if (!cleanName || !cleanPassword) {
+        return { success: false, message: "Nombre y contraseña son obligatorios." };
+      }
+      // B-8a: minimum password length
+      if (cleanPassword.length < 6) {
+        return { success: false, message: "La contraseña debe tener al menos 6 caracteres." };
       }
 
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      const hashedPassword = await bcrypt.hash(cleanPassword, salt);
 
       const newAdmin = await Usuario.create({
         nombre: cleanName,
@@ -55,9 +61,16 @@ function registerConfigHandlers(models, sequelize) {
 
   ipcMain.handle("get-admin-config", async () => {
     try {
+      // S-3: explicit allowlist — excludes mp_access_token, mp_user_id, mp_pos_id, password
       const adminUser = await Usuario.findOne({
         where: { rol: "administrador" },
-        attributes: { exclude: ["password"] },
+        attributes: [
+          "id", "nombre", "rol", "permisos",
+          "config_puerto_scanner", "config_puerto_impresora",
+          "config_balanza", "config_balanza_conexion", "config_arqueo_caja",
+          "config_redondeo_automatico", "config_recargo_credito", "config_descuento_efectivo",
+          "nombre_negocio", "slogan_negocio", "footer_ticket", "logo_url",
+        ],
         raw: true,
       });
 
@@ -150,11 +163,22 @@ function registerConfigHandlers(models, sequelize) {
 
   ipcMain.handle("save-general-config", async (_event, data) => {
     try {
+      // I-2: validate rate multipliers are in [0, 100] before writing to DB
+      const recargoCredito = data?.recargoCredito ?? 0;
+      const descuentoEfectivo = data?.descuentoEfectivo ?? 0;
+
+      if (typeof recargoCredito !== "number" || recargoCredito < 0 || recargoCredito > 100) {
+        return { success: false, message: "El recargo por crédito debe estar entre 0 y 100." };
+      }
+      if (typeof descuentoEfectivo !== "number" || descuentoEfectivo < 0 || descuentoEfectivo > 100) {
+        return { success: false, message: "El descuento por efectivo debe estar entre 0 y 100." };
+      }
+
       await Usuario.update(
         {
-          config_recargo_credito: data?.recargoCredito ?? 0,
-          config_descuento_efectivo: data?.descuentoEfectivo ?? 0,
-          config_redondeo_automatico: { habilitado: data.redondeo },
+          config_recargo_credito: recargoCredito,
+          config_descuento_efectivo: descuentoEfectivo,
+          config_redondeo_automatico: { habilitado: !!data.redondeo }, // B-8g: coerce to boolean
         },
         { where: { rol: "administrador" } }
       );
@@ -169,13 +193,18 @@ function registerConfigHandlers(models, sequelize) {
     try {
       let logoPath = null;
       if (data?.logoBase64) {
+        // B-7: size guard before decoding
+        if (data.logoBase64.length > MAX_LOGO_B64_CHARS) {
+          return { success: false, message: "El logo supera el tamaño máximo permitido (5 MB)." };
+        }
         const logoData = data.logoBase64.split(";base64,").pop();
         const logoBuffer = Buffer.from(logoData, "base64");
         const logoDir = path.join(app.getPath("userData"), "logos");
 
-        fs.mkdirSync(logoDir, { recursive: true });
+        // B-7: async I/O — does not block the main process event loop
+        await fsPromises.mkdir(logoDir, { recursive: true });
         logoPath = path.join(logoDir, `logo-${Date.now()}.png`);
-        fs.writeFileSync(logoPath, logoBuffer);
+        await fsPromises.writeFile(logoPath, logoBuffer);
       }
 
       const updateData = {

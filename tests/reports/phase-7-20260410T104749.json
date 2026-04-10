@@ -1,0 +1,249 @@
+{
+  "date": "2026-04-10T10:47:49.644Z",
+  "suite": "phase-7",
+  "total": 40,
+  "passed": 40,
+  "failed": 0,
+  "results": [
+    {
+      "id": "1.1",
+      "name": "I-1: clearSession sets activeUserId to null",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.2",
+      "name": "I-1: get-user-session returns null after clearSession",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.3",
+      "name": "I-1: get-user-session returns user after login",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.4",
+      "name": "I-1: re-login after logout returns new user",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.1",
+      "name": "S-3: get-user-session does NOT expose mp_access_token",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.2",
+      "name": "S-3: get-user-session does NOT expose password",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.3",
+      "name": "S-3: get-user-session returns required fields (id, nombre, rol, permisos)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.4",
+      "name": "S-3: get-admin-config does NOT expose mp_access_token",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.5",
+      "name": "S-3: get-admin-config returns UI-required fields",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.1",
+      "name": "I-2: save-general-config rejects recargoCredito: -1",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.2",
+      "name": "I-2: save-general-config rejects recargoCredito: 101",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.3",
+      "name": "I-2: save-general-config rejects descuentoEfectivo: 150",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.4",
+      "name": "I-2: save-general-config accepts boundary recargoCredito: 100, descuentoEfectivo: 0",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.5",
+      "name": "I-2: save-general-config accepts boundary recargoCredito: 0, descuentoEfectivo: 100",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.6",
+      "name": "I-2: saved value is persisted correctly",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.1",
+      "name": "I-3: purchase rejects nuevoPrecioVenta below costoUnitario",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.2",
+      "name": "I-3: purchase rejects nuevoPrecioVenta = 0",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.3",
+      "name": "I-3: purchase rejects nuevoPrecioVenta > 100x costoUnitario",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.4",
+      "name": "I-3: valid actualizarPrecioVenta updates precioVenta in DB",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.5",
+      "name": "I-3: actualizarPrecioVenta: false leaves precioVenta unchanged",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.1",
+      "name": "I-4: mp:refund-payment with amount: 0 returns ok:false immediately",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.2",
+      "name": "I-4: mp:refund-payment with amount: null returns ok:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.3",
+      "name": "I-4: mp:refund-payment with amount: -50 returns ok:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.4",
+      "name": "I-4: mp:refund-payment with amount: undefined returns ok:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "5.5",
+      "name": "I-4: mp:refund-payment with valid amount passes validation (may fail on no token)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.1",
+      "name": "S-1: save-user denied when no active session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.2",
+      "name": "S-1: save-user denied for non-admin session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.3",
+      "name": "S-1: save-user allowed for admin session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.4",
+      "name": "S-1: save-user rejects invalid rol (not in allowlist)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.5",
+      "name": "S-1: delete-user denied when no active session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "6.6",
+      "name": "S-1: delete-user denied for non-admin session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "7.1",
+      "name": "S-2: registrar-compra-producto uses session userId, ignores renderer UsuarioId",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "7.2",
+      "name": "S-2: registrar-compra-producto fails with no active session",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "8.1",
+      "name": "B-3: purchase rejects descuento > subtotal",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "8.2",
+      "name": "B-3: purchase rejects negative recargo",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "8.3",
+      "name": "B-3: purchase with descuento = subtotal succeeds",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.1",
+      "name": "[Regresión] login-attempt still authenticates correctly",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.2",
+      "name": "[Regresión] save-general-config with valid values (10, 5) still works",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.3",
+      "name": "[Regresión] save-user with valid admin rol still works",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "9.4",
+      "name": "[Regresión] registrar-compra-producto end-to-end still works",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}

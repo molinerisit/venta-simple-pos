@@ -30,8 +30,9 @@ module.exports = (sequelize) => {
     
     // --- Configs de Negocio (Local) ---
     config_redondeo_automatico: { type: DataTypes.JSON, defaultValue: { habilitado: false } },
-    config_recargo_credito:    { type: DataTypes.FLOAT, defaultValue: 0 },
-    config_descuento_efectivo: { type: DataTypes.FLOAT, defaultValue: 0 },
+    // I-2: ORM-level bounds as defense-in-depth (handler validates first)
+    config_recargo_credito:    { type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0, max: 100 } },
+    config_descuento_efectivo: { type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0, max: 100 } },
     nombre_negocio:            { type: DataTypes.STRING },
     slogan_negocio:            { type: DataTypes.STRING },
     footer_ticket:             { type: DataTypes.STRING },

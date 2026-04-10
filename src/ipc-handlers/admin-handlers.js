@@ -1,13 +1,25 @@
 // src/ipc-handlers/admin-handlers.js (Limpiado)
 const { ipcMain, BrowserWindow } = require("electron");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs"); // B-1: pure-JS, no native rebuild needed
+const { getActiveUserId } = require("./session-handlers"); // S-1: role checks
 
 // (opcionales: mantenidos por compatibilidad; no los usa el test-print actual)
 const printer = require("node-thermal-printer");
 const { PosPrinter } = require("electron-pos-printer");
 
+// S-1: valid role values (explicit allowlist)
+const VALID_ROLES = ["administrador", "empleado", "vendedor"];
+
 function registerAdminHandlers(models) {
   const { Usuario, Empleado, GastoFijo } = models;
+
+  /** S-1: returns true only if the active session user has rol === "administrador" */
+  async function requireAdmin() {
+    const userId = getActiveUserId();
+    if (!userId) return false;
+    const user = await Usuario.findByPk(userId, { attributes: ["rol"] });
+    return user?.rol === "administrador";
+  }
 
   // -----------------------------
   // USUARIOS
@@ -43,6 +55,11 @@ function registerAdminHandlers(models) {
 
   ipcMain.handle("save-user", async (_event, userData) => {
     try {
+      // S-1: only admins may create/edit users
+      if (!(await requireAdmin())) {
+        return { success: false, message: "Acceso denegado." };
+      }
+
       const { id, nombre, password, rol, permisos } = userData || {};
       const cleanNombre = String(nombre || "").trim();
       const cleanPassword = String(password || "").trim();
@@ -52,6 +69,14 @@ function registerAdminHandlers(models) {
       }
       if (!rol) {
         return { success: false, message: "El rol es obligatorio." };
+      }
+      // S-1: validate rol against allowlist
+      if (!VALID_ROLES.includes(rol)) {
+        return { success: false, message: `Rol inválido: "${rol}". Valores permitidos: ${VALID_ROLES.join(", ")}.` };
+      }
+      // B-8a: minimum password length for new users
+      if (!id && cleanPassword.length < 6) {
+        return { success: false, message: "La contraseña debe tener al menos 6 caracteres." };
       }
 
       const permsArray = Array.isArray(permisos) ? permisos : [];
@@ -94,6 +119,10 @@ function registerAdminHandlers(models) {
 
   ipcMain.handle("delete-user", async (_event, userId) => {
     try {
+      // S-1: only admins may delete users
+      if (!(await requireAdmin())) {
+        return { success: false, message: "Acceso denegado." };
+      }
       const userToDelete = await Usuario.findByPk(userId);
       if (!userToDelete) return { success: false, message: "El usuario no existe." };
 
@@ -155,10 +184,15 @@ function registerAdminHandlers(models) {
       if (!cleanNombre) {
         return { success: false, message: "El nombre del empleado es obligatorio." };
       }
+      // B-8c: reject negative sueldo
+      const cleanSueldo = Number.isFinite(+sueldo) ? +sueldo : 0;
+      if (cleanSueldo < 0) {
+        return { success: false, message: "El sueldo no puede ser negativo." };
+      }
       const cleanData = {
         nombre: cleanNombre,
         funcion: funcion ? String(funcion).trim() : null,
-        sueldo: Number.isFinite(+sueldo) ? +sueldo : 0,
+        sueldo: cleanSueldo,
       };
       if (id) {
         await Empleado.update(cleanData, { where: { id } });
@@ -208,9 +242,14 @@ function registerAdminHandlers(models) {
       if (!cleanNombre) {
         return { success: false, message: "El nombre del gasto es obligatorio." };
       }
+      // B-8b: reject negative monto
+      const cleanMonto = Number.isFinite(+monto) ? +monto : 0;
+      if (cleanMonto < 0) {
+        return { success: false, message: "El monto del gasto no puede ser negativo." };
+      }
       const cleanData = {
         nombre: cleanNombre,
-        monto: Number.isFinite(+monto) ? +monto : 0,
+        monto: cleanMonto,
       };
       if (id) {
         await GastoFijo.update(cleanData, { where: { id } });
@@ -265,7 +304,17 @@ function registerAdminHandlers(models) {
  // -----------------------------
   // TEST DE IMPRESIÓN
   // -----------------------------
-  ipcMain.handle("test-print", async (_event, printerName) => {
+    // B-2: HTML-escape helper — prevents XSS injection in print templates
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, '&#39;');
+  }
+
+ipcMain.handle("test-print", async (_event, printerName) => {
     try {
       const focusedWindow = BrowserWindow.getFocusedWindow();
       if (!focusedWindow) {
@@ -278,13 +327,15 @@ function registerAdminHandlers(models) {
         deviceName: printerName || undefined,
       };
 
+    // B-2: escape printerName before injecting into HTML
+    const safePrinterName = escapeHtml(printerName || "(predeterminada)");
       const testWin = new BrowserWindow({ show: false });
       await testWin.loadURL(
         `data:text/html,
         <html>
           <body style="font-family: monospace; font-size:12px; padding:10px;">
             <h2>🧾 PRUEBA DE IMPRESIÓN</h2>
-            <p>Impresora: ${printerName || "(predeterminada)"}</p>
+            <p>Impresora: ${safePrinterName}</p>
             <p>Fecha: ${new Date().toLocaleString()}</p>
             <hr/>
             <p>Si ves este ticket, la impresora está funcionando.</p>
@@ -370,7 +421,7 @@ ipcMain.handle(
           </style>
         </head>
         <body>
-          <pre>${recibo}</pre>
+          <pre>${escapeHtml(recibo)}</pre>
         </body>
         </html>
       `;

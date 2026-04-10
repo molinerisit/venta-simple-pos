@@ -1,5 +1,6 @@
 // src/ipc-handlers/compras.js
 const { ipcMain } = require("electron");
+const { getActiveUserId } = require("./session-handlers");
 
 function registerComprasHandlers(models, sequelize) {
   const { Compra, DetalleCompra, Producto, Insumo, Proveedor } = models;
@@ -9,7 +10,13 @@ function registerComprasHandlers(models, sequelize) {
 
   // --- COMPRA DE PRODUCTOS ---
   ipcMain.handle("registrar-compra-producto", async (_event, data) => {
-    const { proveedorId, nroFactura, UsuarioId, items, pago } = data || {};
+    // S-2: ignore renderer-supplied UsuarioId; derive from active session
+    const sessionUserId = getActiveUserId();
+    if (!sessionUserId) {
+      return { success: false, message: "Sesión no activa." };
+    }
+
+    const { proveedorId, nroFactura, items, pago } = data || {};
     const t = await sequelize.transaction();
     try {
       if (!proveedorId) throw new Error("Se debe seleccionar un proveedor.");
@@ -25,7 +32,13 @@ function registerComprasHandlers(models, sequelize) {
       const subtotal = items.reduce((acc, it) => acc + toNum(it.cantidad) * toNum(it.costoUnitario), 0);
       const descuento = toNum(pago?.descuento);
       const recargo = toNum(pago?.recargo);
+
+      // B-3: validate discount does not exceed subtotal, and recargo is non-negative
+      if (recargo < 0) throw new Error("El recargo no puede ser negativo.");
+      if (descuento > subtotal) throw new Error("El descuento no puede superar el subtotal.");
+
       const totalCompra = subtotal - descuento + recargo;
+      if (totalCompra < 0) throw new Error("El total de la compra no puede ser negativo.");
       const montoAbonado = toNum(pago?.montoAbonado);
       const deudaGenerada = totalCompra - montoAbonado;
 
@@ -45,7 +58,7 @@ function registerComprasHandlers(models, sequelize) {
           montoAbonado,
           estadoPago,
           ProveedorId: proveedorId,
-          UsuarioId,
+          UsuarioId: sessionUserId, // S-2: always from session, not renderer
         },
         { transaction: t }
       );
@@ -69,10 +82,16 @@ function registerComprasHandlers(models, sequelize) {
         await Producto.increment({ stock: cantidad }, { where: { id: it.productoId }, transaction: t });
         // actualizo precios (último costo y, si corresponde, venta)
         const updates = { precioCompra: costo };
-        if (it.actualizarPrecioVenta && toNum(it.nuevoPrecioVenta) > 0) {
-          updates.precioVenta = toNum(it.nuevoPrecioVenta);
+        if (it.actualizarPrecioVenta) {
+          // I-3: validate nuevoPrecioVenta server-side before writing
+          const nuevoPrecio = toNum(it.nuevoPrecioVenta);
+          if (!(nuevoPrecio > 0)) throw new Error("El nuevo precio de venta debe ser mayor a 0.");
+          if (nuevoPrecio < costo) throw new Error("El nuevo precio de venta no puede ser menor al costo unitario.");
+          if (nuevoPrecio > 100 * costo && costo > 0) throw new Error("El nuevo precio de venta supera 100x el costo unitario.");
+          updates.precioVenta = nuevoPrecio;
         }
-        await Producto.update(updates, { where: { id: it.productoId }, transaction: t });
+        const [affectedRows] = await Producto.update(updates, { where: { id: it.productoId }, transaction: t });
+        if (affectedRows === 0) throw new Error(`Producto ${it.productoId} no encontrado para actualizar.`);
       }
 
       if (deudaGenerada > 0) {
@@ -90,7 +109,13 @@ function registerComprasHandlers(models, sequelize) {
 
   // --- COMPRA DE INSUMOS ---
   ipcMain.handle("registrar-compra-insumos", async (_event, data) => {
-    const { proveedorId, nroFactura, UsuarioId, items, pago } = data || {};
+    // S-2: ignore renderer-supplied UsuarioId; derive from active session
+    const sessionUserId = getActiveUserId();
+    if (!sessionUserId) {
+      return { success: false, message: "Sesión no activa." };
+    }
+
+    const { proveedorId, nroFactura, items, pago } = data || {};
     const t = await sequelize.transaction();
     try {
       if (!proveedorId) throw new Error("Se debe seleccionar un proveedor.");
@@ -105,7 +130,13 @@ function registerComprasHandlers(models, sequelize) {
       const subtotal = items.reduce((acc, it) => acc + toNum(it.cantidad) * toNum(it.costoUnitario), 0);
       const descuento = toNum(pago?.descuento);
       const recargo = toNum(pago?.recargo);
+
+      // B-3: validate discount does not exceed subtotal, and recargo is non-negative
+      if (recargo < 0) throw new Error("El recargo no puede ser negativo.");
+      if (descuento > subtotal) throw new Error("El descuento no puede superar el subtotal.");
+
       const totalCompra = subtotal - descuento + recargo;
+      if (totalCompra < 0) throw new Error("El total de la compra no puede ser negativo.");
       const montoAbonado = toNum(pago?.montoAbonado);
       const deudaGenerada = totalCompra - montoAbonado;
 
@@ -125,7 +156,7 @@ function registerComprasHandlers(models, sequelize) {
           montoAbonado,
           estadoPago,
           ProveedorId: proveedorId,
-          UsuarioId,
+          UsuarioId: sessionUserId, // S-2: always from session, not renderer
         },
         { transaction: t }
       );
