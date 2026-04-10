@@ -1,39 +1,41 @@
 'use strict';
 
+const { DataTypes } = require('sequelize');
+
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up(queryInterface) {
     await queryInterface.createTable('movimientos_caja', {
       id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
       ArqueoCajaId: {
-        type: Sequelize.UUID,
+        type: DataTypes.UUID,
         allowNull: false,
         references: { model: 'arqueos_caja', key: 'id' },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
       tipo: {
-        type: Sequelize.ENUM('INGRESO', 'EGRESO'),
+        type: DataTypes.ENUM('INGRESO', 'EGRESO'),
         allowNull: false,
       },
       monto: {
-        type: Sequelize.FLOAT,
+        type: DataTypes.FLOAT,
         allowNull: false,
       },
       concepto: {
-        type: Sequelize.STRING(255),
+        type: DataTypes.STRING(255),
         allowNull: false,
       },
       comprobante: {
-        type: Sequelize.STRING(100),
+        type: DataTypes.STRING(100),
         allowNull: true,
       },
-      createdAt: { type: Sequelize.DATE, allowNull: false },
-      updatedAt: { type: Sequelize.DATE, allowNull: false },
+      createdAt: { type: DataTypes.DATE, allowNull: false },
+      updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
 
     await queryInterface.addIndex('movimientos_caja', ['ArqueoCajaId']);
