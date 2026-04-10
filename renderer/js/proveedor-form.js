@@ -156,6 +156,8 @@ document.addEventListener("app-ready", () => {
     }
   });
 
+  attachEnterNav(proveedorForm, { submitBtn: btnSubmit });
+
   // --- ARRANQUE ---
   inicializarFormulario();
 });

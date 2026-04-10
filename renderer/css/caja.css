@@ -1,444 +1,1404 @@
-/* renderer/css/caja.css */
-html {
-  font-size: 125%; /* Ajustá este valor: 105%, 110%, 115%, etc. */
+/* ================================================================
+   caja.css — POS moderno
+   font-size: 125% en body (no en html) para que rem = 16px siempre
+   y el sidebar de navbar.css no crezca.
+   ================================================================ */
+
+body {
+  font-size: 125%;
+  background: #f0f2f5;
 }
 
-/* Ajuste fino para evitar desbordes en tablas o botones */
-table, button, input, label, p, h2, h3, h4 {
+/* Normalizar tamaños base */
+table, button, input, label, p, h2, h3, h4, textarea, select {
   font-size: 1em;
 }
-/* --- 1. LAYOUT DE LA CAJA --- */
+
+/* ================================================================
+   1. LAYOUT PRINCIPAL
+   ================================================================ */
 .caja-main {
   display: flex;
-  flex-grow: 1;
-  height: 100vh0;
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
   overflow: hidden;
-  position: relative; /* ✅ CRUCIAL: Contiene los elementos posicionados absolutamente */
+  background: #f0f2f5;
 }
+
+/* ================================================================
+   2. PANEL CENTRAL (búsqueda + carrito)
+   ================================================================ */
 .venta-panel {
-  flex: 3;
-  min-width: 480px;
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  background-color: #ffffff;
-  border-right: 1px solid var(--border-color);
-  position: relative; /* ✅ CRUCIAL: Para contener el panel de bloqueo */
-}
-.acciones-panel {
-  flex: 2;
-  min-width: 380px;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  gap: 15px;
-  overflow-y: auto;
-  position: relative; /* Asegura un contexto de apilamiento */
-  z-index: 10; /* ✅ Pone este panel por encima de la superposición de bloqueo */
+  flex: 1;
+  min-width: 0;
+  padding: 16px 16px 12px 16px;
+  gap: 12px;
+  position: relative; /* contiene el overlay de bloqueo */
+  overflow: hidden;
 }
 
-/* --- 2. PANEL DE VENTA (IZQUIERDO) --- */
-.input-area {
+/* ── Cabecera: buscador ── */
+.pos-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-shrink: 0;
-  margin-bottom: 15px;
-}
-/* --- Modificar esta regla existente --- */
-.productos-seleccionados {
-  flex-grow: 1;
-  /* CAMBIO: 'scroll' fuerza que la barra siempre esté visible */
-  overflow-y: scroll; 
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
-  /* Opcional: Scroll suave */
-  scroll-behavior: smooth;
 }
 
-/* --- AGREGAR ESTAS REGLAS NUEVAS PARA ESTILIZAR LA BARRA --- */
-.productos-seleccionados::-webkit-scrollbar {
-  width: 10px; /* Ancho fijo siempre presente */
-}
-
-.productos-seleccionados::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 0 5px 5px 0;
-}
-
-.productos-seleccionados::-webkit-scrollbar-thumb {
-  background: #ccc; 
-  border-radius: 5px;
-  border: 2px solid #f1f1f1; /* Para que parezca flotante */
-}
-
-.productos-seleccionados::-webkit-scrollbar-thumb:hover {
-  background: #999; 
-}
-.total-area {
+.pos-search-wrapper {
   position: relative;
-  flex-shrink: 0;
-  padding-top: 15px;
-  margin-top: 15px;
-  text-align: right;
-  border-top: 2px solid var(--primary-color);
+  flex: 1;
+  margin: 0;
 }
-.items-counter {
+
+.pos-search-icon {
   position: absolute;
-  top: 15px;
-  left: 0;
-  font-size: 0.9em;
-  font-weight: 500;
-  color: #666;
-  background-color: #f0f0f0;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.pos-search-wrapper input,
+#main-input {
+  width: 100%;
+  padding: 13px 16px 13px 44px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1.05em;
+  font-family: inherit;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  transition: border-color .2s, box-shadow .2s;
+  box-sizing: border-box;
+}
+
+#main-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #4f46e5);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+}
+
+/* ── Tabla del carrito ── */
+.productos-seleccionados {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  position: relative;
+}
+
+.productos-seleccionados table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.productos-seleccionados thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: .8em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  z-index: 1;
+}
+
+.col-img    { width: 48px; }
+.col-cant   { width: 80px; }
+.col-precio { width: 100px; }
+.col-sub    { width: 100px; }
+.col-del    { width: 44px; }
+
+.productos-seleccionados tbody td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.productos-seleccionados tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.productos-seleccionados tbody tr:hover td {
+  background: #f8fafc;
+}
+
+/* input de cantidad en la tabla */
+.cantidad-input {
+  width: 68px;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  text-align: center;
+  font-size: .95em;
+  background: #f8fafc;
+  transition: border-color .2s;
+}
+.cantidad-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #4f46e5);
+  background: #fff;
+}
+
+/* botón eliminar fila */
+.btn-delete-item {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
   padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: 700;
+  transition: background .15s;
+}
+.btn-delete-item:hover {
+  background: #fee2e2;
+}
+
+/* ── Estado vacío del carrito ── */
+.productos-seleccionados {
+  display: flex;
+  flex-direction: column;
+}
+
+.productos-seleccionados table {
+  flex-shrink: 0;
+}
+
+.cart-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 20px 40px;
+  min-height: 200px;
+  color: #94a3b8;
+  text-align: center;
+}
+.cart-empty svg { opacity: .4; }
+.cart-empty p { margin: 0; font-size: .95em; }
+
+/* Ocultar empty cuando la tabla tiene filas */
+.productos-seleccionados:has(tbody tr) .cart-empty { display: none; }
+
+/* ── Acceso rápido ── */
+.quick-access-section {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px 2px;
+}
+
+.quick-access-label {
+  font-size: .75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.quick-access-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.quick-access-list::-webkit-scrollbar { height: 4px; }
+.quick-access-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
   border-radius: 4px;
 }
-.total-area h2 {
-  margin: 0;
-  font-size: 1.1em;
-  color: #555;
+
+.quick-access-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1.5px solid #c7d2fe;
+  border-radius: 20px;
+  color: var(--primary-color, #4f46e5);
+  font-size: .85em;
   font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .1s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
-.total-area p#total-display {
-  margin: 5px 0 0;
-  font-size: 2.8em;
-  font-weight: bold;
-  color: var(--primary-color);
+.quick-access-btn:hover {
+  background: #eef2ff;
+  border-color: var(--primary-color, #4f46e5);
+  transform: translateY(-1px);
+}
+.quick-access-btn:active { transform: translateY(0); }
+
+/* ── Área de total ── */
+.total-area {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
-/* --- 3. PANEL DE ACCIONES (DERECHO) --- */
-.arqueo-actions {
-  position: relative;
-  z-index: 20; /* Asegura que los botones de abrir/cerrar caja estén siempre arriba */
+.items-counter {
+  font-size: .85em;
+  color: #64748b;
+  font-weight: 500;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 20px;
 }
-.cliente-area,
-.resumen-venta,
-.payment-methods,
-.pago-efectivo-area,
-.actions {
-  background-color: #fff;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+
+.total-block {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.total-label {
+  font-size: .85em;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.total-value {
+  font-size: 2.4em;
+  font-weight: 800;
+  color: var(--primary-color, #4f46e5);
+  letter-spacing: -.02em;
+}
+
+/* ── Bloqueo de panel ── */
+.bloqueo-superposicion {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, .75);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0;
+  color: #fff;
+  text-align: center;
+  gap: 16px;
+}
+
+.bloqueo-mensaje {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 16px;
+}
+
+.bloqueo-mensaje h2 {
+  font-size: 1.6em;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: .04em;
+}
+
+.bloqueo-mensaje p {
+  margin: 0;
+  opacity: .8;
+  font-size: .95em;
+}
+
+/* ================================================================
+   3. PANEL DERECHO (acciones)
+   ================================================================ */
+.acciones-panel {
+  width: clamp(260px, 26vw, 340px);
+  min-width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 12px 12px 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  position: relative;
+  z-index: 10; /* encima del overlay de bloqueo */
+}
+
+.acciones-panel::-webkit-scrollbar { width: 4px; }
+.acciones-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* ── Tarjeta base ── */
+.pos-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
   flex-shrink: 0;
 }
-.input-group {
+
+.pos-card-title {
   display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #64748b;
+  margin-bottom: 6px;
 }
-.input-group input {
-  flex-grow: 1;
-  border-radius: 5px 0 0 5px;
-  border-right: none;
+
+/* ── Arqueo ── */
+.arqueo-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
-.input-group button {
-  border-radius: 0 5px 5px 0;
+
+.arqueo-actions .btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px;
+  font-size: .85em;
 }
+
+/* ── Cliente ── */
+.cliente-area .input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.cliente-area .input-group input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: .95em;
+  transition: border-color .2s;
+}
+
+.cliente-area .input-group input:focus {
+  outline: none;
+  border-color: var(--primary-color, #4f46e5);
+}
+
+.cliente-area .input-group .btn {
+  flex-shrink: 0;
+  padding: 9px 10px;
+  font-size: .85em;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
 #cliente-info {
-  margin-top: 10px;
+  margin: 3px 0 0;
+  font-size: .82em;
   font-style: italic;
-  color: var(--accent-color);
+  color: var(--accent-color, #4f46e5);
   font-weight: 500;
+  min-height: 14px;
 }
+
+.form-check {
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82em;
+}
+.form-check label { margin: 0; cursor: pointer; }
+
+/* ── Resumen ── */
+.resumen-venta {
+  /* pos-card ya maneja el card */
+}
+
 .resumen-venta p {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  align-items: center;
+  padding: 3px 0;
+  font-size: .85em;
+  color: #475569;
+  margin: 0;
 }
+
 .resumen-venta p:not(:last-child) {
-  border-bottom: 1px dashed #eee;
+  border-bottom: 1px dashed #f1f5f9;
 }
-.valor-negativo {
-  color: var(--danger-color);
-  font-weight: 500;
-}
-.valor-positivo {
-  color: var(--success-color);
-  font-weight: 500;
-}
+
+.valor-negativo { color: #ef4444; font-weight: 600; }
+.valor-positivo { color: #10b981; font-weight: 600; }
+
+/* ── Métodos de pago ── */
 .payment-methods {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.payment-methods button.active {
-  background-color: var(--primary-color);
-  color: var(--text-light);
+  gap: 8px;
+  margin-bottom: 0;
 }
 
-.actions {
-  margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid var(--border-color);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "registrar registrar"
-    "imprimir cancelar";
-  gap: 10px;
-}
-
-#registrar-venta-btn { grid-area: registrar; }
-#imprimir-ticket-btn { grid-area: imprimir; }
-#cancelar-venta-btn { grid-area: cancelar; }
-
-.actions .btn {
-  padding: 15px;
-  font-size: 1.1em;
-  font-weight: bold;
-  width: 100%;
-}
-
-/* --- 4. RESPONSIVIDAD --- */
-@media (max-width: 900px) {
-  .caja-main {
-    flex-direction: column;
-    overflow-y: auto;
-    height: auto;
-  }
-  .venta-panel,
-  .acciones-panel {
-    min-width: 100%;
-    height: auto;
-  }
-  .acciones-panel {
-    border-top: 2px solid var(--border-color);
-  }
-}
-
-/* --- 5. ESTILOS DE COMPONENTES --- */
-.oculto {
-  display: none !important;
-}
-
-.input-area label {
-  display: block;
-  margin-bottom: 5px;
+.payment-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: .85em;
+  cursor: pointer;
+  transition: all .18s;
+  box-shadow: none;
 }
 
-.input-area input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
-  font-size: 1.1em;
-  font-family: inherit;
+.payment-btn svg { opacity: .7; transition: opacity .18s; }
+
+.payment-btn:hover {
+  border-color: var(--primary-color, #4f46e5);
+  background: #eef2ff;
+  color: var(--primary-color, #4f46e5);
+}
+
+.payment-btn:hover svg { opacity: 1; }
+
+.payment-btn.active {
+  border-color: var(--primary-color, #4f46e5);
+  background: var(--primary-color, #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(79,70,229,.3);
+}
+
+.payment-btn.active svg { opacity: 1; stroke: #fff; }
+
+/* ── Área efectivo ── */
+.pago-efectivo-area {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
 }
 
 .pago-efectivo-area label {
   display: block;
-  margin-bottom: 5px;
+  font-size: .8em;
   font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
 }
+
 .pago-efectivo-area input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
   font-size: 1em;
-  margin-bottom: 10px;
+  box-sizing: border-box;
+  transition: border-color .2s;
 }
-.pago-efectivo-area p {
-  font-weight: bold;
-  font-size: 1.1em;
+
+.pago-efectivo-area input:focus {
+  outline: none;
+  border-color: var(--primary-color, #4f46e5);
+}
+
+.vuelto-line {
+  margin: 8px 0 0;
+  font-weight: 700;
+  font-size: 1em;
   text-align: right;
-}
-.pago-efectivo-area span {
-  color: var(--success-color);
+  color: #10b981;
 }
 
-.form-check { margin-top: 10px; display: flex; align-items: center; gap: 8px; }
-.form-check label { margin-bottom: 0; }
+/* ── Botones de acción ── */
+.pos-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "registrar registrar"
+    "imprimir  cancelar";
+  gap: 8px;
+  margin-top: auto;
+  flex-shrink: 0;
+}
 
-/* --- 6. SUPERPOSICIÓN DE BLOQUEO Y MODALES --- */
-.bloqueo-superposicion {
-  position: absolute; /* Se posiciona dentro de '.venta-panel' */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 5; /* Capa intermedia, por debajo del panel de acciones */
+#registrar-venta-btn {
+  grid-area: registrar;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  font-size: 1.05em;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(79,70,229,.35);
+  transition: transform .1s, box-shadow .2s;
+}
+
+#registrar-venta-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(79,70,229,.4);
+}
+
+#registrar-venta-btn:active { transform: translateY(0); }
+
+#imprimir-ticket-btn {
+  grid-area: imprimir;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 8px;
+  font-size: .88em;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+#cancelar-venta-btn {
+  grid-area: cancelar;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 8px;
+  font-size: .88em;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* ── Compatibilidad con clases globales ── */
+.btn-grande { min-height: 44px; }
+.oculto     { display: none !important; }
+
+/* ================================================================
+   4. SCROLLBAR DEL CARRITO
+   ================================================================ */
+.productos-seleccionados::-webkit-scrollbar { width: 6px; }
+.productos-seleccionados::-webkit-scrollbar-track { background: transparent; }
+.productos-seleccionados::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+.productos-seleccionados::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ================================================================
+   5. SUPERPOSICIÓN DE BLOQUEO — estado oculto
+   ================================================================ */
+.bloqueo-superposicion.oculto { display: none !important; }
+
+/* ================================================================
+   6. MODALES
+   ================================================================ */
+.modal-container {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
+  z-index: 1000;
+}
+
+.modal-content {
+  position: relative;
+  background: #fff;
+  padding: 32px 40px;
+  border-radius: 16px;
   text-align: center;
-  border-radius: 0 0 5px 5px; /* Para que coincida con el borde del panel */
-}
-.bloqueo-mensaje h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  border-top: 4px solid var(--danger-color, #ef4444);
+  min-width: 300px;
 }
 
+.modal-content p {
+  font-size: 1.1em;
+  margin: 0 0 24px;
+  color: #334155;
+}
 
-/* Contenedor principal del resumen en el modal de cierre */
+.modal-content button.btn-primario {
+  padding: 10px 30px;
+}
+
+.btn-close-modal {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color .15s;
+}
+.btn-close-modal:hover { color: #1e293b; }
+
+.modal-content .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modal-content .form-campo {
+  text-align: left;
+  margin-bottom: 14px;
+}
+
+.modal-content .form-campo label {
+  display: block;
+  font-size: .85em;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #64748b;
+}
+
+.modal-content .form-campo input,
+.modal-content .form-campo textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: .95em;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+
+.modal-content .form-campo input:focus,
+.modal-content .form-campo textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #4f46e5);
+}
+
+/* Resumen cierre de caja */
 #resumen-cierre-caja {
-    background-color: #f9f9f9;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 15px;
-    margin-bottom: 20px;
-    text-align: left; /* Alineamos el texto a la izquierda para mayor legibilidad */
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 18px;
+  text-align: left;
 }
 
 #resumen-cierre-caja p {
-    display: flex;
-    justify-content: space-between;
-    margin: 8px 0;
-    font-size: 1em;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed #ddd;
-}
-
-#resumen-cierre-caja p:last-child {
-    border-bottom: none;
-}
-
-#resumen-cierre-caja strong {
-    font-weight: 600;
-}
-
-/* El contenedor de los botones de acción en los modales */
-.modal-content .form-actions {
-    display: flex; /* Usamos flexbox para alinear */
-    justify-content: flex-end; /* Alinea los botones a la derecha */
-    gap: 10px; /* ✅ Añade un espacio de 10px entre los botones */
-    margin-top: 20px; /* Añade un espacio superior */
-    padding-top: 15px;
-    border-top: 1px solid var(--border-color);
-}
-
-
-.modal-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-.modal-content {
-    position: relative; /* Para posicionar el botón de cierre */
-    background-color: #fff;
-    padding: 30px 40px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    border-top: 5px solid var(--danger-color);
-}
-.modal-content p {
-    font-size: 1.2em;
-    margin: 0 0 25px 0;
-    color: #333;
-}
-.modal-content button.btn-primario {
-    padding: 10px 30px;
-    font-size: 1em;
-}
-.btn-close-modal {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: transparent;
-  border: none;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #888;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-}
-.btn-close-modal:hover {
-  color: #333;
-}
-
-/* --- 7. SIDEBAR COLAPSABLE Y BOTÓN TOGGLE --- */
-.container {
   display: flex;
-  transition: all 0.3s ease;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: .95em;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #e2e8f0;
 }
-.sidebar {
-  width: 220px;
-  min-width: 220px;
-  background-color: var(--sidebar-bg, #2f3542);
-  color: #fff;
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-.container.sidebar-collapsed .sidebar {
-  width: 0;
-  min-width: 0;
-  padding: 0;
-  border: none;
-}
+#resumen-cierre-caja p:last-child { border-bottom: none; }
 
-.toggle-sidebar {
-  position: absolute;
-  bottom: 12px;
-  left: 240px;
-  transform: translateX(0);
-  padding: 6px 10px;
-  background: var(--color-primario, #3f51b5);
-  color: #fff;
-  border: none;
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  line-height: 1;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-  z-index: 2000;
+/* Modal de venta exitosa */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.6);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
 }
-.toggle-sidebar:hover {
-  background: var(--color-primario-hover, #2e3c9e);
-}
-.toggle-sidebar span {
-  display: inline-block;
-  transition: transform 0.3s ease;
-}
+.modal.visible { display: flex; }
 
-.container.sidebar-collapsed .toggle-sidebar {
-  left: 0;
-  border-radius: 0 6px 6px 0;
-}
-.container.sidebar-collapsed .toggle-sidebar span {
-  transform: rotate(180deg);
-}
-
-/* Añadir en tu archivo CSS */
 .modal-header-success {
   text-align: center;
   margin-bottom: 20px;
 }
 .modal-header-success .status-icon {
-  width: 60px;
-  height: 60px;
-  color: #4caf50; /* Verde éxito */
+  width: 56px;
+  height: 56px;
+  color: #10b981;
 }
+.modal-header-success h2 { margin: 10px 0 0; font-size: 1.2em; }
+
 .resumen-venta, .resumen-mp {
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-  margin-top: 15px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+  margin-top: 14px;
 }
 .resumen-venta p, .resumen-mp p {
   display: flex;
   justify-content: space-between;
   margin: 5px 0;
+  font-size: 1em;
+}
+.resumen-mp h4 { text-align: center; margin-bottom: 8px; }
+
+/* ================================================================
+   7. TOAST
+   ================================================================ */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1e293b;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: .9em;
+  font-weight: 600;
+  z-index: 3000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s, transform .3s;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.success { background: #059669; }
+.toast.error   { background: #dc2626; }
+.toast.warning { background: #d97706; }
+
+/* ================================================================
+   8. RESPONSIVE
+   ================================================================ */
+
+/* ── Pantallas medianas: panel de acciones más compacto ── */
+@media (max-width: 1100px) {
+  .col-img    { width: 36px; }
+  .col-cant   { width: 64px; }
+  .col-precio { width: 84px; }
+  .col-sub    { width: 84px; }
+  .col-del    { width: 36px; }
+
+  .productos-seleccionados thead th,
+  .productos-seleccionados tbody td {
+    padding: 8px 8px;
+  }
+
+  .total-value { font-size: 2em; }
+}
+
+/* ── Pantallas pequeñas: apilado vertical ── */
+@media (max-width: 900px) {
+  .caja-main {
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+  .venta-panel {
+    height: auto;
+    overflow: visible;
+  }
+  .acciones-panel {
+    width: 100%;
+    min-width: 0;
+    padding: 0 16px 16px;
+    overflow: visible;
+    border-top: 2px solid #e2e8f0;
+  }
+  .productos-seleccionados {
+    max-height: 45vh;
+  }
+  .payment-methods {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .pos-actions {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "registrar registrar"
+      "imprimir  cancelar";
+  }
+  .total-value { font-size: 1.8em; }
+}
+
+/* ── Pantallas muy pequeñas / móvil ── */
+@media (max-width: 600px) {
+  .venta-panel { padding: 10px 10px 8px; }
+  .payment-methods { grid-template-columns: 1fr 1fr; }
+  .pos-card { padding: 10px; }
+  .arqueo-actions { flex-wrap: wrap; }
+  .arqueo-actions .btn { min-width: calc(50% - 4px); }
+}
+
+/* ================================================================
+   MODAL REDESIGN — shared primitives
+   ================================================================ */
+
+/* Size variants */
+.modal-sm  { max-width: 380px; }
+.modal-md  { max-width: 460px; }
+.modal-lg  { max-width: 560px; }
+
+/* Icon + title header inside modal */
+.modal-icon-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.modal-icon--success { background: #dcfce7; color: #16a34a; }
+.modal-icon--danger  { background: #fee2e2; color: #dc2626; }
+.modal-icon--neutral { background: #eff6ff; color: #2563eb; }
+
+.modal-title {
+  font-size: 1.05em;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px;
+}
+
+.modal-subtitle {
+  font-size: 0.82em;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Field layout */
+.modal-fields-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.modal-label {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: #374151;
+}
+
+.modal-required { color: #ef4444; font-size: 0.85em; }
+
+.modal-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.92em;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+.modal-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+
+.modal-textarea { resize: vertical; min-height: 60px; }
+
+.modal-hint {
+  font-size: 0.75em;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* $ prefix input */
+.modal-input-prefix {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.modal-input-prefix:focus-within {
+  border-color: var(--primary-color, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.prefix-symbol {
+  padding: 0 10px;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+  border-right: 1.5px solid #e2e8f0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+}
+.modal-input-prefix .modal-input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none !important;
+  flex: 1;
+}
+.modal-input-prefix .modal-input:focus { outline: none; border: none; box-shadow: none; }
+
+/* Modal actions row */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ================================================================
+   MOVIMIENTO TIPO SELECTOR (redesigned)
+   ================================================================ */
+.mov-tipo-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mov-tipo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.mov-tipo-card input[type="radio"] { display: none; }
+
+.mov-tipo-card:has(input:checked) {
+  background: #f8fafc;
+}
+.ingreso-option:has(input:checked) {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+.egreso-option:has(input:checked) {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.mov-tipo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   font-size: 1.1em;
 }
-.resumen-mp h4 {
-  text-align: center;
-  margin-bottom: 10px;
+.mov-icon-ingreso { background: #dcfce7; color: #16a34a; }
+.mov-icon-egreso  { background: #fee2e2; color: #dc2626; }
+
+.ingreso-option:has(input:checked) .mov-tipo-icon { background: #bbf7d0; }
+.egreso-option:has(input:checked)  .mov-tipo-icon { background: #fecaca; }
+
+.mov-tipo-label {
+  font-size: 0.88em;
+  font-weight: 700;
+  color: #1e293b;
+}
+.ingreso-option:has(input:checked) .mov-tipo-label { color: #15803d; }
+.egreso-option:has(input:checked)  .mov-tipo-label { color: #b91c1c; }
+
+.mov-tipo-desc {
+  font-size: 0.72em;
+  color: #94a3b8;
+}
+.ingreso-option:has(input:checked) .mov-tipo-desc { color: #4ade80; }
+.egreso-option:has(input:checked)  .mov-tipo-desc { color: #f87171; }
+
+/* ================================================================
+   VENTA EXITOSA MODAL (redesigned)
+   ================================================================ */
+.venta-ok-modal {
+  max-width: 360px;
+  border-top: none !important;
+  text-align: left;
 }
 
+.venta-ok-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
-.toast.warning {
-    background-color: #f59e0b; /* Naranja */
-    color: #fff;
-    border-left: 5px solid #b45309; /* Borde más oscuro para destacar */
+.venta-ok-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.venta-ok-title {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.venta-ok-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.venta-ok-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88em;
+}
+
+.venta-ok-label { color: #64748b; }
+.venta-ok-value { font-weight: 600; color: #1e293b; }
+
+.venta-ok-badge {
+  font-size: 0.8em;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.venta-ok-total-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.venta-ok-total-label {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.venta-ok-total-value {
+  font-size: 1.6em;
+  font-weight: 800;
+  color: #1d4ed8;
+  letter-spacing: -0.02em;
+}
+
+.venta-ok-mp {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.venta-ok-section-label {
+  font-size: 0.72em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.venta-ok-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95em;
+  font-weight: 700;
+}
+
+/* ================================================================
+   CASH OPENING MODAL — cash-opening.tsx style
+   ================================================================ */
+.co-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 250, 252, 0.75);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.co-overlay.oculto { display: none; }
+
+.co-card {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.06);
+  padding: 32px;
+}
+
+.co-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.co-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: background 0.3s, color 0.3s;
+  flex-shrink: 0;
+}
+.co-icon.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.co-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.co-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+.co-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.co-field {
+  margin-bottom: 24px;
+}
+.co-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+.co-input-wrap {
+  position: relative;
+}
+.co-currency {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+  pointer-events: none;
+  user-select: none;
+}
+.co-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 14px 0 32px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #1e293b;
+  font-family: inherit;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.co-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}
+
+.co-submit {
+  width: 100%;
+  height: 46px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: #1e293b;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.18s;
+}
+.co-submit:hover { background: #0f172a; }
+.co-submit:active { background: #020617; }
+
+.co-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 10px 0 0;
+}
+
+/* ================================================================
+   MOVIMIENTOS ADMINISTRATIVOS DE CAJA
+   ================================================================ */
+
+/* Radio-group de tipo */
+.movimiento-tipo-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.movimiento-tipo-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color, #e2e8f0);
+  cursor: pointer;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.movimiento-tipo-option input[type="radio"] {
+  display: none;
+}
+
+.movimiento-tipo-option:has(input:checked) {
+  border-color: var(--primary-color, #2563eb);
+  background: #eff6ff;
+}
+
+.ingreso-option:has(input:checked) {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.egreso-option:has(input:checked) {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+/* Tabla resumen de cierre */
+.resumen-cierre-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-size: .92em;
+}
+
+.resumen-cierre-table td {
+  padding: 5px 4px;
+  vertical-align: middle;
+}
+
+.resumen-cierre-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumen-total-row td {
+  padding-top: 8px;
+  border-top: 2px solid #e2e8f0;
+  font-size: 1.05em;
+}
+
+/* Lista de movimientos */
+.mov-list {
+  margin: 2px 0 8px;
+  padding-left: 1.2rem;
+  font-size: .85em;
+  list-style: disc;
+}
+
+.mov-list li {
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+.resumen-movimientos {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: .9em;
 }

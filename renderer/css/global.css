@@ -7,37 +7,42 @@
 
 /* --- 1) VARIABLES --- */
 :root{
-  /* Paleta */
-  --primary-color: #2c3e50;
-  --secondary-color: #34495e;
-  --accent-color: #1abc9c;
-  --danger-color: #e74c3c;
-  --info-color: #3498db;
-  --success-color: #2ecc71;
-  --warning-color: #f39c12;
+  /* Paleta — alineada con el diseño de inspiración */
+  --primary-color: #2563EB;
+  --secondary-color: #334155;
+  --accent-color: #10B981;
+  --danger-color: #EF4444;
+  --info-color: #3B82F6;
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
 
-  --light-bg: #f4f7fa;
+  --light-bg: #F8FAFC;
   --text-light: #ffffff;
-  --text-dark: #333333;
-  --text-muted: #6c757d;
-  --border-color: #dfe4e8;
+  --text-dark: #1E293B;
+  --text-muted: #64748B;
+  --border-color: #E2E8F0;
 
   --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Medidas layout */
-  --layout-gutter: 12px;            /* separación entre sidebar y contenido */
-
-  /* Variables declaradas para el navbar (fuente de verdad aquí) */
-  --sidebar-width: 15rem;           /* ≈ 240px abierto */
-  --sidebar-collapsed-width: 64px;  /* base colapsado (navbar.css puede ampliarlo visualmente) */
+  /* Layout: sin gutter entre sidebar y contenido (separación por color) */
+  --layout-gutter: 0px;
 }
 
 /* --- 2) RESET / BASE --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; width: 100%; }
-body{
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* prevent stray scroll on the root */
+  background-color: #F8FAFC;
+}
+body {
+  height: 100vh;
+  width: 100%;
   font-family: var(--body-font);
-  background-color: var(--light-bg);
+  background-color: #F8FAFC;
+  background-image: none; /* explicit: no decorative background */
+  background-repeat: no-repeat;
   color: var(--text-dark);
   display: flex;
   overflow: hidden; /* evita scroll global */
@@ -49,13 +54,11 @@ body{
   position: relative !important;          /* para posicionar el toggle del sidebar */
   display: flex !important;
   width: 100% !important;
-  min-height: 100vh !important;
+  height: 100vh !important;              /* fill full viewport height — no overflow */
   gap: var(--layout-gutter) !important;   /* gutter visual entre sidebar y contenido */
-}
-/* En colapsado podemos achicar un toque el gutter si querés */
-.container.sidebar-collapsed,
-.container-fluid.sidebar-collapsed{
-  --layout-gutter: 10px;
+  overflow: hidden !important;           /* clip stray overflow at the container level */
+  background-color: #F8FAFC !important;  /* clean flat background, no image */
+  background-image: none !important;
 }
 
 /* Fallback por si el motor no soporta gap en flex (raro) */
@@ -65,6 +68,7 @@ body{
 
 .main-content{
   flex: 1 1 auto !important;
+  min-width: 0 !important;               /* KEY: allow flex item to shrink below content size */
   width: auto !important;
   display: flex;
   flex-direction: column;
@@ -76,18 +80,64 @@ body{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  flex-wrap: wrap;                       /* wrap actions to next line instead of overflowing */
+  gap: .5rem 1.5rem;
+  padding: .875rem 1.5rem;
   background: #fff;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
-.header-actions{ display:flex; gap:.75rem; align-items:center; }
+.header-actions{
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  flex-wrap: wrap;                       /* allow actions to wrap on narrow windows */
+  min-width: 0;
+}
 
 .content-body{
   flex: 1 1 auto;
+  min-height: 0;                         /* allow shrinking in column flex */
   overflow-y: auto;
+  overflow-x: hidden;                    /* prevent horizontal bleed */
   padding: 1.5rem;
+}
+
+/* ─── Module tabs (page-level internal navigation) ──────────── */
+.module-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 1.5rem;
+  flex-shrink: 0;
+  overflow-x: auto;
+  gap: 0;
+}
+.module-tabs::-webkit-scrollbar { display: none; }
+
+.mod-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: var(--body-font);
+}
+.mod-tab:hover {
+  color: var(--primary-color);
+  border-bottom-color: rgba(37,99,235,.3);
+}
+.mod-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+  font-weight: 600;
 }
 
 /* Scrollbar contenido */
@@ -95,13 +145,7 @@ body{
 .content-body::-webkit-scrollbar-thumb{ background: var(--secondary-color); border-radius: 6px; }
 .content-body::-webkit-scrollbar-track{ background: transparent; }
 
-/* Separador visual sutil para el sidebar (sin comer espacio útil) */
-.sidebar{
-  border-right: 1px solid rgba(0,0,0,.06) !important;
-  box-shadow:
-    1px 0 0 rgba(255,255,255,.03),
-    8px 0 20px rgba(0,0,0,.06) !important;
-}
+/* Sidebar: estilo delegado completamente a navbar.css */
 
 /* --- 4) ELEMENTOS COMUNES (UI) --- */
 .btn{
@@ -137,7 +181,7 @@ body{
 .form-campo select:focus,
 .form-campo textarea:focus{
   outline:none; border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(44,62,80,.1);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
 }
 .form-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
 .form-grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem; }
@@ -153,8 +197,8 @@ body{
 }
 
 /* Tarjetas / tablas */
-.card { background:#fff; border-radius:8px; padding:1.5rem; margin-bottom:20px; box-shadow: 0 4px 6px rgba(0,0,0,.08); }
-.table-container{ background:#fff; border:1px solid var(--border-color); border-radius:8px; overflow:hidden; }
+.card { background:#fff; border-radius:8px; padding:1.5rem; margin-bottom:20px; box-shadow: 0 4px 6px rgba(0,0,0,.08); max-width:100%; }
+.table-container{ background:#fff; border:1px solid var(--border-color); border-radius:8px; overflow-x:auto; overflow-y:hidden; max-width:100%; }
 table{ width:100%; border-collapse:collapse; }
 th, td{ padding:1rem; text-align:left; border-bottom:1px solid var(--border-color); }
 th{ background:#f8f9fa; font-weight:600; font-size:.8em; text-transform:uppercase; color: var(--text-muted); }

@@ -1325,5 +1325,41 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
         toast.show("Error al guardar/validar sincronización.", "error");
       }
     });
+
+    // ── Importación masiva de productos (CSV) ──────────────────────────────
+    const btnExportarCSV = document.getElementById("btn-exportar-csv");
+    const btnImportarCSV = document.getElementById("btn-importar-csv");
+
+    on(btnExportarCSV, "click", async () => {
+      btnExportarCSV.disabled = true;
+      btnExportarCSV.textContent = "Exportando...";
+      try {
+        const res = await ipcInvoke("export-productos-csv");
+        toast.show(res.success ? res.message : (res.message || "Error al exportar."), res.success ? "success" : "error");
+      } catch (e) {
+        toast.show(e.message || "Error.", "error");
+      } finally {
+        btnExportarCSV.disabled = false;
+        btnExportarCSV.textContent = "Descargar Plantilla (CSV)";
+      }
+    });
+
+    on(btnImportarCSV, "click", async () => {
+      btnImportarCSV.disabled = true;
+      btnImportarCSV.textContent = "Importando...";
+      try {
+        const res = await ipcInvoke("import-productos-csv");
+        if (res.success) {
+          toast.show(res.message, "success");
+        } else if (res.message !== "Importación cancelada.") {
+          toast.show(res.message || "Error al importar.", "error");
+        }
+      } catch (e) {
+        toast.show(e.message || "Error.", "error");
+      } finally {
+        btnImportarCSV.disabled = false;
+        btnImportarCSV.textContent = "Importar Productos (CSV)";
+      }
+    });
   });
 })();

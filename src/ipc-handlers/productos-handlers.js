@@ -47,7 +47,23 @@ function registerProductosHandlers(models, sequelize) {
     }
   });
 
-  // Obtener un producto por ID
+    // Productos de acceso rápido (para la barra de la caja)
+  ipcMain.handle('get-quick-access-products', async () => {
+    try {
+      const productos = await Producto.findAll({
+        where: { acceso_rapido: true, activo: true },
+        attributes: ['id', 'nombre', 'precioVenta', 'stock', 'unidad', 'codigo_barras', 'codigo'],
+        order: [['nombre', 'ASC']],
+        raw: true,
+      });
+      return productos;
+    } catch (error) {
+      console.error('Error en get-quick-access-products:', error);
+      return [];
+    }
+  });
+
+// Obtener un producto por ID
   ipcMain.handle("get-producto-by-id", async (_event, productoId) => {
     try {
       const producto = await Producto.findByPk(productoId, {
@@ -101,7 +117,7 @@ function registerProductosHandlers(models, sequelize) {
       const ALLOWED_FIELDS = [
         'id', 'nombre', 'codigo', 'codigo_barras', 'plu',
         'stock', 'precioCompra', 'precioVenta', 'precio_oferta',
-        'unidad', 'pesable', 'activo',
+        'unidad', 'pesable', 'activo', 'acceso_rapido',
         'imagen_base64', 'imagen_url', 'fecha_fin_oferta', 'fecha_vencimiento',
         'DepartamentoId', 'FamiliaId',
       ];

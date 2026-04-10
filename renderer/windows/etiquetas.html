@@ -10,33 +10,235 @@
 </head>
 <body>
   <div class="container">
-<aside id="sidebar-placeholder" class="sidebar"></aside>
-
+    <aside id="sidebar-placeholder" class="sidebar"></aside>
 
     <main class="main-content">
       <header class="main-header">
         <h2>Precios y Etiquetas</h2>
+        <span id="etq-contador" class="etq-contador-header"></span>
       </header>
+      <nav class="module-tabs">
+        <a href="productos.html" class="mod-tab">Productos</a>
+        <a href="etiquetas.html" class="mod-tab active">Etiquetas</a>
+        <a href="insumos.html" class="mod-tab">Insumos</a>
+        <a href="lotes.html" class="mod-tab">Lotes</a>
+      </nav>
 
-      <section class="content-body landing-container">
-        <p class="landing-intro">
-          Seleccioná una opción para comenzar. Esta herramienta te ayuda a mantener la consistencia de precios entre el sistema y el local.
-        </p>
+      <section class="content-body etq-tool">
 
-        <div class="landing-options">
-          <a href="etiquetas-seleccion.html?modo=etiquetas" class="option-card">
-            <h3>🏷️ Etiquetas de Góndola</h3>
-            <p>Generá e imprimí etiquetas personalizadas para tus productos.</p>
-          </a>
-          <a href="etiquetas-seleccion.html?modo=lista" class="option-card">
-            <h3>📋 Lista de Precios</h3>
-            <p>Crea una lista de precios para control interno o para tus clientes.</p>
-          </a>
+        <!-- ─── Panel izquierdo: selección de productos ─── -->
+        <div class="etq-panel-left">
+
+          <!-- Búsqueda -->
+          <div class="etq-search-wrap">
+            <svg class="etq-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="search-input" placeholder="Buscar por nombre o código..." />
+          </div>
+
+          <!-- Filtros cascada -->
+          <div class="etq-filtros">
+            <select id="depto-filter">
+              <option value="all">Todas las categorías</option>
+            </select>
+            <select id="familia-filter" disabled>
+              <option value="all">Todas las familias</option>
+            </select>
+          </div>
+
+          <!-- Lista de productos con scroll -->
+          <div id="product-list" class="etq-lista"></div>
+
+          <!-- Acciones de selección (fijadas al fondo) -->
+          <div class="etq-acciones">
+            <button id="select-all" class="btn btn-sm etq-btn-outline">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Seleccionar visibles
+            </button>
+            <button id="deselect-all" class="btn btn-sm etq-btn-outline">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" width="14" height="14">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Limpiar selección
+            </button>
+          </div>
         </div>
+
+        <!-- ─── Panel derecho: preview + configuración ─── -->
+        <div class="etq-panel-right">
+          <div class="etq-config-scroll">
+
+            <!-- Preview / Estado vacío -->
+            <div class="etq-preview-zone" id="etq-preview-zone">
+              <div class="etq-empty-state" id="etq-empty-state">
+                <div class="etq-empty-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5" width="32" height="32">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                  </svg>
+                </div>
+                <p class="etq-empty-title">Sin producto seleccionado</p>
+                <p class="etq-empty-sub">Selecciona un producto para ver la vista previa</p>
+              </div>
+              <div class="etq-selected-state" id="etq-selected-state" style="display:none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5" width="28" height="28">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                  <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <p class="etq-selected-count" id="etq-selected-count">0 productos listos</p>
+                <p class="etq-empty-sub">Ajusta la configuración y presiona imprimir</p>
+              </div>
+            </div>
+
+            <!-- Tarjeta de configuración -->
+            <div class="etq-config-card">
+              <h3 class="etq-config-title">Configuración</h3>
+
+              <!-- Tamaño de etiqueta -->
+              <div class="etq-config-group">
+                <label class="etq-config-label">Tamaño de etiqueta</label>
+                <div class="etq-chips" id="etq-size-chips">
+                  <button class="etq-chip active" data-w="6" data-h="4" type="button">6×4 cm</button>
+                  <button class="etq-chip" data-w="10" data-h="5" type="button">10×5 cm</button>
+                  <button class="etq-chip" data-w="8" data-h="6" type="button">8×6 cm</button>
+                  <button class="etq-chip" data-w="12" data-h="8" type="button">12×8 cm</button>
+                </div>
+                <!-- Inputs ocultos para compatibilidad JS -->
+                <input type="number" id="ancho" value="6" step="0.1" hidden />
+                <input type="number" id="alto" value="4" step="0.1" hidden />
+              </div>
+
+              <div class="etq-divider"></div>
+
+              <!-- Toggles -->
+              <div class="etq-toggle-row">
+                <span class="etq-toggle-label">Mostrar nombre del producto</span>
+                <label class="etq-switch">
+                  <input type="checkbox" id="showName" checked />
+                  <span class="etq-slider"></span>
+                </label>
+              </div>
+              <div class="etq-toggle-row">
+                <span class="etq-toggle-label">Mostrar código de barras</span>
+                <label class="etq-switch">
+                  <input type="checkbox" id="showBarcode" checked />
+                  <span class="etq-slider"></span>
+                </label>
+              </div>
+
+              <div class="etq-divider"></div>
+
+              <!-- Color de fondo -->
+              <div class="etq-config-group">
+                <label class="etq-config-label">Color de fondo</label>
+                <div class="etq-color-btns" id="etq-color-btns">
+                  <button class="etq-color-btn active" data-color="#ffffff" type="button">
+                    <span class="etq-color-swatch etq-swatch-white"></span>
+                    Blanco
+                  </button>
+                  <button class="etq-color-btn" data-color="#000000" type="button">
+                    <span class="etq-color-swatch etq-swatch-black"></span>
+                    Negro
+                  </button>
+                </div>
+                <!-- Inputs ocultos para compatibilidad JS -->
+                <input type="color" id="colorFondo" value="#ffffff" hidden />
+                <input type="color" id="colorBorde" value="#000000" hidden />
+              </div>
+
+              <div class="etq-divider"></div>
+
+              <!-- Opciones avanzadas (colapsable) -->
+              <div class="etq-advanced-section">
+                <button class="etq-advanced-toggle" id="etq-adv-toggle" type="button">
+                  <span>Opciones avanzadas</span>
+                  <svg class="etq-adv-chevron" xmlns="http://www.w3.org/2000/svg"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       width="16" height="16">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                <div class="etq-advanced-body" id="etq-adv-body">
+                  <div class="etq-adv-inner">
+                    <!-- Logo -->
+                    <div class="form-campo">
+                      <label>Logo (opcional)</label>
+                      <button class="btn etq-upload-btn" type="button" id="etq-logo-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" width="15" height="15">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Subir logo
+                      </button>
+                      <input type="file" id="logoFile" accept="image/png,image/jpeg" style="display:none" />
+                      <span class="etq-file-hint" id="etq-file-hint">Formatos: PNG, JPG. Máximo 1MB.</span>
+                    </div>
+                    <div class="form-campo" id="etq-logo-size-wrap" style="display:none">
+                      <label for="logoSize">Tamaño del logo: <span id="logoSizeValue">30</span>%</label>
+                      <input type="range" id="logoSize" min="0" max="100" value="30" step="5" />
+                    </div>
+                    <div class="etq-divider"></div>
+                    <!-- Lista de precios -->
+                    <div class="form-campo">
+                      <label for="listaTitulo">Título de lista de precios</label>
+                      <input type="text" id="listaTitulo" value="Lista de Precios" />
+                    </div>
+                    <div class="form-campo">
+                      <label style="margin-bottom:6px;">Columnas adicionales</label>
+                      <div class="etq-checkbox-group">
+                        <label><input type="checkbox" name="columnas" value="codigo_barras" /> Código de Barras</label>
+                        <label><input type="checkbox" name="columnas" value="stock" /> Stock</label>
+                        <label><input type="checkbox" name="columnas" value="precioCompra" /> Precio de Compra</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de impresión -->
+          <div class="etq-print-actions">
+            <button id="btn-imprimir-lista" class="btn etq-btn-outline-action" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="3" y1="15" x2="21" y2="15"/>
+                <line x1="9" y1="3" x2="9" y2="21"/>
+                <line x1="15" y1="3" x2="15" y2="21"/>
+              </svg>
+              Imprimir lista
+            </button>
+            <button id="btn-imprimir-etiquetas" class="btn btn-primario" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              Imprimir etiquetas
+            </button>
+          </div>
+        </div>
+
       </section>
     </main>
   </div>
 
+  <div id="toast-notification" class="toast"></div>
+
   <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/etiquetas.js"></script>
 </body>
 </html>

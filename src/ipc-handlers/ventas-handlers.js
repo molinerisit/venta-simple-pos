@@ -280,23 +280,28 @@ function registerVentasHandlers(models, sequelize) {
         }
       }
 
-      // Si no, buscar por barcode exacto o nombre like
-      const whereClause = {
-        activo: true,  // M-6: never return inactive products in search results
-        [Op.or]: [
-          { codigo_barras: String(texto) },
-          // 🟢 AGREGADO: Buscar también por el campo 'codigo'
-          { codigo: String(texto) }, 
-          { nombre: { [Op.like]: `%${String(texto)}%` } },
-        ],
-      };
-      const producto = await Producto.findOne({ where: whereClause });
-      
-      if(producto) {
-      } else {
-      }
-      
-      return producto ? producto.toJSON() : null;
+      // Paso 1: coincidencia exacta por codigo_barras o codigo (siempre tiene prioridad)
+      let producto = await Producto.findOne({
+        where: {
+          activo: true,
+          [Op.or]: [
+            { codigo_barras: String(texto) },
+            { codigo: String(texto) },
+          ],
+        },
+      });
+
+      // Paso 2: solo si no hubo match exacto, buscar por nombre
+      if (!producto) {
+        producto = await Producto.findOne({
+          where: {
+            activo: true,
+            nombre: { [Op.like]: `%${String(texto)}%` },
+          },
+        });
+      }
+
+      return producto ? producto.toJSON() : null;
     } catch (error) {
       console.error("Error en búsqueda inteligente:", error);
       return null;

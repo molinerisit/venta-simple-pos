@@ -28,10 +28,18 @@
          <aside id="sidebar-placeholder" class="sidebar"></aside>
 
         <main class="main-content">
-           
+            <header class="main-header">
+              <h1 class="page-title">Ventas</h1>
+            </header>
+            <nav class="module-tabs">
+              <a href="reportes.html" class="mod-tab">Historial</a>
+              <a href="mp_transactions.html" class="mod-tab active">Transacciones MP</a>
+            </nav>
+
+            <div class="content-body">
             <!-- Contenedor unificado tipo "card" -->
-            <div class="card"> 
-                
+            <div class="card">
+
                 <header>
                     <h1>Transacciones de Mercado Pago</h1>
                 </header>
@@ -85,10 +93,17 @@
                     </table>
                 </div>
             </div>
+            </div><!-- /.content-body -->
         </main>
     </div>
 
     <script src="../js/navbar-loader.js"></script>
     <script src="../js/mp_transactions.js"></script>
+    <script>
+      document.addEventListener('app-ready', () => {
+        const link = document.querySelector('nav a[href="reportes.html"]');
+        if (link) link.setAttribute('aria-current', 'page');
+      });
+    </script>
 </body>
 </html>

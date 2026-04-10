@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/navbar.css">
   <link rel="stylesheet" href="../css/proveedores.css">
+  <link rel="stylesheet" href="../css/productos.css">
 </head>
 <body>
   <div class="container">
@@ -20,10 +21,42 @@
       <header class="main-header">
         <h2>Gestión de Proveedores</h2>
         <div class="header-actions">
+          <input type="text" id="search-input" placeholder="Buscar proveedor..." />
           <button id="btn-nuevo-proveedor" class="btn btn-primario">+ Nuevo Proveedor</button>
         </div>
       </header>
       <section class="content-body">
+        <!-- Stat cards -->
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Total proveedores</p>
+              <p class="stat-card-value" id="stat-total-proveedores">—</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Suministran productos</p>
+              <p class="stat-card-value" id="stat-tipo-producto">—</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon stat-card-icon--amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div>
+              <p class="stat-card-label">Suministran insumos</p>
+              <p class="stat-card-value" id="stat-tipo-insumo">—</p>
+            </div>
+          </div>
+        </div>
+
         <div class="table-container">
           <table id="proveedores-table">
             <thead>
@@ -46,6 +79,12 @@
 
   <script defer src="../js/navbar-loader.js"></script>
   <script defer src="../js/proveedores.js"></script>
+  <script>
+    document.addEventListener('app-ready', () => {
+      const link = document.querySelector('nav a[href="admin.html"]');
+      if (link) link.setAttribute('aria-current', 'page');
+    });
+  </script>
 
   <div id="toast-notification" class="toast"></div>
 </body>

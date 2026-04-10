@@ -6,6 +6,7 @@ document.addEventListener("app-ready", () => {
   const tablaBody = document.querySelector("#ventas-table tbody");
   const totalVentasDisplay = document.getElementById("total-ventas");
   const cantidadVentasDisplay = document.getElementById("cantidad-ventas");
+  const ticketPromedioDisplay = document.getElementById("ticket-promedio");
 
   // --- UTILS ---
   const money = (n) =>
@@ -102,6 +103,11 @@ document.addEventListener("app-ready", () => {
       }
 
       window[`__venta_detalles_${index}`] = detalles;
+      window[`__venta_resumen_${index}`] = {
+        montoDescuento: v.montoDescuento || 0,
+        recargo: v.recargo || 0,
+        total: v.total || 0,
+      };
 
       const subtotal = detalles.reduce((acc, it) => {
         // Usa el subtotal si existe, si no, calcúlalo
@@ -148,27 +154,60 @@ document.addEventListener("app-ready", () => {
           filaActual.classList.remove("fila-activa");
         } else {
           const detalles = window[`__venta_detalles_${index}`] || [];
+          const resumen = window[`__venta_resumen_${index}`] || {};
 
-          // 🟢 CORRECCIÓN: Usar una Lista de Descripción (<dl>) en lugar de <Table>
+          const itemsSubtotal = detalles.reduce((acc, d) => {
+            return acc + (d.subtotal || (d.cantidad || 0) * (d.precioUnitario || 0));
+          }, 0);
+
+          const descuento = resumen.montoDescuento || 0;
+          const recargo = resumen.recargo || 0;
+          const total = resumen.total || 0;
+
           const detallesHtml =
             detalles.length > 0
-              ? `<dl class="detalles-lista">
-                   ${detalles
-                     .map((d) => {
-                       const subtotalItem =
-                         d.subtotal ||
-                         (d.cantidad || 0) * (d.precioUnitario || 0);
-                       return `
-                           <div>
-                             <dt>${d.cantidad || 0} x ${
-                         d.nombreProducto || "N/A"
-                       } <span>(${money(d.precioUnitario || 0)} c/u)</span></dt>
-                             <dd>${money(subtotalItem)}</dd>
-                           </div>
-                         `;
-                     })
-                     .join("")}
-                 </dl>`
+              ? `<div class="sale-detail-panel">
+                  <table class="sale-detail-table">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${detalles.map((d) => {
+                        const sub = d.subtotal || (d.cantidad || 0) * (d.precioUnitario || 0);
+                        return `<tr>
+                          <td>${d.nombreProducto || "N/A"}</td>
+                          <td>${d.cantidad || 0}</td>
+                          <td>${money(d.precioUnitario || 0)}</td>
+                          <td>${money(sub)}</td>
+                        </tr>`;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                  <div class="sale-detail-totals">
+                    <div class="sale-totals-row">
+                      <span class="sale-totals-label">Subtotal</span>
+                      <span class="sale-totals-value">${money(itemsSubtotal)}</span>
+                    </div>
+                    ${descuento > 0 ? `<div class="sale-totals-row sale-totals-discount">
+                      <span class="sale-totals-label">Descuento</span>
+                      <span class="sale-totals-value">-${money(descuento)}</span>
+                    </div>` : ""}
+                    ${recargo > 0 ? `<div class="sale-totals-row sale-totals-surcharge">
+                      <span class="sale-totals-label">Recargo</span>
+                      <span class="sale-totals-value">+${money(recargo)}</span>
+                    </div>` : ""}
+                    <hr class="sale-totals-divider" />
+                    <div class="sale-totals-total">
+                      <span class="sale-totals-total-label">Total</span>
+                      <span class="sale-totals-total-value">${money(total)}</span>
+                    </div>
+                  </div>
+                </div>`
               : "<span>Sin detalles</span>";
 
           const nuevaFila = document.createElement("tr");
@@ -199,6 +238,9 @@ document.addEventListener("app-ready", () => {
     const total = ventas.reduce((acc, v) => acc + (v.total || 0), 0);
     totalVentasDisplay.textContent = money(total);
     cantidadVentasDisplay.textContent = ventas.length;
+    if (ticketPromedioDisplay) {
+      ticketPromedioDisplay.textContent = ventas.length > 0 ? money(total / ventas.length) : money(0);
+    }
   };
 
   // --- EVENTS ---

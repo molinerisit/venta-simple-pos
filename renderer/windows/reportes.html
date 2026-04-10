@@ -10,75 +10,124 @@
   <link rel="stylesheet" href="../css/reportes.css" />
 </head>
 
-<body class="caja-body">
+<body>
   <div class="container">
     <aside id="sidebar-placeholder" class="sidebar"></aside>
 
     <main class="main-content">
+      <!-- Page header -->
+      <header class="main-header">
+        <div class="page-title-group">
+          <h1 class="page-title">Ventas</h1>
+          <p class="page-subtitle">Consultá, filtrá y analizá tus ventas</p>
+        </div>
+      </header>
+      <nav class="module-tabs">
+        <a href="reportes.html" class="mod-tab active">Historial</a>
+        <a href="mp_transactions.html" class="mod-tab">Transacciones MP</a>
+      </nav>
+
       <div class="content-body">
-        <header>
-          <h1>Reporte de Ventas</h1>
-        </header>
 
-        <section>
-          <div class="toolbar">
-            <div class="filtros">
-              <div class="form-campo">
-                <label for="filtro-fecha">Filtrar por fecha</label>
-                <select id="filtro-fecha">
-                  <option value="hoy">Hoy</option>
-                  <option value="ayer">Ayer</option>
-                  <option value="semana">Esta Semana</option>
-                  <option value="mes">Este Mes</option>
-                  <option value="todos" selected>Todas las Ventas</option>
-                </select>
-              </div>
-
-              <div class="form-campo">
-                <label for="busqueda-producto">Buscar por producto</label>
-                <input
-                  type="text"
-                  id="busqueda-producto"
-                  placeholder="Nombre del producto..."
-                />
-              </div>
+        <!-- ─── Filters card ─────────────────────────────── -->
+        <div class="filters-card">
+          <div class="filtros">
+            <div class="filter-field">
+              <label for="filtro-fecha">Período</label>
+              <select id="filtro-fecha">
+                <option value="hoy">Hoy</option>
+                <option value="ayer">Ayer</option>
+                <option value="semana">Esta Semana</option>
+                <option value="mes">Este Mes</option>
+                <option value="todos" selected>Todas las Ventas</option>
+              </select>
             </div>
 
-            <div class="acciones">
-              <button id="btn-aplicar-filtros" class="btn btn-primario">
-                Aplicar Filtros
-              </button>
+            <div class="filter-field">
+              <label for="busqueda-producto">Buscar por producto</label>
+              <input
+                type="text"
+                id="busqueda-producto"
+                placeholder="Nombre del producto..."
+                autocomplete="off"
+              />
             </div>
           </div>
 
-          <div class="summary-bar">
-            <div>Total Facturado: <strong id="total-ventas">$0.00</strong></div>
-            <div>Ventas Encontradas: <strong id="cantidad-ventas">0</strong></div>
+          <div class="acciones">
+            <button id="btn-aplicar-filtros" class="btn-apply">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Aplicar Filtros
+            </button>
+          </div>
+        </div>
+
+        <!-- ─── KPI cards ─────────────────────────────────── -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Total Facturado</span>
+              <strong class="kpi-value" id="total-ventas">$0,00</strong>
+            </div>
           </div>
 
+          <div class="kpi-card kpi-neutral">
+            <div class="kpi-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Ventas Encontradas</span>
+              <strong class="kpi-value" id="cantidad-ventas">0</strong>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-accent">
+            <div class="kpi-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Ticket Promedio</span>
+              <strong class="kpi-value" id="ticket-promedio">$0,00</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Table card ────────────────────────────────── -->
+        <div class="table-card">
           <div class="table-container">
             <table id="ventas-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Fecha y Hora</th>
-                  <th>Cliente (DNI)</th>
-                  <th>Método de Pago</th>
-                  <th>Subtotal</th>
-                  <th>Descuento</th>
-                  <th>Recargo</th>
-                  <th class="col-total">Total</th>
-                  <th>Monto Pagado</th>
-                  <th>Vuelto</th>
-                  <th class="col-detalles">Mercadería</th>
+                  <th class="col-id">#</th>
+                  <th class="col-fecha">Fecha y Hora</th>
+                  <th class="col-cliente">Cliente</th>
+                  <th class="col-pago">Método Pago</th>
+                  <th class="col-num">Subtotal</th>
+                  <th class="col-num">Descuento</th>
+                  <th class="col-num">Recargo</th>
+                  <th class="col-num col-total">Total</th>
+                  <th class="col-num">Pagado</th>
+                  <th class="col-num">Vuelto</th>
+                  <th class="col-detalles">Detalle</th>
                 </tr>
               </thead>
-              <tbody id="ventas-table-body">
-                </tbody>
+              <tbody id="ventas-table-body"></tbody>
             </table>
           </div>
-        </section>
-      </div>
+        </div>
+
+      </div><!-- /.content-body -->
     </main>
   </div>
 

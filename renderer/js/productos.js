@@ -13,10 +13,6 @@ const filterSort = document.getElementById("filter-sort");
   const MARGEN_ADVERTENCIA = 39; // %
   let toastTimer;
 
-  // Botones CSV
-  const btnExportarCSV = document.getElementById("btn-exportar-csv");
-  const btnImportarCSV = document.getElementById("btn-importar-csv");
-
   // Confirm modal (no bloqueante)
   const confirmOverlay = document.createElement("div");
   confirmOverlay.className = "confirm-overlay";
@@ -474,50 +470,6 @@ const aplicarOrdenamiento = (productos, criterio) => {
       btn.dataset.busy = "0";
       btn.disabled = false;
       await nextFrame();
-    }
-  });
-
-  // ==========================================================
-  // LOGICA DE BOTONES CSV
-  // ==========================================================
-  btnExportarCSV?.addEventListener("click", async () => {
-    btnExportarCSV.disabled = true;
-    btnExportarCSV.textContent = "Exportando...";
-    try {
-      const res = await window.electronAPI.invoke("export-productos-csv");
-      if (res.success) {
-        showNotification(res.message, "success");
-      } else {
-        showNotification(res.message, "error");
-      }
-    } catch (e) {
-      showNotification(e.message, "error");
-    } finally {
-      btnExportarCSV.disabled = false;
-      btnExportarCSV.textContent = "Descargar Plantilla (CSV)";
-    }
-  });
-
-  btnImportarCSV?.addEventListener("click", async () => {
-    // H-5b: dialog is now opened inside the main-process handler.
-    // Renderer only triggers the action — no file path crosses the IPC boundary.
-    try {
-      btnImportarCSV.disabled = true;
-      btnImportarCSV.textContent = "Importando...";
-
-      const res = await window.electronAPI.invoke("import-productos-csv");
-
-      if (res.success) {
-        showNotification(res.message, "success");
-        await cargarProductos();
-      } else if (res.message !== "Importación cancelada.") {
-        showNotification(res.message, "error");
-      }
-    } catch (e) {
-      showNotification(e.message, "error");
-    } finally {
-      btnImportarCSV.disabled = false;
-      btnImportarCSV.textContent = "Importar Productos (CSV)";
     }
   });
 

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Lotes</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' app: data:; connect-src 'self';">
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <style>
+    /* Estado badge de vencimiento */
+    .badge-venc {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-venc.ok      { background: #D1FAE5; color: #065F46; }
+    .badge-venc.proximo { background: #FEF3C7; color: #92400E; }
+    .badge-venc.vencido { background: #FEE2E2; color: #991B1B; }
+    .badge-venc.hoy     { background: #FFEDD5; color: #9A3412; }
+
+    /* Filtros */
+    .lotes-toolbar {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .lotes-toolbar .form-campo { margin-bottom: 0; }
+    .lotes-toolbar select,
+    .lotes-toolbar input[type="text"] {
+      padding: .45rem .7rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: .875rem;
+      font-family: inherit;
+    }
+
+    /* Modal campos */
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .modal-grid .full { grid-column: 1 / -1; }
+
+    /* Tabla: columna estado */
+    td.col-estado { text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <aside id="sidebar-placeholder" class="sidebar"></aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <h2>Productos</h2>
+        <div class="header-actions">
+          <button id="btn-nuevo-lote" class="btn btn-primario">+ Nuevo Lote</button>
+        </div>
+      </header>
+      <nav class="module-tabs">
+        <a href="productos.html" class="mod-tab">Productos</a>
+        <a href="etiquetas.html" class="mod-tab">Etiquetas</a>
+        <a href="insumos.html" class="mod-tab">Insumos</a>
+        <a href="lotes.html" class="mod-tab active">Lotes</a>
+      </nav>
+
+      <section class="content-body">
+        <div class="lotes-toolbar">
+          <div class="form-campo">
+            <label for="lotes-search">Buscar producto</label>
+            <input type="text" id="lotes-search" placeholder="Nombre o código..." />
+          </div>
+          <div class="form-campo">
+            <label for="lotes-filter">Mostrar</label>
+            <select id="lotes-filter">
+              <option value="todos">Todos</option>
+              <option value="vigentes">Vigentes</option>
+              <option value="proximos">Próximos a vencer (≤30 días)</option>
+              <option value="vencidos">Vencidos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="lotes-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>N° Lote</th>
+                <th>Cantidad</th>
+                <th>Ingreso</th>
+                <th>Vencimiento</th>
+                <th style="text-align:center;">Estado</th>
+                <th style="text-align:right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="lotes-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal nuevo/editar lote -->
+  <div id="lote-modal" class="modal">
+    <div class="modal-contenido" style="max-width:520px;">
+      <h2 id="lote-modal-titulo" class="modal-titulo">Nuevo Lote</h2>
+      <div class="modal-cuerpo">
+        <input type="hidden" id="lote-id" />
+        <div class="modal-grid">
+          <div class="form-campo full">
+            <label for="lote-producto">Producto *</label>
+            <select id="lote-producto" required></select>
+          </div>
+          <div class="form-campo">
+            <label for="lote-numero">N° de Lote</label>
+            <input type="text" id="lote-numero" placeholder="Opcional" />
+          </div>
+          <div class="form-campo">
+            <label for="lote-cantidad">Cantidad *</label>
+            <input type="number" id="lote-cantidad" min="0" step="0.01" placeholder="0" />
+          </div>
+          <div class="form-campo">
+            <label for="lote-ingreso">Fecha de Ingreso *</label>
+            <input type="date" id="lote-ingreso" />
+          </div>
+          <div class="form-campo">
+            <label for="lote-vencimiento">Fecha de Vencimiento *</label>
+            <input type="date" id="lote-vencimiento" />
+          </div>
+          <div class="form-campo full">
+            <label for="lote-notas">Notas</label>
+            <input type="text" id="lote-notas" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" id="lote-modal-cancelar" class="btn btn-secundario">Cancelar</button>
+        <button type="button" id="lote-modal-guardar" class="btn btn-primario">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-notification" class="toast"></div>
+
+  <script defer src="../js/navbar-loader.js"></script>
+  <script defer src="../js/lotes.js"></script>
+  <script>
+    document.addEventListener('app-ready', () => {
+      const link = document.querySelector('nav a[href="productos.html"]');
+      if (link) link.setAttribute('aria-current', 'page');
+    });
+  </script>
+</body>
+</html>

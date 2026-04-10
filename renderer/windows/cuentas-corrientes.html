@@ -17,6 +17,10 @@
       <header class="main-header">
         <h1>Gestión de Cuentas Corrientes</h1>
       </header>
+      <nav class="module-tabs">
+        <a href="clientes.html" class="mod-tab">Clientes</a>
+        <a href="cuentas-corrientes.html" class="mod-tab active">Cuentas Corrientes</a>
+      </nav>
 
       <section class="content-body">
         <!-- Pestañas -->
@@ -88,5 +92,11 @@
 
   <script defer src="../js/navbar-loader.js"></script>
   <script defer src="../js/cuentas-corrientes.js"></script>
+  <script>
+    document.addEventListener('app-ready', () => {
+      const link = document.querySelector('nav a[href="clientes.html"]');
+      if (link) link.setAttribute('aria-current', 'page');
+    });
+  </script>
 </body>
 </html>

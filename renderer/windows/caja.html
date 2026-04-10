@@ -6,69 +6,131 @@
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/navbar.css" />
   <link rel="stylesheet" href="../css/caja.css" />
-  <!-- Mantengo CSP laxa por carga de app:// e inline requerido para plantillas -->
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' app: data:; connect-src 'self';">
 </head>
 <body>
   <div class="container">
-    <!-- sidebar se inyecta async por navbar-loader.js -->
+    <!-- Sidebar inyectado async por navbar-loader.js -->
     <aside id="sidebar-placeholder" class="sidebar"></aside>
 
-    <!-- <button id="toggle-sidebar-btn" class="toggle-sidebar">
-      <span id="toggle-icon">◀</span>
-    </button> -->
-
     <main class="caja-main">
-      <!-- Panel izquierdo -->
-      <div class="venta-panel">
-        <!-- Superposición de bloqueo -->
+
+      <!-- ═══════════════════════════════════════════════
+           PANEL CENTRAL: búsqueda + carrito + acceso rápido
+           ═══════════════════════════════════════════════ -->
+      <section class="venta-panel">
+
+        <!-- Superposición de bloqueo (debe quedar aquí, position:absolute relativo a .venta-panel) -->
         <div id="bloqueo-panel-superposicion" class="bloqueo-superposicion oculto">
           <div class="bloqueo-mensaje">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
             <h2>CAJA CERRADA</h2>
             <p>El panel de ventas está bloqueado.</p>
           </div>
         </div>
 
-        <div class="input-area form-campo">
-          <label for="main-input">Buscar (Nombre/Código) o Ingresar Monto (Enter)</label>
-          <input type="text" id="main-input" placeholder="El sistema detecta el tipo de entrada..." />
+        <!-- Cabecera: buscador -->
+        <div class="pos-header">
+          <div class="pos-search-wrapper input-area form-campo">
+            <svg class="pos-search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="main-input"
+              placeholder="Escanea o busca un producto..."
+              autocomplete="off" spellcheck="false" />
+          </div>
         </div>
 
+        <!-- Tabla de productos en el carrito -->
         <div class="productos-seleccionados">
           <table>
             <thead>
               <tr>
-                <th>Img.</th>
-                <th>Producto</th>
-                <th>Cant.</th>
-                <th>P. Unit.</th>
-                <th>Subtotal</th>
-                <th></th>
+                <th class="col-img"></th>
+                <th class="col-producto">Producto</th>
+                <th class="col-cant">Cant.</th>
+                <th class="col-precio">P. Unit.</th>
+                <th class="col-sub">Subtotal</th>
+                <th class="col-del"></th>
               </tr>
             </thead>
             <tbody id="tabla-productos"></tbody>
           </table>
+          <!-- Estado vacío: se muestra cuando no hay filas -->
+          <div class="cart-empty" id="cart-empty">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor"
+              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <p>No hay productos en el carrito</p>
+          </div>
         </div>
 
+        <!-- Acceso rápido (oculto si no hay productos configurados) -->
+        <div class="quick-access-section oculto" id="quick-access-section">
+          <span class="quick-access-label">Acceso rápido</span>
+          <div id="quick-access-products" class="quick-access-list"></div>
+        </div>
+
+        <!-- Total -->
         <div class="total-area">
           <div class="items-counter">Ítems: <span id="items-count-display">0</span></div>
-          <h2>TOTAL</h2>
-          <p id="total-display">$ 0.00</p>
+          <div class="total-block">
+            <span class="total-label">TOTAL</span>
+            <span id="total-display" class="total-value">$ 0,00</span>
+          </div>
         </div>
-      </div>
 
-      <!-- Panel derecho -->
-      <div class="acciones-panel">
+      </section>
+
+      <!-- ═══════════════════════════════════════════════
+           PANEL DERECHO: cliente + pago + acciones
+           ═══════════════════════════════════════════════ -->
+      <aside class="acciones-panel">
+
+        <!-- Arqueo de caja -->
         <div class="arqueo-actions">
-          <button id="abrir-caja-btn" class="btn btn-success btn-grande oculto">Abrir Caja</button>
-          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto">Cerrar Caja</button>
+          <button id="abrir-caja-btn" class="btn btn-success btn-grande oculto">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+            </svg>
+            Abrir Caja
+          </button>
+          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Cerrar Caja
+          </button>
+          <button id="movimiento-caja-btn" class="btn btn-secundario btn-grande oculto">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Movimiento
+          </button>
         </div>
 
-        <div class="cliente-area">
-          <label for="dni-cliente">Cliente (DNI):</label>
+        <!-- Cliente -->
+        <div class="pos-card cliente-area">
+          <div class="pos-card-title">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Cliente
+          </div>
           <div class="input-group">
-            <input type="text" id="dni-cliente" placeholder="Opcional" />
+            <input type="text" id="dni-cliente" placeholder="DNI (opcional)" />
             <button id="btn-buscar-cliente" class="btn btn-secundario">Buscar</button>
           </div>
           <p id="cliente-info"></p>
@@ -78,43 +140,108 @@
           </div>
         </div>
 
-        <div class="resumen-venta">
-          <p>Subtotal: <span id="subtotal-display">$0.00</span></p>
+        <!-- Resumen de descuentos/recargos -->
+        <div class="pos-card resumen-venta">
+          <p>Subtotal: <span id="subtotal-display">$0,00</span></p>
           <p class="descuento-fila oculto">
-            Descuento Cliente: <span id="descuento-display" class="valor-negativo">-$0.00</span>
+            Desc. Cliente: <span id="descuento-display" class="valor-negativo">-$0,00</span>
           </p>
           <p class="descuento-efectivo-fila oculto">
-            Desc. Efectivo: <span id="descuento-efectivo-display" class="valor-negativo">-$0.00</span>
+            Desc. Efectivo: <span id="descuento-efectivo-display" class="valor-negativo">-$0,00</span>
           </p>
           <p class="recargo-fila oculto">
-            Recargo Crédito: <span id="recargo-display" class="valor-positivo">+$0.00</span>
+            Recargo Crédito: <span id="recargo-display" class="valor-positivo">+$0,00</span>
           </p>
         </div>
 
-        <h3>Método de Pago</h3>
-        <div class="payment-methods">
-          <button class="btn" data-metodo="Efectivo">Efectivo</button>
-          <button class="btn" data-metodo="Débito">Débito</button>
-          <button class="btn" data-metodo="Crédito">Crédito</button>
-          <button class="btn" data-metodo="QR">QR</button>
+        <!-- Método de pago -->
+        <div class="pos-card payment-card">
+          <div class="pos-card-title">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            Método de Pago
+          </div>
+          <div class="payment-methods">
+            <button class="btn payment-btn" data-metodo="Efectivo">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              <span>Efectivo</span>
+            </button>
+            <button class="btn payment-btn" data-metodo="Débito">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+                <line x1="5" y1="15" x2="9" y2="15"></line>
+              </svg>
+              <span>Débito</span>
+            </button>
+            <button class="btn payment-btn" data-metodo="Crédito">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+                <polyline points="1 10 23 10"></polyline>
+                <line x1="5" y1="15" x2="11" y2="15"></line>
+                <line x1="15" y1="15" x2="19" y2="15"></line>
+              </svg>
+              <span>Crédito</span>
+            </button>
+            <button class="btn payment-btn" data-metodo="QR">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+                <rect x="14" y="14" width="3" height="3"></rect>
+              </svg>
+              <span>QR</span>
+            </button>
+          </div>
+
+          <!-- Área de efectivo (se muestra solo con método Efectivo) -->
+          <div class="pago-efectivo-area oculto form-campo" id="efectivo-area">
+            <label for="monto-pagado">Paga con:</label>
+            <input type="number" id="monto-pagado" placeholder="0.00" />
+            <p class="vuelto-line">Vuelto: <span id="vuelto-display">$ 0,00</span></p>
+          </div>
         </div>
 
-        <div class="pago-efectivo-area oculto form-campo" id="efectivo-area">
-          <label for="monto-pagado">Paga con:</label>
-          <input type="number" id="monto-pagado" placeholder="0.00" />
-          <p>Vuelto: <span id="vuelto-display">$ 0.00</span></p>
+        <!-- Botones de acción -->
+        <div class="pos-actions actions">
+          <button id="registrar-venta-btn" class="btn btn-primario btn-grande">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Registrar Venta
+          </button>
+          <button id="imprimir-ticket-btn" class="btn btn-info" disabled>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Imprimir 
+          </button>
+          <button id="cancelar-venta-btn" class="btn btn-danger">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            Cancelar 
+          </button>
         </div>
 
-        <div class="actions">
-          <button id="registrar-venta-btn" class="btn btn-primario btn-grande">Registrar Venta</button>
-          <button id="imprimir-ticket-btn" class="btn btn-info" disabled>Imprimir Ticket</button>
-          <button id="cancelar-venta-btn" class="btn btn-danger">Cancelar Venta</button>
-        </div>
-      </div>
+      </aside>
     </main>
   </div>
 
-  <!-- Modales generales -->
+  <!-- ═══════════════════════════════════════════════
+       MODALES (IDs y estructura intactos)
+       ═══════════════════════════════════════════════ -->
+
+  <!-- Modal de error genérico -->
   <div id="modal-container" class="modal-container oculto">
     <div class="modal-content">
       <p id="modal-message">Mensaje de error</p>
@@ -126,43 +253,75 @@
   <div id="toast-notification" class="toast"></div>
 
   <!-- Apertura de caja -->
-  <div id="apertura-caja-modal" class="modal-container oculto">
-    <div class="modal-content">
-      <button type="button" class="btn-close-modal" aria-label="Cerrar">&times;</button>
-      <h2>Apertura de Caja</h2>
-      <p>Ingresa el monto inicial de efectivo.</p>
+  <div id="apertura-caja-modal" class="co-overlay oculto">
+    <div class="co-card">
       <form id="apertura-caja-form">
-        <div class="form-campo">
-          <label for="monto-inicial">Monto Inicial en Caja ($)</label>
-          <input type="number" id="monto-inicial" step="0.01" required placeholder="0.00" />
+        <!-- Icon -->
+        <div class="co-icon-wrap">
+          <div class="co-icon" id="co-icon-state">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+            </svg>
+          </div>
         </div>
-        <div class="form-actions">
-          <button type="button" id="cancelar-apertura-btn" class="btn btn-secundario">Cancelar</button>
-          <button type="submit" class="btn btn-primario">Confirmar Apertura</button>
+        <!-- Title -->
+        <div class="co-header">
+          <h2 class="co-title">Abrir Caja</h2>
+          <p class="co-subtitle">Ingresá el monto inicial para comenzar a vender</p>
         </div>
+        <!-- Input -->
+        <div class="co-field">
+          <label class="co-label" for="monto-inicial">Fondo de cambio</label>
+          <div class="co-input-wrap">
+            <span class="co-currency">$</span>
+            <input type="number" id="monto-inicial" step="0.01" required placeholder="0" class="co-input" inputmode="decimal" />
+          </div>
+        </div>
+        <!-- Actions -->
+        <button type="submit" class="co-submit">Abrir Caja</button>
+        <p class="co-hint">Presioná Enter para confirmar</p>
+        <!-- Hidden for JS compatibility -->
+        <button type="button" id="cancelar-apertura-btn" style="display:none;"></button>
       </form>
     </div>
   </div>
 
   <!-- Cierre de caja -->
   <div id="cierre-caja-modal" class="modal-container oculto">
-    <div class="modal-content">
+    <div class="modal-content modal-lg">
       <button type="button" class="btn-close-modal" aria-label="Cerrar">&times;</button>
-      <h2>Cierre de Caja</h2>
-      <p>Cuenta el efectivo y registra el monto para detectar diferencias.</p>
+      <div class="modal-icon-header">
+        <div class="modal-icon modal-icon--danger">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Cierre de Caja</h2>
+          <p class="modal-subtitle">Revisá el resumen y contá el efectivo</p>
+        </div>
+      </div>
+
+      <!-- Resumen de cierre (populated by JS) -->
       <div id="resumen-cierre-caja"></div>
+
       <form id="cierre-caja-form">
-        <div class="form-campo">
-          <label for="monto-final-real">Monto Real en Efectivo ($)</label>
-          <input type="number" id="monto-final-real" step="0.01" required placeholder="0.00" />
+        <div class="modal-field">
+          <label class="modal-label" for="monto-final-real">Efectivo contado en caja</label>
+          <div class="modal-input-prefix">
+            <span class="prefix-symbol">$</span>
+            <input type="number" id="monto-final-real" step="0.01" required placeholder="0,00" class="modal-input" />
+          </div>
         </div>
-        <div class="form-campo">
-          <label for="observaciones-cierre">Observaciones (Opcional)</label>
-          <textarea id="observaciones-cierre" rows="3" placeholder="Ej: Faltante justificado por..."></textarea>
+        <div class="modal-field">
+          <label class="modal-label" for="observaciones-cierre">Observaciones <span style="font-weight:400;color:#94a3b8;">(opcional)</span></label>
+          <textarea id="observaciones-cierre" class="modal-input modal-textarea" rows="2" placeholder="Ej: Faltante justificado por..."></textarea>
         </div>
-        <div class="form-actions">
+        <div class="modal-actions">
           <button type="button" id="cancelar-cierre-btn" class="btn btn-secundario">Cancelar</button>
-          <button type="submit" class="btn btn-primario">Confirmar y Cerrar Caja</button>
+          <button type="submit" class="btn btn-danger">Confirmar Cierre</button>
         </div>
       </form>
     </div>
@@ -170,31 +329,119 @@
 
   <!-- Modal de venta exitosa -->
   <div id="venta-exitosa-modal" class="modal">
-    <div class="modal-content" style="max-width: 450px;">
-      <div class="modal-header-success">
-        <svg class="status-icon" viewBox="0 0 24 24">
-          <path fill="currentColor"
-            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.09,8.59L17.5,10L11,16.5Z" />
-        </svg>
-        <h2>Venta Registrada Exitosamente</h2>
+    <div class="modal-content venta-ok-modal">
+      <!-- Success header -->
+      <div class="venta-ok-header">
+        <div class="venta-ok-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h2 class="venta-ok-title">Venta Registrada</h2>
       </div>
 
-      <div id="resumen-venta-exitosa" class="resumen-venta">
-        <p><strong>Total Venta:</strong> <span id="ex-total"></span></p>
-        <p><strong>Método de Pago:</strong> <span id="ex-metodo-pago"></span></p>
-      </div>
-
-      <div id="resumen-pago-mp" class="resumen-mp oculto">
-        <h4>Detalles del Pago (Mercado Pago)</h4>
-        <p><strong>ID de Pago:</strong> <span id="ex-mp-id"></span></p>
-        <div class="form-actions" style="justify-content: center; margin-top: 15px;">
-          <button id="ex-btn-imprimir-mp" class="btn btn-info">Imprimir Comprobante MP</button>
+      <!-- Info row: método + total -->
+      <div class="venta-ok-info">
+        <div class="venta-ok-row">
+          <span class="venta-ok-label">Método de pago</span>
+          <span id="ex-metodo-pago" class="venta-ok-badge"></span>
         </div>
       </div>
 
-      <div class="form-actions" style="margin-top: 25px;">
-        <button id="ex-btn-cerrar" class="btn btn-primario btn-grande">Nueva Venta</button>
+      <!-- Total highlight box -->
+      <div class="venta-ok-total-box">
+        <span class="venta-ok-total-label">Total cobrado</span>
+        <span id="ex-total" class="venta-ok-total-value"></span>
       </div>
+
+      <!-- MP details (conditional) -->
+      <div id="resumen-pago-mp" class="venta-ok-mp oculto">
+        <div class="venta-ok-section-label">Mercado Pago</div>
+        <div class="venta-ok-row">
+          <span class="venta-ok-label">ID de pago</span>
+          <span id="ex-mp-id" class="venta-ok-value"></span>
+        </div>
+        <div style="text-align:center;margin-top:10px;">
+          <button id="ex-btn-imprimir-mp" class="btn btn-info btn-sm">Imprimir Comprobante MP</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <button id="ex-btn-cerrar" class="btn btn-primario venta-ok-btn">Nueva Venta</button>
+    </div>
+  </div>
+
+  <!-- Modal: Movimiento administrativo de caja -->
+  <div id="movimiento-caja-modal" class="modal-container oculto">
+    <div class="modal-content modal-md">
+      <button type="button" class="btn-close-modal" id="cerrar-movimiento-modal-btn" aria-label="Cerrar">&times;</button>
+      <div class="modal-icon-header">
+        <div class="modal-icon modal-icon--neutral">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Movimiento de Caja</h2>
+          <p class="modal-subtitle">Ingresos o egresos que no son ventas</p>
+        </div>
+      </div>
+
+      <form id="movimiento-caja-form" autocomplete="off">
+
+        <!-- Tipo: 2 large visual cards -->
+        <div class="mov-tipo-selector">
+          <label class="mov-tipo-card ingreso-option">
+            <input type="radio" name="movimiento-tipo" value="INGRESO" checked />
+            <div class="mov-tipo-icon mov-icon-ingreso">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            </div>
+            <span class="mov-tipo-label">Ingreso</span>
+            <span class="mov-tipo-desc">Efectivo que entra</span>
+          </label>
+          <label class="mov-tipo-card egreso-option">
+            <input type="radio" name="movimiento-tipo" value="EGRESO" />
+            <div class="mov-tipo-icon mov-icon-egreso">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <span class="mov-tipo-label">Egreso</span>
+            <span class="mov-tipo-desc">Efectivo que sale</span>
+          </label>
+        </div>
+
+        <div class="modal-fields-group">
+          <!-- Monto -->
+          <div class="modal-field">
+            <label class="modal-label" for="movimiento-monto">Monto</label>
+            <div class="modal-input-prefix">
+              <span class="prefix-symbol">$</span>
+              <input type="number" id="movimiento-monto" min="0.01" step="0.01" required placeholder="0,00" class="modal-input" />
+            </div>
+          </div>
+
+          <!-- Concepto -->
+          <div class="modal-field">
+            <label class="modal-label" for="movimiento-concepto">Concepto</label>
+            <input type="text" id="movimiento-concepto" required class="modal-input"
+                   placeholder="Ej: Pago a proveedor García" />
+          </div>
+
+          <!-- Comprobante (solo EGRESO) -->
+          <div class="modal-field" id="movimiento-comprobante-wrap" style="display:none;">
+            <label class="modal-label" for="movimiento-comprobante">
+              Nº Comprobante / Factura
+              <span class="modal-required">*</span>
+            </label>
+            <input type="text" id="movimiento-comprobante" class="modal-input"
+                   placeholder="Ej: FAC-00042" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelar-movimiento-btn" class="btn btn-secundario">Cancelar</button>
+          <button type="submit" id="submit-movimiento-btn" class="btn btn-primario">Registrar</button>
+        </div>
+      </form>
     </div>
   </div>
 

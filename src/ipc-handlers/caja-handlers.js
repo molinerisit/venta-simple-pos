@@ -4,16 +4,13 @@ const { Op } = require("sequelize");
 const { getActiveUserId } = require("./session-handlers");
 
 function registerCajaHandlers(models, sequelize) {
-  const { ArqueoCaja, Venta, Usuario } = models;
+  const { ArqueoCaja, MovimientoCaja, Venta, Usuario } = models;
 
   // -----------------------------
   // Helpers
   // -----------------------------
   const now = () => new Date();
 
-  // Dada un arqueo, calcula ventana [inicio, fin) para sumar ventas:
-  // fin = próxima apertura si existe, sino fechaCierre si ya cerró, sino ahora.
-  // t is an optional Sequelize transaction (used inside cerrar-caja to avoid phantom reads).
   async function obtenerVentanaArqueo(arqueo, t = null) {
     const siguiente = await ArqueoCaja.findOne({
       where: { fechaApertura: { [Op.gt]: arqueo.fechaApertura } },
@@ -27,16 +24,12 @@ function registerCajaHandlers(models, sequelize) {
     return { inicio, fin };
   }
 
-  // H-3: Maps stored metodoPago strings to canonical allowlist values.
-  // Handles legacy data with accent variations (e.g. "Debito" → "Débito").
-  // Throws on any value that cannot be recognized — silent exclusion from
-  // totals is a financial error and must not be allowed.
   function normalizarMetodoPago(s) {
     if (!s) throw new Error('normalizarMetodoPago: metodoPago nulo o vacío.');
     const t = String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (t.includes("efectivo")) return "Efectivo";
-    if (t.includes("debito")) return "Débito";
-    if (t.includes("credito")) return "Crédito";
+    if (t.includes("debito"))   return "Débito";
+    if (t.includes("credito"))  return "Crédito";
     if (t.includes("qr") || t.includes("mercado") || t.includes("mp")) return "QR";
     if (t.includes("transfer")) return "Transferencia";
     if (t.replace(/[\s._\-\/]/g, "").includes("ctacte")) return "CtaCte";
@@ -46,27 +39,32 @@ function registerCajaHandlers(models, sequelize) {
     );
   }
 
-  // H-3: Aggregates sale totals by canonical payment method.
-  // Now includes Transferencia and CtaCte (previously missing from totals).
   function agregarTotalesPorMetodo(ventas) {
-    let totalEfectivo = 0,
-      totalDebito = 0,
-      totalCredito = 0,
-      totalQR = 0,
-      totalTransfer = 0,
-      totalCtaCte = 0;
+    let totalEfectivo = 0, totalDebito = 0, totalCredito = 0,
+        totalQR = 0, totalTransfer = 0, totalCtaCte = 0;
 
     for (const v of ventas) {
       const m = normalizarMetodoPago(v.metodoPago);
       const x = Number(v.total) || 0;
-      if (m === "Efectivo") totalEfectivo += x;
-      else if (m === "Débito") totalDebito += x;
-      else if (m === "Crédito") totalCredito += x;
-      else if (m === "QR") totalQR += x;
+      if      (m === "Efectivo")     totalEfectivo += x;
+      else if (m === "Débito")       totalDebito   += x;
+      else if (m === "Crédito")      totalCredito  += x;
+      else if (m === "QR")           totalQR       += x;
       else if (m === "Transferencia") totalTransfer += x;
-      else if (m === "CtaCte") totalCtaCte += x;
+      else if (m === "CtaCte")       totalCtaCte   += x;
     }
     return { totalEfectivo, totalDebito, totalCredito, totalQR, totalTransfer, totalCtaCte };
+  }
+
+  // Suma ingresos y egresos de movimientos administrativos
+  function calcularMovimientos(movimientos) {
+    const totalIngresosExtra = movimientos
+      .filter(m => m.tipo === 'INGRESO')
+      .reduce((s, m) => s + (Number(m.monto) || 0), 0);
+    const totalEgresosExtra = movimientos
+      .filter(m => m.tipo === 'EGRESO')
+      .reduce((s, m) => s + (Number(m.monto) || 0), 0);
+    return { totalIngresosExtra, totalEgresosExtra };
   }
 
   // -----------------------------
@@ -86,29 +84,22 @@ function registerCajaHandlers(models, sequelize) {
     }
   });
 
-  // Abrir caja
-  // W3-H7: UsuarioId taken from server-side session, not renderer payload.
-  // W3-L6: montoInicial must be >= 0.
+  // Abrir caja (fondo de cambio)
   ipcMain.handle("abrir-caja", async (_event, { montoInicial } = {}) => {
     try {
       const sessionUserId = getActiveUserId();
       const monto = Number(montoInicial);
-      // W3-L6: reject negative opening balance
       if (Number.isFinite(monto) && monto < 0) {
-        return { success: false, message: "El monto inicial no puede ser negativo.", error: true };
+        return { success: false, message: "El fondo de cambio no puede ser negativo.", error: true };
       }
       const montoSafe = Number.isFinite(monto) && monto >= 0 ? monto : 0;
 
       const existente = await ArqueoCaja.findOne({ where: { estado: "ABIERTA" } });
       if (existente) {
-        return {
-          success: false,
-          message: "Ya existe una caja abierta. Debe cerrarla antes de abrir una nueva.",
-        };
+        return { success: false, message: "Ya existe una caja abierta. Debe cerrarla antes de abrir una nueva." };
       }
       const nuevoArqueo = await ArqueoCaja.create({
         montoInicial: montoSafe,
-        // W3-H7: Always use server-side session userId; ignore any renderer-supplied value.
         UsuarioId: sessionUserId,
       });
       return { success: true, arqueo: nuevoArqueo.toJSON() };
@@ -118,19 +109,13 @@ function registerCajaHandlers(models, sequelize) {
     }
   });
 
-  // Historial de cierres (listado) — M-1: supports optional limit/offset pagination
+  // Historial de cierres
   ipcMain.handle("get-all-cierres-caja", async (_event, opts) => {
     const { limit, offset } = opts || {};
     try {
       const cierres = await ArqueoCaja.findAll({
         where: { estado: "CERRADA" },
-        include: [
-          {
-            model: Usuario,
-            as: "usuario",
-            attributes: ["nombre"],
-          },
-        ],
+        include: [{ model: Usuario, as: "usuario", attributes: ["nombre"] }],
         order: [["fechaCierre", "DESC"]],
         ...(limit != null && { limit: Number(limit) }),
         ...(offset != null && { offset: Number(offset) }),
@@ -142,7 +127,8 @@ function registerCajaHandlers(models, sequelize) {
     }
   });
 
-  // Pre-calcular resumen de cierre (sin cerrar aún)
+  // Pre-calcular resumen de cierre (sin cerrar)
+  // Fórmula: Efectivo Esperado = Fondo Inicial + Ventas Efectivo + Ingresos Extra − Egresos
   ipcMain.handle("get-resumen-cierre", async (_event, arqueoId) => {
     try {
       const arqueo = await ArqueoCaja.findByPk(arqueoId);
@@ -150,22 +136,29 @@ function registerCajaHandlers(models, sequelize) {
 
       const { inicio, fin } = await obtenerVentanaArqueo(arqueo);
 
-      const ventas = await Venta.findAll({
-        where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fin } },
-        attributes: ["metodoPago", "total"],
-        raw: true,
-      });
+      const [ventas, movimientos] = await Promise.all([
+        Venta.findAll({
+          where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fin } },
+          attributes: ["metodoPago", "total"],
+          raw: true,
+        }),
+        MovimientoCaja ? MovimientoCaja.findAll({
+          where: { ArqueoCajaId: arqueoId },
+          order: [["createdAt", "ASC"]],
+          raw: true,
+        }) : Promise.resolve([]),
+      ]);
 
-      const {
-        totalEfectivo,
-        totalDebito,
-        totalCredito,
-        totalQR,
-        totalTransfer,
-        totalCtaCte,
-      } = agregarTotalesPorMetodo(ventas);
+      const { totalEfectivo, totalDebito, totalCredito, totalQR, totalTransfer, totalCtaCte } =
+        agregarTotalesPorMetodo(ventas);
 
-      const montoEstimado = (Number(arqueo.montoInicial) || 0) + totalEfectivo;
+      const { totalIngresosExtra, totalEgresosExtra } = calcularMovimientos(movimientos);
+
+      const montoEstimado =
+        (Number(arqueo.montoInicial) || 0) +
+        totalEfectivo +
+        totalIngresosExtra -
+        totalEgresosExtra;
 
       return {
         success: true,
@@ -177,6 +170,9 @@ function registerCajaHandlers(models, sequelize) {
           totalQR,
           totalTransfer,
           totalCtaCte,
+          totalIngresosExtra,
+          totalEgresosExtra,
+          movimientos,
           montoEstimado,
           desde: inicio,
           hasta: fin,
@@ -188,11 +184,7 @@ function registerCajaHandlers(models, sequelize) {
     }
   });
 
-  // H-4: cerrar-caja is now fully transactional.
-  // All reads (arqueo, ventas) and the final write (arqueo.save) run inside a
-  // single transaction with a single timestamp. This eliminates the race where
-  // a venta registered between Venta.findAll and arqueo.save would be excluded
-  // from the stored totals.
+  // Cerrar caja (transaccional)
   ipcMain.handle("cerrar-caja", async (_event, { arqueoId, montoFinalReal, observaciones }) => {
     let resultado;
     try {
@@ -202,43 +194,48 @@ function registerCajaHandlers(models, sequelize) {
           throw new Error("El arqueo no existe o ya fue cerrado.");
         }
 
-        // Single timestamp used for both the query window and fechaCierre.
-        // Prevents the split-brain where two different "now()" calls produce
-        // slightly different cutoffs.
         const fechaCierre = new Date();
-
         const { inicio } = await obtenerVentanaArqueo(arqueo, t);
 
-        const ventas = await Venta.findAll({
-          where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fechaCierre } },
-          attributes: ["metodoPago", "total"],
-          raw: true,
-          transaction: t,
-        });
+        const [ventas, movimientos] = await Promise.all([
+          Venta.findAll({
+            where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fechaCierre } },
+            attributes: ["metodoPago", "total"],
+            raw: true,
+            transaction: t,
+          }),
+          MovimientoCaja ? MovimientoCaja.findAll({
+            where: { ArqueoCajaId: arqueoId },
+            raw: true,
+            transaction: t,
+          }) : Promise.resolve([]),
+        ]);
 
-        const {
-          totalEfectivo,
-          totalDebito,
-          totalCredito,
-          totalQR,
-          totalTransfer,
-          totalCtaCte,
-        } = agregarTotalesPorMetodo(ventas);
+        const { totalEfectivo, totalDebito, totalCredito, totalQR, totalTransfer, totalCtaCte } =
+          agregarTotalesPorMetodo(ventas);
 
-        const montoEstimado = (Number(arqueo.montoInicial) || 0) + totalEfectivo;
+        const { totalIngresosExtra, totalEgresosExtra } = calcularMovimientos(movimientos);
 
-        arqueo.fechaCierre = fechaCierre;
-        arqueo.totalVentasEfectivo = totalEfectivo;
-        arqueo.totalVentasDebito = totalDebito;
-        arqueo.totalVentasCredito = totalCredito;
-        arqueo.totalVentasQR = totalQR;
+        const montoEstimado =
+          (Number(arqueo.montoInicial) || 0) +
+          totalEfectivo +
+          totalIngresosExtra -
+          totalEgresosExtra;
+
+        arqueo.fechaCierre            = fechaCierre;
+        arqueo.totalVentasEfectivo    = totalEfectivo;
+        arqueo.totalVentasDebito      = totalDebito;
+        arqueo.totalVentasCredito     = totalCredito;
+        arqueo.totalVentasQR          = totalQR;
         arqueo.totalVentasTransferencia = totalTransfer;
-        arqueo.totalVentasCtaCte = totalCtaCte;
-        arqueo.montoFinalEstimado = montoEstimado;
-        arqueo.montoFinalReal = Number(montoFinalReal) || 0;
-        arqueo.diferencia = (Number(montoFinalReal) || 0) - montoEstimado;
-        arqueo.observaciones = observaciones || null;
-        arqueo.estado = "CERRADA";
+        arqueo.totalVentasCtaCte      = totalCtaCte;
+        arqueo.totalIngresosExtra     = totalIngresosExtra;
+        arqueo.totalEgresosExtra      = totalEgresosExtra;
+        arqueo.montoFinalEstimado     = montoEstimado;
+        arqueo.montoFinalReal         = Number(montoFinalReal) || 0;
+        arqueo.diferencia             = (Number(montoFinalReal) || 0) - montoEstimado;
+        arqueo.observaciones          = observaciones || null;
+        arqueo.estado                 = "CERRADA";
 
         await arqueo.save({ transaction: t });
         resultado = arqueo.toJSON();
@@ -248,6 +245,70 @@ function registerCajaHandlers(models, sequelize) {
     } catch (error) {
       console.error("Error al cerrar caja:", error);
       return { success: false, message: error.message, error: true };
+    }
+  });
+
+  // -----------------------------
+  // Movimientos administrativos
+  // -----------------------------
+
+  // Registrar ingreso o egreso de efectivo (no-venta)
+  ipcMain.handle("registrar-movimiento-caja", async (_event, { arqueoId, tipo, monto, concepto, comprobante }) => {
+    try {
+      if (!MovimientoCaja) return { success: false, message: "Módulo no disponible." };
+
+      const arqueo = await ArqueoCaja.findByPk(arqueoId);
+      if (!arqueo || arqueo.estado !== 'ABIERTA') {
+        return { success: false, message: 'No hay una caja abierta para registrar movimientos.' };
+      }
+
+      if (!['INGRESO', 'EGRESO'].includes(tipo)) {
+        return { success: false, message: 'Tipo de movimiento inválido.' };
+      }
+
+      const montoNum = Number(monto);
+      if (!montoNum || montoNum <= 0) {
+        return { success: false, message: 'El monto debe ser mayor a cero.' };
+      }
+
+      const conceptoTrim = (concepto || '').trim();
+      if (!conceptoTrim) {
+        return { success: false, message: 'El concepto es obligatorio.' };
+      }
+
+      const comprobanteTrim = (comprobante || '').trim();
+      if (tipo === 'EGRESO' && !comprobanteTrim) {
+        return { success: false, message: 'El número de comprobante es obligatorio para egresos.' };
+      }
+
+      const mov = await MovimientoCaja.create({
+        ArqueoCajaId: arqueoId,
+        tipo,
+        monto: montoNum,
+        concepto: conceptoTrim,
+        comprobante: comprobanteTrim || null,
+      });
+
+      return { success: true, movimiento: mov.toJSON() };
+    } catch (error) {
+      console.error("Error en 'registrar-movimiento-caja':", error);
+      return { success: false, message: error.message, error: true };
+    }
+  });
+
+  // Obtener movimientos de un arqueo
+  ipcMain.handle("get-movimientos-caja", async (_event, arqueoId) => {
+    try {
+      if (!MovimientoCaja || !arqueoId) return [];
+      const movimientos = await MovimientoCaja.findAll({
+        where: { ArqueoCajaId: arqueoId },
+        order: [['createdAt', 'ASC']],
+        raw: true,
+      });
+      return movimientos;
+    } catch (error) {
+      console.error("Error en 'get-movimientos-caja':", error);
+      return [];
     }
   });
 }

@@ -407,6 +407,8 @@ document.addEventListener("app-ready", () => {
     }
   });
 
+  attachEnterNav(productoForm, { submitBtn: btnSubmit });
+
   // --- ARRANQUE ---
   (async () => {
     await inicializar();

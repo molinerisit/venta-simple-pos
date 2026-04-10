@@ -5,6 +5,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorMessage = document.getElementById("error-message");
   const submitButton = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
 
+  // Password visibility toggle
+  const toggleBtn = document.querySelector('.toggle-password');
+  if (toggleBtn && passwordInput) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      toggleBtn.querySelector('.eye-show').style.display = isHidden ? 'none' : '';
+      toggleBtn.querySelector('.eye-hide').style.display = isHidden ? '' : 'none';
+    });
+  }
+
+  attachEnterNav(loginForm);
+
   if (loginForm && submitButton) {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();

@@ -20,6 +20,8 @@ document.addEventListener("app-ready", () => {
 
   let toastTimer;
 
+  attachEnterNav(clienteForm, { submitBtn: btnGuardar });
+
   // --- Confirm modal ligero (no bloquea UI) ---
   const confirmOverlay = document.createElement("div");
   confirmOverlay.className = "confirm-overlay";
@@ -105,14 +107,44 @@ document.addEventListener("app-ready", () => {
     inputDni?.focus();
   };
 
+  // --- Stat cards ---
+  const actualizarStatCards = (clientes) => {
+    const total = document.getElementById("stat-total-clientes");
+    const conDescuento = document.getElementById("stat-con-descuento");
+    const conCtaCte = document.getElementById("stat-con-cta-cte");
+    if (total) total.textContent = clientes.length;
+    if (conDescuento) conDescuento.textContent = clientes.filter((c) => parseFloat(c.descuento) > 0).length;
+    if (conCtaCte) conCtaCte.textContent = "0";
+  };
+
+  // --- Search filter ---
+  const searchInput = document.getElementById("search-input");
+  let todosLosClientes = [];
+
+  const filtrarTabla = (termino) => {
+    const term = termino.toLowerCase().trim();
+    const rows = tablaBody.querySelectorAll("tr");
+    rows.forEach((tr) => {
+      const texto = tr.textContent.toLowerCase();
+      tr.style.display = !term || texto.includes(term) ? "" : "none";
+    });
+  };
+
+  searchInput?.addEventListener("input", (e) => {
+    filtrarTabla(e.target.value);
+  });
+
   const cargarClientes = async () => {
     try {
       const lista = await window.electronAPI.invoke("get-clientes");
       if (!lista || lista.length === 0) {
         tablaBody.innerHTML =
           '<tr><td colspan="4" class="text-center">No se encontraron clientes.</td></tr>';
+        actualizarStatCards([]);
         return;
       }
+      todosLosClientes = lista;
+      actualizarStatCards(lista);
       const rows = lista
         .map(
           (c) => `
@@ -128,6 +160,8 @@ document.addEventListener("app-ready", () => {
         )
         .join("");
       tablaBody.innerHTML = rows;
+      // Re-apply active search filter after reload
+      if (searchInput?.value) filtrarTabla(searchInput.value);
     } catch (error) {
       console.error("Error al cargar clientes:", error);
       showNotification("No se pudieron cargar los clientes.", "error");

@@ -38,7 +38,8 @@
     background-color: #fff;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    overflow: hidden; /* Para que el borde redondeado se aplique a la tabla */
+    overflow-x: auto;  /* allow wide tables to scroll horizontally */
+    overflow-y: hidden;
 }
 
 table {
