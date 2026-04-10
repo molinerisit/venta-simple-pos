@@ -8,12 +8,16 @@ function registerClientesHandlers(models) {
   // Normaliza DNI: quita espacios y caracteres no numéricos
   const normDni = (dni) => String(dni || "").replace(/\D+/g, "").trim();
 
-  // Lista completa (para pantallas pequeñas). Para grandes volúmenes, mejor usar paginado.
-  ipcMain.handle("get-clientes", async () => {
+  // W3-H1: Added default limit of 500 to prevent unbounded full-table query.
+  ipcMain.handle("get-clientes", async (_event, opts) => {
     try {
+      const limit = Math.min(500, Math.max(1, parseInt(opts?.limit) || 500));
+      const offset = Math.max(0, parseInt(opts?.offset) || 0);
       return await Cliente.findAll({
         attributes: ["id", "dni", "nombre", "apellido", "descuento", "deuda", "createdAt", "updatedAt"],
         order: [["nombre", "ASC"]],
+        limit,
+        offset,
         raw: true,
       });
     } catch (error) {
@@ -82,6 +86,11 @@ function registerClientesHandlers(models) {
 
       if (!dni || !nombre) {
         return { success: false, message: "El DNI y el Nombre son obligatorios." };
+      }
+
+      // W3-M6: descuento must be in [0, 100] to prevent negative sale totals.
+      if (descuento < 0 || descuento > 100) {
+        return { success: false, message: "El descuento debe estar entre 0 y 100." };
       }
 
       const payload = { dni, nombre, apellido, descuento };

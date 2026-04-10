@@ -2180,3 +2180,724 @@ if (!payload.nombre) {
 | Fail   | 0 |
 
 ### All tests passed ✅
+
+---
+
+## [2026-04-10] Phase 7 Testing Results — Wave-2 Security Fixes
+
+**Runner:** `tests/run-phase-7.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** session, config, compras, admin
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | I-1: clearSession sets activeUserId to null | ✅ |
+| 1.2 | I-1: get-user-session returns null after clearSession | ✅ |
+| 1.3 | I-1: get-user-session returns user after login | ✅ |
+| 1.4 | I-1: re-login after logout returns new user | ✅ |
+| 2.1 | S-3: get-user-session does NOT expose mp_access_token | ✅ |
+| 2.2 | S-3: get-user-session does NOT expose password | ✅ |
+| 2.3 | S-3: get-user-session returns required fields (id, nombre, rol, permisos) | ✅ |
+| 2.4 | S-3: get-admin-config does NOT expose mp_access_token | ✅ |
+| 2.5 | S-3: get-admin-config returns UI-required fields | ✅ |
+| 3.1 | I-2: save-general-config rejects recargoCredito: -1 | ✅ |
+| 3.2 | I-2: save-general-config rejects recargoCredito: 101 | ✅ |
+| 3.3 | I-2: save-general-config rejects descuentoEfectivo: 150 | ✅ |
+| 3.4 | I-2: save-general-config accepts boundary recargoCredito: 100, descuentoEfectivo: 0 | ✅ |
+| 3.5 | I-2: save-general-config accepts boundary recargoCredito: 0, descuentoEfectivo: 100 | ✅ |
+| 3.6 | I-2: saved value is persisted correctly | ✅ |
+| 4.1 | I-3: purchase rejects nuevoPrecioVenta below costoUnitario | ✅ |
+| 4.2 | I-3: purchase rejects nuevoPrecioVenta = 0 | ✅ |
+| 4.3 | I-3: purchase rejects nuevoPrecioVenta > 100x costoUnitario | ✅ |
+| 4.4 | I-3: valid actualizarPrecioVenta updates precioVenta in DB | ✅ |
+| 4.5 | I-3: actualizarPrecioVenta: false leaves precioVenta unchanged | ✅ |
+| 5.1 | I-4: mp:refund-payment with amount: 0 returns ok:false immediately | ✅ |
+| 5.2 | I-4: mp:refund-payment with amount: null returns ok:false | ✅ |
+| 5.3 | I-4: mp:refund-payment with amount: -50 returns ok:false | ✅ |
+| 5.4 | I-4: mp:refund-payment with amount: undefined returns ok:false | ✅ |
+| 5.5 | I-4: mp:refund-payment with valid amount passes validation (may fail on no token) | ✅ |
+| 6.1 | S-1: save-user denied when no active session | ✅ |
+| 6.2 | S-1: save-user denied for non-admin session | ✅ |
+| 6.3 | S-1: save-user allowed for admin session | ✅ |
+| 6.4 | S-1: save-user rejects invalid rol (not in allowlist) | ✅ |
+| 6.5 | S-1: delete-user denied when no active session | ✅ |
+| 6.6 | S-1: delete-user denied for non-admin session | ✅ |
+| 7.1 | S-2: registrar-compra-producto uses session userId, ignores renderer UsuarioId | ✅ |
+| 7.2 | S-2: registrar-compra-producto fails with no active session | ✅ |
+| 8.1 | B-3: purchase rejects descuento > subtotal | ✅ |
+| 8.2 | B-3: purchase rejects negative recargo | ✅ |
+| 8.3 | B-3: purchase with descuento = subtotal succeeds | ✅ |
+| 9b.1 | B-4: 5 failed attempts trigger lockout on 6th attempt | ✅ |
+| 9b.2 | B-4: successful login after 4 failures clears counter | ✅ |
+| 9c.1 | B-7: save-business-info rejects oversized logoBase64 | ✅ |
+| 9c.2 | B-7: save-business-info without logo still works | ✅ |
+| 9d.1 | B-8a: save-user rejects password shorter than 6 chars | ✅ |
+| 9d.2 | B-8b: save-gasto-fijo rejects negative monto | ✅ |
+| 9d.3 | B-8b: save-gasto-fijo accepts monto: 0 | ✅ |
+| 9d.4 | B-8c: save-empleado rejects negative sueldo | ✅ |
+| 9d.5 | B-8c: save-empleado accepts sueldo: 0 | ✅ |
+| 9d.7 | B-8d: save-user rejects invalid permission IDs | ✅ |
+| 9d.8 | B-8d: save-user accepts known permission IDs | ✅ |
+| 9d.9 | B-8f: registrar-compra-producto rejects duplicate nroFactura for same proveedor | ✅ |
+| 9d.6 | B-8k: login-attempt ignores payload.username (must use payload.nombre) | ✅ |
+| 9.1 | [Regresión] login-attempt still authenticates correctly | ✅ |
+| 9.2 | [Regresión] save-general-config with valid values (10, 5) still works | ✅ |
+| 9.3 | [Regresión] save-user with valid admin rol still works | ✅ |
+| 9.4 | [Regresión] registrar-compra-producto end-to-end still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 53 |
+| Pass   | 53 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.1: Session guard on financial mutation handlers
+
+**Finding:** W3-H6, W3-H7
+**Plan step:** 8.1
+**Files:** `src/ipc-handlers/ctascorrientes-handlers.js`, `src/ipc-handlers/caja-handlers.js`
+**Status:** Done
+
+### Problem
+`registrar-pago-cliente` and `registrar-abono-proveedor` accepted renderer-supplied entity IDs and wrote to the DB without verifying an active server-side session. `abrir-caja` stored a renderer-supplied `usuarioId` directly as the audit owner.
+
+### Change
+- Added `getActiveUserId()` null-check at the top of both payment handlers.
+- `abrir-caja` now ignores the renderer-supplied `usuarioId`; reads UID from session.
+- Added `montoInicial < 0` guard (W3-L6).
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.2: Allowlist + affectedRows in guardar-insumo
+
+**Finding:** W3-H4, W3-H5
+**Plan step:** 8.2
+**File:** `src/ipc-handlers/insumos-handlers.js`
+**Status:** Done
+
+### Problem
+Raw renderer payload spread into `Insumo.update()`/`Insumo.create()` (mass-assignment). Silent `{ success: true }` on non-existent row.
+
+### Change
+- Added `INSUMO_ALLOWED_FIELDS` allowlist; `payload` built with `Object.fromEntries` filter.
+- On update, `affectedRows === 0` now returns `{ success: false, message: "Insumo no encontrado." }`.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.3: Default limits on unbounded list handlers
+
+**Finding:** W3-H1, W3-H2, W3-H3, W3-H8, W3-M1, W3-M2, W3-M3
+**Plan step:** 8.3
+**Files:** clientes-handlers, proveedores-handlers, ctascorrientes-handlers, facturacion-handlers, insumos-handlers, ventas-handlers, etiquetas-handlers
+**Status:** Done
+
+### Change
+Added `limit` (default 500 or 200) and optional `offset` to all previously unbounded `findAll()` calls.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.4: descuento upper bound in guardar-cliente
+
+**Finding:** W3-M6
+**Plan step:** 8.4
+**File:** `src/ipc-handlers/clientes-handlers.js`
+**Status:** Done
+
+### Change
+Added `descuento < 0 || descuento > 100` guard returning `{ success: false }`.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.5: Field allowlist in guardar-proveedor
+
+**Finding:** W3-M7
+**Plan step:** 8.5
+**File:** `src/ipc-handlers/proveedores-handlers.js`
+**Status:** Done
+
+### Change
+Added `PROVEEDOR_ALLOWED_FIELDS` allowlist; `safePayload` filtered before `proveedor.update()` / `Proveedor.create()`.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.6: Date validation in dashboard and reportes
+
+**Finding:** W3-M4, W3-M5
+**Plan step:** 8.6
+**Files:** `src/ipc-handlers/dashboard-handlers.js`, `src/ipc-handlers/registerReportesHandlers.js`
+**Status:** Done
+
+### Change
+Added `isNaN(startDate.getTime()) || isNaN(endDate.getTime())` check; returns `{ success: false, message: "Fechas inválidas." }`.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.7: Negative montoInicial guard in abrir-caja
+
+**Finding:** W3-L6
+**Plan step:** 8.7
+**File:** `src/ipc-handlers/caja-handlers.js`
+**Status:** Done (included in Step 8.1 implementation)
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.8: InsumoDepartamentoId existence check
+
+**Finding:** W3-L4
+**Plan step:** 8.8
+**File:** `src/ipc-handlers/insumos-handlers.js`
+**Status:** Done
+
+### Change
+Added `InsumoDepartamento.findByPk(depId)` guard before `InsumoFamilia.create()`.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.9: GastoFijos date filter in dashboard
+
+**Finding:** W3-L5
+**Plan step:** 8.9
+**File:** `src/ipc-handlers/dashboard-handlers.js`
+**Status:** Done
+
+### Change
+`GastoFijo.sum("monto")` now has `where: { createdAt: { [Op.gte]: startDate, [Op.lte]: endDate } }`.
+
+---
+
+## [2026-04-10] Wave 3 — Step 8.10: HTML escaping in generar-vista-impresion
+
+**Finding:** W3-M8
+**Plan step:** 8.10
+**File:** `src/ipc-handlers/etiquetas-handlers.js`
+**Status:** Done
+
+### Change
+Added `escapeHtml()` helper; all product name/code interpolations into HTML wrapped with it.
+
+---
+
+## [2026-04-10] Phase 8 Testing Results
+
+**Runner:** `tests/run-phase-8.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** clientes, proveedores, ctascorrientes, insumos, caja, ventas, facturacion, dashboard, reportes
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 8.1: registrar-pago-cliente fails without active session | PASS |
+| 1.2 | 8.1: registrar-pago-cliente succeeds with active session | PASS |
+| 1.3 | 8.1: registrar-abono-proveedor fails without active session | PASS |
+| 1.4 | 8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId | PASS |
+| 2.1 | 8.2: guardar-insumo update on non-existent ID returns success:false | PASS |
+| 2.2 | 8.2: guardar-insumo create works with valid data | PASS |
+| 2.3 | 8.2: guardar-insumo update with allowed fields succeeds | PASS |
+| 2.4 | 8.2: guardar-insumo rejects empty nombre | PASS |
+| 3.1 | 8.3: get-clientes returns bounded result by default | PASS |
+| 3.2 | 8.3: get-clientes respects limit=1 | PASS |
+| 3.3 | 8.3: get-insumos returns bounded result by default | PASS |
+| 3.4 | 8.3: get-insumos respects limit=1 | PASS |
+| 3.5 | 8.3: get-ventas enforces default limit | PASS |
+| 4.1 | 8.4: guardar-cliente rejects descuento > 100 | PASS |
+| 4.2 | 8.4: guardar-cliente rejects descuento < 0 | PASS |
+| 4.3 | 8.4: guardar-cliente accepts descuento: 100 | PASS |
+| 4.4 | 8.4: guardar-cliente accepts descuento: 0 | PASS |
+| 5.1 | 8.5: guardar-proveedor create works with valid nombreEmpresa | PASS |
+| 5.2 | 8.5: guardar-proveedor cannot overwrite deuda via payload injection | PASS |
+| 5.3 | 8.5: guardar-proveedor rejects missing nombreEmpresa | PASS |
+| 6.1 | 8.6: get-dashboard-stats with garbage dateFrom returns success:false | PASS |
+| 6.2 | 8.6: get-dashboard-stats with garbage dateTo returns success:false | PASS |
+| 6.3 | 8.6: get-dashboard-stats with valid dates returns success:true | PASS |
+| 6.4 | 8.6: get-rentabilidad-report with invalid dates returns success:false | PASS |
+| 6.5 | 8.6: get-rentabilidad-report with valid dates returns success:true | PASS |
+| 7.1 | 8.7: abrir-caja rejects negative montoInicial | PASS |
+| 7.2 | 8.7: abrir-caja accepts montoInicial: 0 | PASS |
+| 8.1 | 8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error | PASS |
+| 8.2 | 8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds | PASS |
+| 9.1 | [Regression] guardar-cliente create still works | PASS |
+| 9.2 | [Regression] eliminar-cliente still works | PASS |
+| 9.3 | [Regression] get-clientes returns seeded clients | PASS |
+| 9.4 | [Regression] guardar-proveedor create end-to-end still works | PASS |
+| 9.5 | [Regression] registrar-venta still works end-to-end | PASS |
+| 9.6 | [Regression] get-insumos returns all insumos (no filter) | PASS |
+| 9.7 | [Regression] get-ctacte-resumen returns totals | PASS |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 36 |
+| Pass   | 36 |
+| Fail   | 0 |
+
+### All tests passed
+---
+
+## [2026-04-10] Phase 8 Testing Results
+
+**Runner:** `tests/run-phase-8.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** clientes, proveedores, ctascorrientes, insumos, caja, ventas, facturacion, dashboard, reportes
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 8.1: registrar-pago-cliente fails without active session | PASS |
+| 1.2 | 8.1: registrar-pago-cliente succeeds with active session | PASS |
+| 1.3 | 8.1: registrar-abono-proveedor fails without active session | PASS |
+| 1.4 | 8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId | PASS |
+| 2.1 | 8.2: guardar-insumo update on non-existent ID returns success:false | PASS |
+| 2.2 | 8.2: guardar-insumo create works with valid data | PASS |
+| 2.3 | 8.2: guardar-insumo update with allowed fields succeeds | PASS |
+| 2.4 | 8.2: guardar-insumo rejects empty nombre | PASS |
+| 3.1 | 8.3: get-clientes returns bounded result by default | PASS |
+| 3.2 | 8.3: get-clientes respects limit=1 | PASS |
+| 3.3 | 8.3: get-insumos returns bounded result by default | PASS |
+| 3.4 | 8.3: get-insumos respects limit=1 | PASS |
+| 3.5 | 8.3: get-ventas enforces default limit | PASS |
+| 4.1 | 8.4: guardar-cliente rejects descuento > 100 | PASS |
+| 4.2 | 8.4: guardar-cliente rejects descuento < 0 | PASS |
+| 4.3 | 8.4: guardar-cliente accepts descuento: 100 | PASS |
+| 4.4 | 8.4: guardar-cliente accepts descuento: 0 | PASS |
+| 5.1 | 8.5: guardar-proveedor create works with valid nombreEmpresa | PASS |
+| 5.2 | 8.5: guardar-proveedor cannot overwrite deuda via payload injection | PASS |
+| 5.3 | 8.5: guardar-proveedor rejects missing nombreEmpresa | PASS |
+| 6.1 | 8.6: get-dashboard-stats with garbage dateFrom returns success:false | PASS |
+| 6.2 | 8.6: get-dashboard-stats with garbage dateTo returns success:false | PASS |
+| 6.3 | 8.6: get-dashboard-stats with valid dates returns success:true | PASS |
+| 6.4 | 8.6: get-rentabilidad-report with invalid dates returns success:false | PASS |
+| 6.5 | 8.6: get-rentabilidad-report with valid dates returns success:true | PASS |
+| 7.1 | 8.7: abrir-caja rejects negative montoInicial | PASS |
+| 7.2 | 8.7: abrir-caja accepts montoInicial: 0 | PASS |
+| 8.1 | 8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error | PASS |
+| 8.2 | 8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds | PASS |
+| 9.1 | [Regression] guardar-cliente create still works | PASS |
+| 9.2 | [Regression] eliminar-cliente still works | PASS |
+| 9.3 | [Regression] get-clientes returns seeded clients | PASS |
+| 9.4 | [Regression] guardar-proveedor create end-to-end still works | PASS |
+| 9.5 | [Regression] registrar-venta still works end-to-end | PASS |
+| 9.6 | [Regression] get-insumos returns all insumos (no filter) | PASS |
+| 9.7 | [Regression] get-ctacte-resumen returns totals | PASS |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 36 |
+| Pass   | 36 |
+| Fail   | 0 |
+
+### All tests passed
+---
+
+## [2026-04-10] Phase 8 Testing Results
+
+**Runner:** `tests/run-phase-8.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** clientes, proveedores, ctascorrientes, insumos, caja, ventas, facturacion, dashboard, reportes
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 8.1: registrar-pago-cliente fails without active session | PASS |
+| 1.2 | 8.1: registrar-pago-cliente succeeds with active session | PASS |
+| 1.3 | 8.1: registrar-abono-proveedor fails without active session | PASS |
+| 1.4 | 8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId | PASS |
+| 2.1 | 8.2: guardar-insumo update on non-existent ID returns success:false | PASS |
+| 2.2 | 8.2: guardar-insumo create works with valid data | PASS |
+| 2.3 | 8.2: guardar-insumo update with allowed fields succeeds | PASS |
+| 2.4 | 8.2: guardar-insumo rejects empty nombre | PASS |
+| 3.1 | 8.3: get-clientes returns bounded result by default | PASS |
+| 3.2 | 8.3: get-clientes respects limit=1 | PASS |
+| 3.3 | 8.3: get-insumos returns bounded result by default | PASS |
+| 3.4 | 8.3: get-insumos respects limit=1 | PASS |
+| 3.5 | 8.3: get-ventas enforces default limit | PASS |
+| 4.1 | 8.4: guardar-cliente rejects descuento > 100 | PASS |
+| 4.2 | 8.4: guardar-cliente rejects descuento < 0 | PASS |
+| 4.3 | 8.4: guardar-cliente accepts descuento: 100 | PASS |
+| 4.4 | 8.4: guardar-cliente accepts descuento: 0 | PASS |
+| 5.1 | 8.5: guardar-proveedor create works with valid nombreEmpresa | PASS |
+| 5.2 | 8.5: guardar-proveedor cannot overwrite deuda via payload injection | PASS |
+| 5.3 | 8.5: guardar-proveedor rejects missing nombreEmpresa | PASS |
+| 6.1 | 8.6: get-dashboard-stats with garbage dateFrom returns success:false | PASS |
+| 6.2 | 8.6: get-dashboard-stats with garbage dateTo returns success:false | PASS |
+| 6.3 | 8.6: get-dashboard-stats with valid dates returns success:true | PASS |
+| 6.4 | 8.6: get-rentabilidad-report with invalid dates returns success:false | PASS |
+| 6.5 | 8.6: get-rentabilidad-report with valid dates returns success:true | PASS |
+| 7.1 | 8.7: abrir-caja rejects negative montoInicial | PASS |
+| 7.2 | 8.7: abrir-caja accepts montoInicial: 0 | PASS |
+| 8.1 | 8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error | PASS |
+| 8.2 | 8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds | PASS |
+| 9.1 | [Regression] guardar-cliente create still works | PASS |
+| 9.2 | [Regression] eliminar-cliente still works | PASS |
+| 9.3 | [Regression] get-clientes returns seeded clients | PASS |
+| 9.4 | [Regression] guardar-proveedor create end-to-end still works | PASS |
+| 9.5 | [Regression] registrar-venta still works end-to-end | PASS |
+| 9.6 | [Regression] get-insumos returns all insumos (no filter) | PASS |
+| 9.7 | [Regression] get-ctacte-resumen returns totals | PASS |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 36 |
+| Pass   | 36 |
+| Fail   | 0 |
+
+### All tests passed
+---
+
+## [2026-04-10] Phase 7 Testing Results — Wave-2 Security Fixes
+
+**Runner:** `tests/run-phase-7.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** session, config, compras, admin
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | I-1: clearSession sets activeUserId to null | ✅ |
+| 1.2 | I-1: get-user-session returns null after clearSession | ✅ |
+| 1.3 | I-1: get-user-session returns user after login | ✅ |
+| 1.4 | I-1: re-login after logout returns new user | ✅ |
+| 2.1 | S-3: get-user-session does NOT expose mp_access_token | ✅ |
+| 2.2 | S-3: get-user-session does NOT expose password | ✅ |
+| 2.3 | S-3: get-user-session returns required fields (id, nombre, rol, permisos) | ✅ |
+| 2.4 | S-3: get-admin-config does NOT expose mp_access_token | ✅ |
+| 2.5 | S-3: get-admin-config returns UI-required fields | ✅ |
+| 3.1 | I-2: save-general-config rejects recargoCredito: -1 | ✅ |
+| 3.2 | I-2: save-general-config rejects recargoCredito: 101 | ✅ |
+| 3.3 | I-2: save-general-config rejects descuentoEfectivo: 150 | ✅ |
+| 3.4 | I-2: save-general-config accepts boundary recargoCredito: 100, descuentoEfectivo: 0 | ✅ |
+| 3.5 | I-2: save-general-config accepts boundary recargoCredito: 0, descuentoEfectivo: 100 | ✅ |
+| 3.6 | I-2: saved value is persisted correctly | ✅ |
+| 4.1 | I-3: purchase rejects nuevoPrecioVenta below costoUnitario | ✅ |
+| 4.2 | I-3: purchase rejects nuevoPrecioVenta = 0 | ✅ |
+| 4.3 | I-3: purchase rejects nuevoPrecioVenta > 100x costoUnitario | ✅ |
+| 4.4 | I-3: valid actualizarPrecioVenta updates precioVenta in DB | ✅ |
+| 4.5 | I-3: actualizarPrecioVenta: false leaves precioVenta unchanged | ✅ |
+| 5.1 | I-4: mp:refund-payment with amount: 0 returns ok:false immediately | ✅ |
+| 5.2 | I-4: mp:refund-payment with amount: null returns ok:false | ✅ |
+| 5.3 | I-4: mp:refund-payment with amount: -50 returns ok:false | ✅ |
+| 5.4 | I-4: mp:refund-payment with amount: undefined returns ok:false | ✅ |
+| 5.5 | I-4: mp:refund-payment with valid amount passes validation (may fail on no token) | ✅ |
+| 6.1 | S-1: save-user denied when no active session | ✅ |
+| 6.2 | S-1: save-user denied for non-admin session | ✅ |
+| 6.3 | S-1: save-user allowed for admin session | ✅ |
+| 6.4 | S-1: save-user rejects invalid rol (not in allowlist) | ✅ |
+| 6.5 | S-1: delete-user denied when no active session | ✅ |
+| 6.6 | S-1: delete-user denied for non-admin session | ✅ |
+| 7.1 | S-2: registrar-compra-producto uses session userId, ignores renderer UsuarioId | ✅ |
+| 7.2 | S-2: registrar-compra-producto fails with no active session | ✅ |
+| 8.1 | B-3: purchase rejects descuento > subtotal | ✅ |
+| 8.2 | B-3: purchase rejects negative recargo | ✅ |
+| 8.3 | B-3: purchase with descuento = subtotal succeeds | ✅ |
+| 9b.1 | B-4: 5 failed attempts trigger lockout on 6th attempt | ✅ |
+| 9b.2 | B-4: successful login after 4 failures clears counter | ✅ |
+| 9c.1 | B-7: save-business-info rejects oversized logoBase64 | ✅ |
+| 9c.2 | B-7: save-business-info without logo still works | ✅ |
+| 9d.1 | B-8a: save-user rejects password shorter than 6 chars | ✅ |
+| 9d.2 | B-8b: save-gasto-fijo rejects negative monto | ✅ |
+| 9d.3 | B-8b: save-gasto-fijo accepts monto: 0 | ✅ |
+| 9d.4 | B-8c: save-empleado rejects negative sueldo | ✅ |
+| 9d.5 | B-8c: save-empleado accepts sueldo: 0 | ✅ |
+| 9d.7 | B-8d: save-user rejects invalid permission IDs | ✅ |
+| 9d.8 | B-8d: save-user accepts known permission IDs | ✅ |
+| 9d.9 | B-8f: registrar-compra-producto rejects duplicate nroFactura for same proveedor | ✅ |
+| 9d.6 | B-8k: login-attempt ignores payload.username (must use payload.nombre) | ✅ |
+| 9.1 | [Regresión] login-attempt still authenticates correctly | ✅ |
+| 9.2 | [Regresión] save-general-config with valid values (10, 5) still works | ✅ |
+| 9.3 | [Regresión] save-user with valid admin rol still works | ✅ |
+| 9.4 | [Regresión] registrar-compra-producto end-to-end still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 53 |
+| Pass   | 53 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-10] Phase 7 Testing Results — Wave-2 Security Fixes
+
+**Runner:** `tests/run-phase-7.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** session, config, compras, admin
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | I-1: clearSession sets activeUserId to null | ✅ |
+| 1.2 | I-1: get-user-session returns null after clearSession | ✅ |
+| 1.3 | I-1: get-user-session returns user after login | ✅ |
+| 1.4 | I-1: re-login after logout returns new user | ✅ |
+| 2.1 | S-3: get-user-session does NOT expose mp_access_token | ✅ |
+| 2.2 | S-3: get-user-session does NOT expose password | ✅ |
+| 2.3 | S-3: get-user-session returns required fields (id, nombre, rol, permisos) | ✅ |
+| 2.4 | S-3: get-admin-config does NOT expose mp_access_token | ✅ |
+| 2.5 | S-3: get-admin-config returns UI-required fields | ✅ |
+| 3.1 | I-2: save-general-config rejects recargoCredito: -1 | ✅ |
+| 3.2 | I-2: save-general-config rejects recargoCredito: 101 | ✅ |
+| 3.3 | I-2: save-general-config rejects descuentoEfectivo: 150 | ✅ |
+| 3.4 | I-2: save-general-config accepts boundary recargoCredito: 100, descuentoEfectivo: 0 | ✅ |
+| 3.5 | I-2: save-general-config accepts boundary recargoCredito: 0, descuentoEfectivo: 100 | ✅ |
+| 3.6 | I-2: saved value is persisted correctly | ✅ |
+| 4.1 | I-3: purchase rejects nuevoPrecioVenta below costoUnitario | ✅ |
+| 4.2 | I-3: purchase rejects nuevoPrecioVenta = 0 | ✅ |
+| 4.3 | I-3: purchase rejects nuevoPrecioVenta > 100x costoUnitario | ✅ |
+| 4.4 | I-3: valid actualizarPrecioVenta updates precioVenta in DB | ✅ |
+| 4.5 | I-3: actualizarPrecioVenta: false leaves precioVenta unchanged | ✅ |
+| 5.1 | I-4: mp:refund-payment with amount: 0 returns ok:false immediately | ✅ |
+| 5.2 | I-4: mp:refund-payment with amount: null returns ok:false | ✅ |
+| 5.3 | I-4: mp:refund-payment with amount: -50 returns ok:false | ✅ |
+| 5.4 | I-4: mp:refund-payment with amount: undefined returns ok:false | ✅ |
+| 5.5 | I-4: mp:refund-payment with valid amount passes validation (may fail on no token) | ✅ |
+| 6.1 | S-1: save-user denied when no active session | ✅ |
+| 6.2 | S-1: save-user denied for non-admin session | ✅ |
+| 6.3 | S-1: save-user allowed for admin session | ✅ |
+| 6.4 | S-1: save-user rejects invalid rol (not in allowlist) | ✅ |
+| 6.5 | S-1: delete-user denied when no active session | ✅ |
+| 6.6 | S-1: delete-user denied for non-admin session | ✅ |
+| 7.1 | S-2: registrar-compra-producto uses session userId, ignores renderer UsuarioId | ✅ |
+| 7.2 | S-2: registrar-compra-producto fails with no active session | ✅ |
+| 8.1 | B-3: purchase rejects descuento > subtotal | ✅ |
+| 8.2 | B-3: purchase rejects negative recargo | ✅ |
+| 8.3 | B-3: purchase with descuento = subtotal succeeds | ✅ |
+| 9b.1 | B-4: 5 failed attempts trigger lockout on 6th attempt | ✅ |
+| 9b.2 | B-4: successful login after 4 failures clears counter | ✅ |
+| 9c.1 | B-7: save-business-info rejects oversized logoBase64 | ✅ |
+| 9c.2 | B-7: save-business-info without logo still works | ✅ |
+| 9d.1 | B-8a: save-user rejects password shorter than 6 chars | ✅ |
+| 9d.2 | B-8b: save-gasto-fijo rejects negative monto | ✅ |
+| 9d.3 | B-8b: save-gasto-fijo accepts monto: 0 | ✅ |
+| 9d.4 | B-8c: save-empleado rejects negative sueldo | ✅ |
+| 9d.5 | B-8c: save-empleado accepts sueldo: 0 | ✅ |
+| 9d.7 | B-8d: save-user rejects invalid permission IDs | ✅ |
+| 9d.8 | B-8d: save-user accepts known permission IDs | ✅ |
+| 9d.9 | B-8f: registrar-compra-producto rejects duplicate nroFactura for same proveedor | ✅ |
+| 9d.6 | B-8k: login-attempt ignores payload.username (must use payload.nombre) | ✅ |
+| 9.1 | [Regresión] login-attempt still authenticates correctly | ✅ |
+| 9.2 | [Regresión] save-general-config with valid values (10, 5) still works | ✅ |
+| 9.3 | [Regresión] save-user with valid admin rol still works | ✅ |
+| 9.4 | [Regresión] registrar-compra-producto end-to-end still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 53 |
+| Pass   | 53 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-10] Phase 8 Testing Results
+
+**Runner:** `tests/run-phase-8.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** clientes, proveedores, ctascorrientes, insumos, caja, ventas, facturacion, dashboard, reportes
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 8.1: registrar-pago-cliente fails without active session | PASS |
+| 1.2 | 8.1: registrar-pago-cliente succeeds with active session | PASS |
+| 1.3 | 8.1: registrar-abono-proveedor fails without active session | PASS |
+| 1.4 | 8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId | PASS |
+| 2.1 | 8.2: guardar-insumo update on non-existent ID returns success:false | PASS |
+| 2.2 | 8.2: guardar-insumo create works with valid data | PASS |
+| 2.3 | 8.2: guardar-insumo update with allowed fields succeeds | PASS |
+| 2.4 | 8.2: guardar-insumo rejects empty nombre | PASS |
+| 3.1 | 8.3: get-clientes returns bounded result by default | PASS |
+| 3.2 | 8.3: get-clientes respects limit=1 | PASS |
+| 3.3 | 8.3: get-insumos returns bounded result by default | PASS |
+| 3.4 | 8.3: get-insumos respects limit=1 | PASS |
+| 3.5 | 8.3: get-ventas enforces default limit | PASS |
+| 4.1 | 8.4: guardar-cliente rejects descuento > 100 | PASS |
+| 4.2 | 8.4: guardar-cliente rejects descuento < 0 | PASS |
+| 4.3 | 8.4: guardar-cliente accepts descuento: 100 | PASS |
+| 4.4 | 8.4: guardar-cliente accepts descuento: 0 | PASS |
+| 5.1 | 8.5: guardar-proveedor create works with valid nombreEmpresa | PASS |
+| 5.2 | 8.5: guardar-proveedor cannot overwrite deuda via payload injection | PASS |
+| 5.3 | 8.5: guardar-proveedor rejects missing nombreEmpresa | PASS |
+| 6.1 | 8.6: get-dashboard-stats with garbage dateFrom returns success:false | PASS |
+| 6.2 | 8.6: get-dashboard-stats with garbage dateTo returns success:false | PASS |
+| 6.3 | 8.6: get-dashboard-stats with valid dates returns success:true | PASS |
+| 6.4 | 8.6: get-rentabilidad-report with invalid dates returns success:false | PASS |
+| 6.5 | 8.6: get-rentabilidad-report with valid dates returns success:true | PASS |
+| 7.1 | 8.7: abrir-caja rejects negative montoInicial | PASS |
+| 7.2 | 8.7: abrir-caja accepts montoInicial: 0 | PASS |
+| 8.1 | 8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error | PASS |
+| 8.2 | 8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds | PASS |
+| 9.1 | [Regression] guardar-cliente create still works | PASS |
+| 9.2 | [Regression] eliminar-cliente still works | PASS |
+| 9.3 | [Regression] get-clientes returns seeded clients | PASS |
+| 9.4 | [Regression] guardar-proveedor create end-to-end still works | PASS |
+| 9.5 | [Regression] registrar-venta still works end-to-end | PASS |
+| 9.6 | [Regression] get-insumos returns all insumos (no filter) | PASS |
+| 9.7 | [Regression] get-ctacte-resumen returns totals | PASS |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 36 |
+| Pass   | 36 |
+| Fail   | 0 |
+
+### All tests passed
+---
+
+## [2026-04-10] Phase 7 Testing Results — Wave-2 Security Fixes
+
+**Runner:** `tests/run-phase-7.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** session, config, compras, admin
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | I-1: clearSession sets activeUserId to null | ✅ |
+| 1.2 | I-1: get-user-session returns null after clearSession | ✅ |
+| 1.3 | I-1: get-user-session returns user after login | ✅ |
+| 1.4 | I-1: re-login after logout returns new user | ✅ |
+| 2.1 | S-3: get-user-session does NOT expose mp_access_token | ✅ |
+| 2.2 | S-3: get-user-session does NOT expose password | ✅ |
+| 2.3 | S-3: get-user-session returns required fields (id, nombre, rol, permisos) | ✅ |
+| 2.4 | S-3: get-admin-config does NOT expose mp_access_token | ✅ |
+| 2.5 | S-3: get-admin-config returns UI-required fields | ✅ |
+| 3.1 | I-2: save-general-config rejects recargoCredito: -1 | ✅ |
+| 3.2 | I-2: save-general-config rejects recargoCredito: 101 | ✅ |
+| 3.3 | I-2: save-general-config rejects descuentoEfectivo: 150 | ✅ |
+| 3.4 | I-2: save-general-config accepts boundary recargoCredito: 100, descuentoEfectivo: 0 | ✅ |
+| 3.5 | I-2: save-general-config accepts boundary recargoCredito: 0, descuentoEfectivo: 100 | ✅ |
+| 3.6 | I-2: saved value is persisted correctly | ✅ |
+| 4.1 | I-3: purchase rejects nuevoPrecioVenta below costoUnitario | ✅ |
+| 4.2 | I-3: purchase rejects nuevoPrecioVenta = 0 | ✅ |
+| 4.3 | I-3: purchase rejects nuevoPrecioVenta > 100x costoUnitario | ✅ |
+| 4.4 | I-3: valid actualizarPrecioVenta updates precioVenta in DB | ✅ |
+| 4.5 | I-3: actualizarPrecioVenta: false leaves precioVenta unchanged | ✅ |
+| 5.1 | I-4: mp:refund-payment with amount: 0 returns ok:false immediately | ✅ |
+| 5.2 | I-4: mp:refund-payment with amount: null returns ok:false | ✅ |
+| 5.3 | I-4: mp:refund-payment with amount: -50 returns ok:false | ✅ |
+| 5.4 | I-4: mp:refund-payment with amount: undefined returns ok:false | ✅ |
+| 5.5 | I-4: mp:refund-payment with valid amount passes validation (may fail on no token) | ✅ |
+| 6.1 | S-1: save-user denied when no active session | ✅ |
+| 6.2 | S-1: save-user denied for non-admin session | ✅ |
+| 6.3 | S-1: save-user allowed for admin session | ✅ |
+| 6.4 | S-1: save-user rejects invalid rol (not in allowlist) | ✅ |
+| 6.5 | S-1: delete-user denied when no active session | ✅ |
+| 6.6 | S-1: delete-user denied for non-admin session | ✅ |
+| 7.1 | S-2: registrar-compra-producto uses session userId, ignores renderer UsuarioId | ✅ |
+| 7.2 | S-2: registrar-compra-producto fails with no active session | ✅ |
+| 8.1 | B-3: purchase rejects descuento > subtotal | ✅ |
+| 8.2 | B-3: purchase rejects negative recargo | ✅ |
+| 8.3 | B-3: purchase with descuento = subtotal succeeds | ✅ |
+| 9b.1 | B-4: 5 failed attempts trigger lockout on 6th attempt | ✅ |
+| 9b.2 | B-4: successful login after 4 failures clears counter | ✅ |
+| 9c.1 | B-7: save-business-info rejects oversized logoBase64 | ✅ |
+| 9c.2 | B-7: save-business-info without logo still works | ✅ |
+| 9d.1 | B-8a: save-user rejects password shorter than 6 chars | ✅ |
+| 9d.2 | B-8b: save-gasto-fijo rejects negative monto | ✅ |
+| 9d.3 | B-8b: save-gasto-fijo accepts monto: 0 | ✅ |
+| 9d.4 | B-8c: save-empleado rejects negative sueldo | ✅ |
+| 9d.5 | B-8c: save-empleado accepts sueldo: 0 | ✅ |
+| 9d.7 | B-8d: save-user rejects invalid permission IDs | ✅ |
+| 9d.8 | B-8d: save-user accepts known permission IDs | ✅ |
+| 9d.9 | B-8f: registrar-compra-producto rejects duplicate nroFactura for same proveedor | ✅ |
+| 9d.6 | B-8k: login-attempt ignores payload.username (must use payload.nombre) | ✅ |
+| 9.1 | [Regresión] login-attempt still authenticates correctly | ✅ |
+| 9.2 | [Regresión] save-general-config with valid values (10, 5) still works | ✅ |
+| 9.3 | [Regresión] save-user with valid admin rol still works | ✅ |
+| 9.4 | [Regresión] registrar-compra-producto end-to-end still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 53 |
+| Pass   | 53 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-10] Phase 8 Testing Results
+
+**Runner:** `tests/run-phase-8.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** clientes, proveedores, ctascorrientes, insumos, caja, ventas, facturacion, dashboard, reportes
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 8.1: registrar-pago-cliente fails without active session | PASS |
+| 1.2 | 8.1: registrar-pago-cliente succeeds with active session | PASS |
+| 1.3 | 8.1: registrar-abono-proveedor fails without active session | PASS |
+| 1.4 | 8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId | PASS |
+| 2.1 | 8.2: guardar-insumo update on non-existent ID returns success:false | PASS |
+| 2.2 | 8.2: guardar-insumo create works with valid data | PASS |
+| 2.3 | 8.2: guardar-insumo update with allowed fields succeeds | PASS |
+| 2.4 | 8.2: guardar-insumo rejects empty nombre | PASS |
+| 3.1 | 8.3: get-clientes returns bounded result by default | PASS |
+| 3.2 | 8.3: get-clientes respects limit=1 | PASS |
+| 3.3 | 8.3: get-insumos returns bounded result by default | PASS |
+| 3.4 | 8.3: get-insumos respects limit=1 | PASS |
+| 3.5 | 8.3: get-ventas enforces default limit | PASS |
+| 4.1 | 8.4: guardar-cliente rejects descuento > 100 | PASS |
+| 4.2 | 8.4: guardar-cliente rejects descuento < 0 | PASS |
+| 4.3 | 8.4: guardar-cliente accepts descuento: 100 | PASS |
+| 4.4 | 8.4: guardar-cliente accepts descuento: 0 | PASS |
+| 5.1 | 8.5: guardar-proveedor create works with valid nombreEmpresa | PASS |
+| 5.2 | 8.5: guardar-proveedor cannot overwrite deuda via payload injection | PASS |
+| 5.3 | 8.5: guardar-proveedor rejects missing nombreEmpresa | PASS |
+| 6.1 | 8.6: get-dashboard-stats with garbage dateFrom returns success:false | PASS |
+| 6.2 | 8.6: get-dashboard-stats with garbage dateTo returns success:false | PASS |
+| 6.3 | 8.6: get-dashboard-stats with valid dates returns success:true | PASS |
+| 6.4 | 8.6: get-rentabilidad-report with invalid dates returns success:false | PASS |
+| 6.5 | 8.6: get-rentabilidad-report with valid dates returns success:true | PASS |
+| 7.1 | 8.7: abrir-caja rejects negative montoInicial | PASS |
+| 7.2 | 8.7: abrir-caja accepts montoInicial: 0 | PASS |
+| 8.1 | 8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error | PASS |
+| 8.2 | 8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds | PASS |
+| 9.1 | [Regression] guardar-cliente create still works | PASS |
+| 9.2 | [Regression] eliminar-cliente still works | PASS |
+| 9.3 | [Regression] get-clientes returns seeded clients | PASS |
+| 9.4 | [Regression] guardar-proveedor create end-to-end still works | PASS |
+| 9.5 | [Regression] registrar-venta still works end-to-end | PASS |
+| 9.6 | [Regression] get-insumos returns all insumos (no filter) | PASS |
+| 9.7 | [Regression] get-ctacte-resumen returns totals | PASS |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 36 |
+| Pass   | 36 |
+| Fail   | 0 |
+
+### All tests passed

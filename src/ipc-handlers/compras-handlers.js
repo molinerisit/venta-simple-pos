@@ -22,6 +22,12 @@ function registerComprasHandlers(models, sequelize) {
       if (!proveedorId) throw new Error("Se debe seleccionar un proveedor.");
       if (!items || !items.length) throw new Error("La compra debe tener al menos un producto.");
 
+      // B-8f: reject duplicate nroFactura within same proveedor (if provided)
+      if (nroFactura) {
+        const existing = await Compra.findOne({ where: { nroFactura, ProveedorId: proveedorId } });
+        if (existing) throw new Error(`Ya existe una compra con nroFactura "${nroFactura}" para este proveedor.`);
+      }
+
       // Validación rápida de items
       for (const it of items) {
         if (!it?.productoId) throw new Error("Falta productoId en un ítem.");

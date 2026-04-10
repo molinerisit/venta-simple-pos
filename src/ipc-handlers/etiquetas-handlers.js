@@ -2,6 +2,16 @@
 const { ipcMain, BrowserWindow } = require("electron");
 const { Op } = require("sequelize");
 
+// W3-M8: Simple HTML escape to prevent stored XSS when product names contain HTML characters.
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function registerEtiquetasHandlers(models) {
   // Extraemos los modelos de forma segura
   const Producto = models.Producto;
@@ -15,17 +25,20 @@ function registerEtiquetasHandlers(models) {
 // ==================================================================
   // 1. OBTENER DATOS (CORREGIDO para FILTROS)
   // ==================================================================
-  ipcMain.handle("get-data-for-seleccion", async () => {
-    try {
-      // 1. Traer TODOS los productos
-      const productosRaw = await Producto.findAll({
-        order: [["nombre", "ASC"]],
-        include: [
-          Familia ? { model: Familia, as: 'familia', required: false, 
-            include: [Departamento ? { model: Departamento, as: 'departamento', required: false } : null].filter(Boolean) 
-          } : null,
-        ].filter(Boolean),
-      });
+  // W3-M3: Added default limit of 500 to prevent unbounded query on large catalogues.
+  ipcMain.handle("get-data-for-seleccion", async (_event, opts) => {
+    try {
+      const limit = Math.min(500, Math.max(1, parseInt(opts && opts.limit) || 500));
+      // 1. Traer productos con limite
+      const productosRaw = await Producto.findAll({
+        order: [["nombre", "ASC"]],
+        limit,
+        include: [
+          Familia ? { model: Familia, as: 'familia', required: false,
+            include: [Departamento ? { model: Departamento, as: 'departamento', required: false } : null].filter(Boolean)
+          } : null,
+        ].filter(Boolean),
+      });
 
       // 2. Traer departamentos y familias por separado
       let departamentos = [];
@@ -129,7 +142,7 @@ function registerEtiquetasHandlers(models) {
               <div class="label-content" style="background-color: ${config.colorFondo}; border: 1px dashed #ccc;">
                 
                 <div class="product-header">
-                  <span class="product-name">${p.nombre || "PRODUCTO"}</span>
+                  <span class="product-name">${escapeHtml(p.nombre || "PRODUCTO")}</span>
                 </div>
 
                 <div class="price-body">
@@ -140,7 +153,7 @@ function registerEtiquetasHandlers(models) {
 
                 <div class="label-footer">
                     <div class="footer-left">
-                        <span class="label-code">COD: ${getCodigo(p)}</span>
+                        <span class="label-code">COD: ${escapeHtml(getCodigo(p))}</span>
                         <span class="label-date">${fechaHoy}</span>
                     </div>
                     ${logoHtml ? `<div class="footer-right">${logoHtml}</div>` : ''}
@@ -161,9 +174,9 @@ function registerEtiquetasHandlers(models) {
         const trs = productos.map(p => {
              const precio = getPrecio(p).toLocaleString("es-AR", { style:"currency", currency:"ARS" });
              let extras = "";
-             if(config.columnas?.includes('codigo_barras')) extras += `<td>${getCodigo(p)}</td>`;
+             if(config.columnas?.includes('codigo_barras')) extras += `<td>${escapeHtml(getCodigo(p))}</td>`;
              if(config.columnas?.includes('stock')) extras += `<td>${p.stock || 0}</td>`;
-             return `<tr><td>${p.nombre}</td><td class="precio-lista">${precio}</td>${extras}</tr>`;
+             return `<tr><td>${escapeHtml(p.nombre)}</td><td class="precio-lista">${precio}</td>${extras}</tr>`;
         }).join("");
 
         contentHtml = `

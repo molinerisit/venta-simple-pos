@@ -547,6 +547,52 @@ test('9d.5', 'B-8c: save-empleado accepts sueldo: 0', async () => {
   assertTrue(result.success, '9d.5 zero sueldo must be accepted');
 });
 
+test('9d.7', 'B-8d: save-user rejects invalid permission IDs', async () => {
+  const { admin } = await fresh();
+  await loginAs(admin.id);
+  const result = await invoke('save-user', {
+    nombre: 'UserBadPerms', password: 'pass123', rol: 'empleado',
+    permisos: ['caja', 'hack_the_planet'],
+  });
+  assertFalse(result.success, '9d.7 unknown permission IDs must be rejected');
+  assertTrue(result.message.includes('hack_the_planet') || result.message.toLowerCase().includes('permiso'),
+    '9d.7 message must mention the invalid permission');
+});
+
+test('9d.8', 'B-8d: save-user accepts known permission IDs', async () => {
+  const { admin } = await fresh();
+  await loginAs(admin.id);
+  const result = await invoke('save-user', {
+    nombre: 'UserGoodPerms', password: 'pass123', rol: 'empleado',
+    permisos: ['caja', 'productos', 'reportes'],
+  });
+  assertTrue(result.success, '9d.8 valid permissions must be accepted');
+});
+
+test('9d.9', 'B-8f: registrar-compra-producto rejects duplicate nroFactura for same proveedor', async () => {
+  const { admin, prodA } = await fresh();
+  await loginAs(admin.id);
+  const proveedor = await MODELS.Proveedor.create({ nombreEmpresa: 'Prov Dup', deuda: 0 });
+  // First purchase with nroFactura "FAC-001"
+  const r1 = await invoke('registrar-compra-producto', {
+    proveedorId: proveedor.id,
+    nroFactura: 'FAC-001',
+    items: [{ productoId: prodA.id, cantidad: 1, costoUnitario: 50 }],
+    pago: { descuento: 0, recargo: 0, montoAbonado: 50, metodoPago: 'Efectivo' },
+  });
+  assertTrue(r1.success, '9d.9 first purchase must succeed');
+  // Duplicate nroFactura
+  const r2 = await invoke('registrar-compra-producto', {
+    proveedorId: proveedor.id,
+    nroFactura: 'FAC-001',
+    items: [{ productoId: prodA.id, cantidad: 1, costoUnitario: 50 }],
+    pago: { descuento: 0, recargo: 0, montoAbonado: 50, metodoPago: 'Efectivo' },
+  });
+  assertFalse(r2.success, '9d.9 duplicate nroFactura must be rejected');
+  assertTrue(r2.message.includes('FAC-001') || r2.message.includes('nroFactura'),
+    '9d.9 message must mention the duplicate invoice number');
+});
+
 test('9d.6', 'B-8k: login-attempt ignores payload.username (must use payload.nombre)', async () => {
   const { admin } = await fresh();
   _resetLoginAttempts('Admin Test');

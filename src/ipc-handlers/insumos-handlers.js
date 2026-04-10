@@ -5,8 +5,12 @@ const { Op } = require("sequelize");
 function registerInsumosHandlers(models, sequelize) {
   const { Insumo, InsumoDepartamento, InsumoFamilia } = models;
 
-  ipcMain.handle("get-insumos", async (_event, filtro) => {
+  // W3-M1: Added default limit of 500 to prevent unbounded query.
+  ipcMain.handle("get-insumos", async (_event, opts) => {
     try {
+      const filtro = typeof opts === 'string' ? opts : opts?.filtro;
+      const limit = Math.min(500, Math.max(1, parseInt(opts?.limit) || 500));
+      const offset = Math.max(0, parseInt(opts?.offset) || 0);
       const where = filtro ? { nombre: { [Op.like]: `%${String(filtro).trim()}%` } } : undefined;
       const insumos = await Insumo.findAll({
         where,
@@ -15,6 +19,8 @@ function registerInsumosHandlers(models, sequelize) {
           { model: InsumoFamilia, as: "familia", attributes: ["nombre"] },
         ],
         order: [["nombre", "ASC"]],
+        limit,
+        offset,
       });
       return insumos.map((i) => {
         const j = i.toJSON();
@@ -46,14 +52,33 @@ function registerInsumosHandlers(models, sequelize) {
     }
   });
 
+  // W3-H4: Explicit field allowlist — renderer cannot inject arbitrary columns.
+  // W3-H5: affectedRows check on update — silent no-op replaced with clear error.
+  const INSUMO_ALLOWED_FIELDS = [
+    'nombre', 'stock', 'precioCompra', 'precioVenta', 'unidad',
+    'InsumoDepartamentoId', 'InsumoFamiliaId', 'activo',
+  ];
+
   ipcMain.handle("guardar-insumo", async (_event, data) => {
     try {
       const nombre = String(data?.nombre || "").trim();
       if (!nombre) return { success: false, message: "El nombre es obligatorio." };
 
-      const payload = { ...data, nombre };
-      if (payload.id) await Insumo.update(payload, { where: { id: payload.id } });
-      else await Insumo.create(payload);
+      // Build payload from allowlist only
+      const payload = Object.fromEntries(
+        Object.entries(data || {}).filter(([k]) => INSUMO_ALLOWED_FIELDS.includes(k))
+      );
+      payload.nombre = nombre;
+
+      const insumoId = data?.id;
+      if (insumoId) {
+        const [affectedRows] = await Insumo.update(payload, { where: { id: insumoId } });
+        if (affectedRows === 0) {
+          return { success: false, message: "Insumo no encontrado." };
+        }
+      } else {
+        await Insumo.create(payload);
+      }
 
       return { success: true };
     } catch (error) {
@@ -97,11 +122,17 @@ function registerInsumosHandlers(models, sequelize) {
     }
   });
 
+  // W3-L4: Validate InsumoDepartamentoId exists before creating family.
   ipcMain.handle("guardar-insumo-familia", async (_event, data) => {
     try {
       const nombre = String(data?.nombre || "").trim();
       const depId = data?.InsumoDepartamentoId;
       if (!nombre || !depId) return { success: false, message: "Nombre y departamento requeridos." };
+
+      const deptoExiste = await InsumoDepartamento.findByPk(depId);
+      if (!deptoExiste) {
+        return { success: false, message: "El departamento de insumo no existe." };
+      }
 
       const nueva = await InsumoFamilia.create({ nombre, InsumoDepartamentoId: depId });
       return { success: true, message: "Familia creada.", data: nueva.toJSON() };

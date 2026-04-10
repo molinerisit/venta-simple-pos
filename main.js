@@ -384,6 +384,15 @@ app.on("ready", async () => {
       }
     });
 
+    // 🔹 Reportes (get-rentabilidad-report, etc.)
+    try {
+      const { registerReportesHandlers } = require("./src/ipc-handlers/registerReportesHandlers");
+      registerReportesHandlers(models, sequelize);
+      console.log("[MAIN] ✔ reportes-handlers registrados.");
+    } catch (e) {
+      console.warn("[MAIN] reportes-handlers no disponibles:", e?.message || e);
+    }
+
     // 🔹 Kretz / Balanza (PLU & co)
 
     try {

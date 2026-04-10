@@ -11,8 +11,11 @@ function registerFacturacionHandlers(models) {
   // ---
 
   // Historial de ventas facturadas (Se mantiene, es una lectura local)
-  ipcMain.handle("get-ventas-con-factura", async () => {
+  // W3-H8: Added default limit of 200 to prevent unbounded full-table scan.
+  ipcMain.handle("get-ventas-con-factura", async (_event, opts) => {
     try {
+      const limit = Math.min(200, Math.max(1, parseInt(opts?.limit) || 200));
+      const offset = Math.max(0, parseInt(opts?.offset) || 0);
       const ventasFacturadas = await Venta.findAll({
         where: { facturada: true },
         include: [
@@ -20,6 +23,8 @@ function registerFacturacionHandlers(models) {
           { model: Cliente, as: "cliente" },
         ],
         order: [["createdAt", "DESC"]],
+        limit,
+        offset,
       });
       return ventasFacturadas.map((v) => v.toJSON());
     } catch (error) {
