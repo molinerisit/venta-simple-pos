@@ -97,16 +97,6 @@
           </div>
 
           <div class="metric-card metric-card--expense">
-            <p class="metric-label">Compras Mercadería</p>
-            <p class="metric-value" id="total-compras">$0.00</p>
-            <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-              <span class="metric-pct">—</span>
-              <span class="metric-vs">vs ayer</span>
-            </div>
-          </div>
-
-          <div class="metric-card metric-card--expense">
             <p class="metric-label">Gastos Operativos</p>
             <p class="metric-value" id="total-gastos">$0.00</p>
             <div class="metric-trend metric-trend--up">
@@ -129,6 +119,16 @@
           <div class="metric-card metric-card--revenue">
             <p class="metric-label">Ticket Promedio</p>
             <p class="metric-value" id="ticket-promedio">$0.00</p>
+            <div class="metric-trend metric-trend--up">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <span class="metric-pct">—</span>
+              <span class="metric-vs">vs ayer</span>
+            </div>
+          </div>
+
+          <div class="metric-card metric-card--revenue">
+            <p class="metric-label">Margen %</p>
+            <p class="metric-value" id="margen-pct">0%</p>
             <div class="metric-trend metric-trend--up">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
@@ -290,6 +290,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="../js/ui-notifications.js"></script>
   <script defer src="../js/navbar-loader.js"></script>
   <script defer src="../js/dashboard.js"></script>
 </body>

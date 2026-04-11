@@ -18,8 +18,8 @@
       <!-- Page header -->
       <header class="main-header">
         <div class="page-title-group">
-          <h1 class="page-title">Ventas</h1>
-          <p class="page-subtitle">Consultá, filtrá y analizá tus ventas</p>
+          <h1 class="page-title">Reporte de Ventas</h1>
+          <p class="page-subtitle">Consultá y revisá las ventas realizadas</p>
         </div>
       </header>
       <nav class="module-tabs">
@@ -52,6 +52,18 @@
                 autocomplete="off"
               />
             </div>
+
+            <div class="filter-field">
+              <label for="filtro-metodo">Método de pago</label>
+              <select id="filtro-metodo">
+                <option value="">Todos</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Débito">Débito</option>
+                <option value="Crédito">Crédito</option>
+                <option value="Mercado Pago">Mercado Pago</option>
+                <option value="Cuenta Corriente">Cuenta Corriente</option>
+              </select>
+            </div>
           </div>
 
           <div class="acciones">
@@ -61,45 +73,6 @@
               </svg>
               Aplicar Filtros
             </button>
-          </div>
-        </div>
-
-        <!-- ─── KPI cards ─────────────────────────────────── -->
-        <div class="kpi-grid">
-          <div class="kpi-card kpi-primary">
-            <div class="kpi-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-              </svg>
-            </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Total Facturado</span>
-              <strong class="kpi-value" id="total-ventas">$0,00</strong>
-            </div>
-          </div>
-
-          <div class="kpi-card kpi-neutral">
-            <div class="kpi-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-              </svg>
-            </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Ventas Encontradas</span>
-              <strong class="kpi-value" id="cantidad-ventas">0</strong>
-            </div>
-          </div>
-
-          <div class="kpi-card kpi-accent">
-            <div class="kpi-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-              </svg>
-            </div>
-            <div class="kpi-body">
-              <span class="kpi-label">Ticket Promedio</span>
-              <strong class="kpi-value" id="ticket-promedio">$0,00</strong>
-            </div>
           </div>
         </div>
 
@@ -131,6 +104,104 @@
     </main>
   </div>
 
+  <!-- ─── Side Panel ───────────────────────────────────────────── -->
+  <div id="venta-panel-backdrop" class="panel-backdrop"></div>
+  <aside id="venta-side-panel" class="venta-side-panel" aria-hidden="true" role="dialog" aria-labelledby="panel-sale-id">
+
+    <div class="vsp-header">
+      <div class="vsp-header-info">
+        <h2 class="vsp-sale-id" id="panel-sale-id">Venta #—</h2>
+        <p class="vsp-sale-date" id="panel-sale-date">—</p>
+      </div>
+      <button class="vsp-close-btn" id="panel-close-btn" aria-label="Cerrar panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="vsp-body">
+
+      <!-- Sección 1: Información de la venta -->
+      <div class="vsp-section">
+        <h3 class="vsp-section-title">Información de la venta</h3>
+        <div class="vsp-info-grid">
+          <div class="vsp-info-row">
+            <span class="vsp-info-label">Cliente</span>
+            <span class="vsp-info-value" id="panel-cliente">—</span>
+          </div>
+          <div class="vsp-info-row">
+            <span class="vsp-info-label">Método de pago</span>
+            <span class="vsp-info-value" id="panel-metodo">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 2: Productos -->
+      <div class="vsp-section">
+        <h3 class="vsp-section-title">Productos</h3>
+        <div class="vsp-table-wrap">
+          <table class="vsp-products-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="vsp-num">Cant.</th>
+                <th class="vsp-num">Precio</th>
+                <th class="vsp-num">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="panel-products-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sección 3: Resumen de pago -->
+      <div class="vsp-section">
+        <h3 class="vsp-section-title">Resumen de pago</h3>
+        <div class="vsp-summary">
+          <div class="vsp-summary-row">
+            <span>Subtotal</span>
+            <span id="panel-subtotal">—</span>
+          </div>
+          <div class="vsp-summary-row vsp-discount-row" id="panel-discount-row" style="display:none;">
+            <span>Descuento</span>
+            <span id="panel-descuento" class="vsp-discount-val">—</span>
+          </div>
+          <div class="vsp-summary-row vsp-surcharge-row" id="panel-surcharge-row" style="display:none;">
+            <span>Recargo</span>
+            <span id="panel-recargo" class="vsp-surcharge-val">—</span>
+          </div>
+          <div class="vsp-summary-total">
+            <span>Total</span>
+            <span id="panel-total">—</span>
+          </div>
+          <div class="vsp-summary-row" id="panel-pagado-row" style="display:none;">
+            <span>Pagado</span>
+            <span id="panel-pagado">—</span>
+          </div>
+          <div class="vsp-summary-row" id="panel-vuelto-row" style="display:none;">
+            <span>Vuelto</span>
+            <span id="panel-vuelto">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.vsp-body -->
+
+    <div class="vsp-footer">
+      <button class="btn btn-secundario" id="panel-btn-cerrar">Cerrar</button>
+      <button class="btn btn-primario" id="panel-btn-imprimir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Imprimir
+      </button>
+    </div>
+  </aside>
+
+  <script src="../js/ui-notifications.js"></script>
   <script defer src="../js/navbar-loader.js"></script>
   <script src="../js/reportes.js"></script>
 </body>

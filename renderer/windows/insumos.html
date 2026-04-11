@@ -33,21 +33,21 @@
         <!-- Tarjetas de resumen -->
         <div class="stat-cards">
           <div class="stat-card">
-            <div class="stat-card-icon stat-card-icon--green">
+            <div class="stat-card-icon stat-card-icon--blue">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
               </svg>
             </div>
             <div>
-              <p class="stat-card-label">Total insumos</p>
-              <p class="stat-card-value" id="stat-total">—</p>
+              <p class="stat-card-label">Gasto del mes</p>
+              <p class="stat-card-value" id="stat-gasto-mes">—</p>
             </div>
           </div>
 
           <div class="stat-card">
-            <div class="stat-card-icon stat-card-icon--amber" id="stat-sin-stock-icon">
+            <div class="stat-card-icon stat-card-icon--amber" id="stat-bajo-stock-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
@@ -55,13 +55,13 @@
               </svg>
             </div>
             <div>
-              <p class="stat-card-label">Sin stock</p>
-              <p class="stat-card-value" id="stat-sin-stock">—</p>
+              <p class="stat-card-label">Insumos con bajo stock</p>
+              <p class="stat-card-value" id="stat-bajo-stock">—</p>
             </div>
           </div>
 
           <div class="stat-card">
-            <div class="stat-card-icon stat-card-icon--blue">
+            <div class="stat-card-icon stat-card-icon--green">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -69,8 +69,8 @@
               </svg>
             </div>
             <div>
-              <p class="stat-card-label">Sin precio carga</p>
-              <p class="stat-card-value" id="stat-sin-precio">—</p>
+              <p class="stat-card-label">Última compra</p>
+              <p class="stat-card-value stat-card-value--sm" id="stat-ultima-compra">—</p>
             </div>
           </div>
         </div>
@@ -80,11 +80,11 @@
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Departamento</th>
-                <th>Familia</th>
+                <th>Categoría</th>
                 <th>Stock</th>
                 <th>Unidad</th>
-                <th>Último Costo</th>
+                <th>Último costo</th>
+                <th>Última compra</th>
                 <th>Estado</th>
                 <th style="text-align:right;">Acciones</th>
               </tr>
@@ -96,6 +96,7 @@
     </main>
   </div>
 
+  <script src="../js/ui-notifications.js"></script>
   <script defer src="../js/navbar-loader.js"></script>
   <script defer src="../js/insumos.js"></script>
   <script>

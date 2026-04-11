@@ -884,11 +884,17 @@ if (event.key === "Enter") {
 
   montoPagadoInput?.addEventListener("input", actualizarCalculoVuelto);
   // W5-F5: Confirmation guard — only prompt when the cart has items.
-  btnCancelarVenta?.addEventListener("click", () => {
+  btnCancelarVenta?.addEventListener("click", async () => {
     if (CajaState.ventaActual.length === 0) { resetearVenta(); return; }
-    if (window.confirm('¿Cancelar la venta actual? Se perderán todos los ítems agregados.')) {
-      resetearVenta();
-    }
+    const ok = await window.AppDialog.confirm({
+      title: '¿Cancelar la venta?',
+      message: `Se perderán los ${CajaState.ventaActual.length} ítem${CajaState.ventaActual.length !== 1 ? 's' : ''} del carrito.`,
+      confirmText: 'Cancelar Venta',
+      cancelText: 'Volver',
+      type: 'warning',
+      danger: true,
+    });
+    if (ok) resetearVenta();
   });
 
   btnRegistrarVenta?.addEventListener("click", async () => {
@@ -1243,33 +1249,12 @@ if (event.key === "Enter") {
 
   // W5-F12: Informe X — snapshot de totales sin cerrar la caja
   informeXBtn?.addEventListener("click", async () => {
-    const res = await window.api.invoke("get-informe-x");
+    const res = await window.electronAPI.invoke("get-informe-x");
     if (!res?.success) {
       showToast(res?.message || "No se pudo obtener el Informe X.", "error");
       return;
     }
-    const r = res.resumen;
-    const fmt = (v) => (v || 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
-    const lines = [
-      `📊 INFORME X — ${new Date().toLocaleTimeString("es-AR")}`,
-      `Desde: ${new Date(r.desde).toLocaleTimeString("es-AR")}`,
-      ``,
-      `Ventas: ${r.cantidadVentas} — Total: ${fmt(r.totalVentas)}`,
-      `Ticket promedio: ${fmt(r.ticketPromedio)}`,
-      ``,
-      `Efectivo: ${fmt(r.totalEfectivo)}`,
-      `Débito: ${fmt(r.totalDebito)}`,
-      `Crédito: ${fmt(r.totalCredito)}`,
-      `QR/MP: ${fmt(r.totalQR)}`,
-      `Transferencia: ${fmt(r.totalTransfer)}`,
-      `Cta. Cte.: ${fmt(r.totalCtaCte)}`,
-      ``,
-      `Ingresos extra: ${fmt(r.totalIngresosExtra)}`,
-      `Egresos extra: ${fmt(r.totalEgresosExtra)}`,
-      ``,
-      `Efectivo esperado en caja: ${fmt(r.montoEstimado)}`,
-    ].join("\n");
-    alert(lines);
+    window.AppDialog.informeX(res.resumen);
   });
 
   movimientoForm?.addEventListener("submit", async (e) => {
