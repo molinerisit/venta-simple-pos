@@ -815,34 +815,9 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
 .resumen-mp h4 { text-align: center; margin-bottom: 8px; }
 
 /* ================================================================
-   7. TOAST
+   7. TOAST — interceptado por ui-notifications.js (ver global.css)
    ================================================================ */
-.toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: #1e293b;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 24px;
-  font-size: .9em;
-  font-weight: 600;
-  z-index: 3000;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .3s, transform .3s;
-  box-shadow: 0 8px 24px rgba(0,0,0,.2);
-}
-
-.toast.visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast.success { background: #059669; }
-.toast.error   { background: #dc2626; }
-.toast.warning { background: #d97706; }
+.toast { display: none !important; }
 
 /* ================================================================
    8. RESPONSIVE

@@ -223,7 +223,7 @@ tbody tr:last-child td{ border-bottom:none; }
 .modal-cuerpo{ flex:1 1 auto; overflow-y:auto; }
 .modal-acciones{ display:flex; justify-content:flex-end; gap:.75rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color); flex-shrink:0; }
 
-/* --- 6) TOAST / NOTIFS --- */
+/* --- 6) TOAST / NOTIFS (legacy — hidden by ui-notifications.js) --- */
 .notification{
   position:fixed; bottom:-100px; left:50%; transform:translateX(-50%);
   padding:12px 25px; border-radius:8px; color:#fff; font-size:1rem; font-weight:500;
@@ -233,18 +233,8 @@ tbody tr:last-child td{ border-bottom:none; }
 .notification.show{ bottom:20px; opacity:1; }
 .notification.success{ background:#28a745; }
 .notification.error{ background:#dc3545; }
-
-/* Toast no bloqueante */
-.toast{
-  position:fixed; bottom:16px; left:50%;
-  transform: translateX(-50%) translateY(8px);
-  z-index:9999; pointer-events:none;
-  max-width:92vw; padding:10px 16px; border-radius:8px; color:#fff; background:#333;
-  opacity:0; transition: opacity .15s ease, transform .15s ease; will-change: opacity, transform;
-}
-.toast.visible{ opacity:1; transform: translateX(-50%) translateY(0); }
-.toast.success{ background: var(--success-color); }
-.toast.error{ background: var(--danger-color); }
+/* Legacy .toast element is intercepted and hidden by ui-notifications.js */
+.toast{ display:none !important; }
 
 /* --- 7) CONFIRM OVERLAY --- */
 .confirm-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:2000; }
@@ -253,3 +243,291 @@ tbody tr:last-child td{ border-bottom:none; }
 .confirm-box h4{ margin:0 0 8px; font-size:1.05rem; }
 .confirm-box p{ margin:0 0 16px; color:#444; }
 .confirm-actions{ display:flex; gap:8px; justify-content:flex-end; }
+
+/* ================================================================
+   8) APP TOAST — Modern top-right notification stack (ui-notifications.js)
+   ================================================================ */
+
+#app-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.app-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  background: #fff;
+  border-radius: 12px;
+  border-left: 4px solid var(--toast-color, #64748b);
+  box-shadow:
+    0 4px 6px -1px rgba(15,23,42,.07),
+    0 10px 20px -4px rgba(15,23,42,.10);
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(calc(100% + 24px));
+  /* entrance handled by .app-toast--in */
+}
+
+.app-toast--in {
+  animation: toast-in 0.35s cubic-bezier(.22,.68,0,1.2) forwards;
+}
+
+.app-toast--out {
+  animation: toast-out 0.28s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(calc(100% + 24px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); max-height: 120px; margin-bottom: 0; }
+  to   { opacity: 0; transform: translateX(calc(100% + 24px)); max-height: 0; margin-bottom: -10px; }
+}
+
+.app-toast__icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--toast-color, #64748b);
+}
+
+.app-toast__icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.app-toast__msg {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.5;
+  margin: 0;
+  padding-right: 4px;
+  word-break: break-word;
+}
+
+.app-toast__close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.12s, color 0.12s;
+  margin-top: -1px;
+}
+
+.app-toast__close:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Progress bar */
+.app-toast__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--toast-color, #64748b);
+  opacity: 0.25;
+  transform-origin: left;
+  animation: toast-progress linear forwards;
+  animation-duration: inherit;
+}
+
+.app-toast--paused .app-toast__bar {
+  animation-play-state: paused;
+}
+
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* ================================================================
+   9) APP DIALOG — Custom confirm/alert (ui-notifications.js)
+   ================================================================ */
+
+.app-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 99998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.app-dialog-overlay--in {
+  opacity: 1;
+}
+
+.app-dialog {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow:
+    0 20px 60px rgba(15,23,42,.2),
+    0 4px 16px rgba(15,23,42,.1);
+  text-align: center;
+  transform: scale(0.92) translateY(8px);
+  opacity: 0;
+  transition: transform 0.26s cubic-bezier(.34,1.56,.64,1), opacity 0.22s ease;
+}
+
+.app-dialog--wide {
+  max-width: 480px;
+}
+
+.app-dialog--in {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.app-dialog__icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--dlg-color) 12%, transparent);
+  color: var(--dlg-color, #f59e0b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+/* Fallback for browsers without color-mix */
+@supports not (background: color-mix(in srgb, red 10%, transparent)) {
+  .app-dialog__icon-wrap {
+    background: rgba(0,0,0,0.06);
+  }
+}
+
+.app-dialog__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.app-dialog__msg {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.app-dialog__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.app-dialog__btn {
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: opacity 0.15s, transform 0.1s;
+  min-width: 100px;
+}
+
+.app-dialog__btn:active {
+  transform: scale(0.97);
+}
+
+.app-dialog__btn--cancel {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #374151;
+}
+
+.app-dialog__btn--cancel:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.app-dialog__btn--confirm {
+  background: var(--btn-color, #3b82f6);
+  border-color: var(--btn-color, #3b82f6);
+  color: #fff;
+}
+
+.app-dialog__btn--confirm:hover {
+  opacity: 0.88;
+}
+
+/* ── Informe X table ─────────────────────────────── */
+.ix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+  margin: 0;
+}
+
+.ix-table td {
+  padding: 7px 4px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+}
+
+.ix-table tfoot td {
+  border-bottom: none;
+  padding-top: 8px;
+}
+
+.ix-val {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.ix-total td {
+  font-weight: 700;
+  color: #0f172a;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px !important;
+}
+
+.ix-cash td {
+  font-size: 0.95rem;
+}
+
+.ix-pos { color: #059669 !important; }
+.ix-neg { color: #dc2626 !important; }

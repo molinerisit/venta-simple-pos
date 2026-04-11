@@ -442,30 +442,8 @@
   text-overflow: ellipsis;
 }
 
-/* Estilos para la notificación Toast */
-.toast{
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  pointer-events: none;           /* <-- clave para no bloquear inputs */
-  max-width: 92vw;
-  opacity: 0;
-  transition: opacity .15s ease, transform .15s ease;
-}
-.toast.visible{
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.toast.success {
-  background-color: #27ae60; /* Verde */
-}
-
-.toast.error {
-  background-color: #c0392b; /* Rojo */
-}
+/* Toast — interceptado por ui-notifications.js */
+.toast { display: none !important; }
 .banner {
   display:flex; align-items:center; justify-content:space-between;
   gap:.75rem; padding:.75rem 1rem; border-radius:8px; margin: .75rem 0;
@@ -488,5 +466,3 @@
 .confirm-box p{margin:0 0 16px;color:#444}
 .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
 
-/* Toast ya no bloquea inputs (si faltaba) */
-.toast{pointer-events:none}
