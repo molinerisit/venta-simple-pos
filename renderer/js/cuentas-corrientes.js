@@ -1,8 +1,8 @@
 // renderer/js/cuentas-corrientes.js
 document.addEventListener("app-ready", () => {
   // --- REFS ---
-  const tabs = document.querySelectorAll(".tab-button");
-  const tabContents = document.querySelectorAll(".tab-content");
+  const tabs = document.querySelectorAll(".cc-tab");
+  const tabContents = document.querySelectorAll(".cc-tab-content");
   const clientesTbody = document.getElementById("clientes-deuda-tbody");
   const proveedoresTbody = document.getElementById("proveedores-deuda-tbody");
 
@@ -38,36 +38,60 @@ document.addEventListener("app-ready", () => {
   };
 
   // --- LOADERS ---
+  const actualizarStatCards = (clientes) => {
+    const totalDeuda     = document.getElementById("stat-total-deuda");
+    const clientesDeuda  = document.getElementById("stat-clientes-deuda");
+    const pagosMes       = document.getElementById("stat-pagos-mes");
+    if (totalDeuda) {
+      const suma = clientes.reduce((acc, c) => acc + parseFloat(c.deuda || 0), 0);
+      totalDeuda.textContent = money(suma);
+    }
+    if (clientesDeuda) clientesDeuda.textContent = clientes.length;
+    if (pagosMes) pagosMes.textContent = "—"; // requires backend support
+  };
+
+  const fmtDate = (d) => d
+    ? new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "—";
+
   const cargarClientesConDeuda = async () => {
     if (!clientesTbody) return;
-    setLoadingTbody(clientesTbody);
+    setLoadingTbody(clientesTbody, 5);
     try {
       const { success, data } = await window.electronAPI.invoke("get-clientes-con-deuda");
       clientesTbody.innerHTML = "";
       if (success && Array.isArray(data) && data.length > 0) {
+        actualizarStatCards(data);
         clientesTbody.innerHTML = data
-          .map(
-            (c) => `
+          .map((c) => {
+            const nombre = `${c.apellido || ""}, ${c.nombre || ""}`.trim().replace(/^,\s*/, "");
+            const deuda  = parseFloat(c.deuda || 0);
+            const estado = deuda > 0
+              ? '<span class="badge-estado badge-estado--deudor">Con deuda</span>'
+              : '<span class="badge-estado badge-estado--activo">Al día</span>';
+            return `
           <tr>
-            <td>${c.apellido || ""}, ${c.nombre || ""}</td>
-            <td>${c.dni || "-"}</td>
-            <td>${money(c.deuda)}</td>
+            <td><strong>${nombre}</strong><br><small style="color:#64748b;">${c.dni || ""}</small></td>
+            <td>${money(deuda)}</td>
+            <td>${fmtDate(c.ultimoMovimiento || c.updatedAt)}</td>
+            <td>${estado}</td>
             <td style="text-align:right;">
               <button class="btn btn-success btn-sm btn-pagar-cliente"
-                data-id="${c.id}" data-nombre="${(c.apellido || "") + ", " + (c.nombre || "")}"
+                data-id="${c.id}" data-nombre="${nombre}"
                 data-deuda="${c.deuda || 0}">Registrar Pago</button>
             </td>
-          </tr>`
-          )
+          </tr>`;
+          })
           .join("");
       } else {
+        actualizarStatCards([]);
         clientesTbody.innerHTML =
-          '<tr class="empty-row"><td colspan="4">No hay clientes con deudas pendientes.</td></tr>';
+          '<tr class="empty-row"><td colspan="5">No hay clientes con deudas pendientes.</td></tr>';
       }
     } catch (e) {
       console.error("get-clientes-con-deuda", e);
       clientesTbody.innerHTML =
-        '<tr class="empty-row"><td colspan="4" style="color:red;">Error al cargar datos.</td></tr>';
+        '<tr class="empty-row"><td colspan="5" style="color:red;">Error al cargar datos.</td></tr>';
       showToast("Error al cargar deudas de clientes.", "error");
     }
   };
