@@ -184,6 +184,71 @@ function registerCajaHandlers(models, sequelize) {
     }
   });
 
+  // W5-F12: Informe X — snapshot de totales sin cerrar la caja
+  // Misma lógica que get-resumen-cierre pero completamente de solo lectura.
+  ipcMain.handle("get-informe-x", async () => {
+    try {
+      const arqueo = await ArqueoCaja.findOne({ where: { estado: "ABIERTA" }, order: [["fechaApertura", "DESC"]] });
+      if (!arqueo) return { success: false, message: "No hay una caja abierta." };
+
+      const { inicio, fin } = await obtenerVentanaArqueo(arqueo);
+
+      const [ventas, movimientos] = await Promise.all([
+        Venta.findAll({
+          where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fin } },
+          attributes: ["metodoPago", "total"],
+          raw: true,
+        }),
+        MovimientoCaja ? MovimientoCaja.findAll({
+          where: { ArqueoCajaId: arqueo.id },
+          order: [["createdAt", "ASC"]],
+          raw: true,
+        }) : Promise.resolve([]),
+      ]);
+
+      const { totalEfectivo, totalDebito, totalCredito, totalQR, totalTransfer, totalCtaCte } =
+        agregarTotalesPorMetodo(ventas);
+
+      const { totalIngresosExtra, totalEgresosExtra } = calcularMovimientos(movimientos);
+
+      const montoEstimado =
+        (Number(arqueo.montoInicial) || 0) +
+        totalEfectivo +
+        totalIngresosExtra -
+        totalEgresosExtra;
+
+      const totalVentas = totalEfectivo + totalDebito + totalCredito + totalQR + totalTransfer + totalCtaCte;
+      const cantidadVentas = ventas.length;
+      const ticketPromedio = cantidadVentas > 0 ? Math.round((totalVentas / cantidadVentas) * 100) / 100 : 0;
+
+      return {
+        success: true,
+        resumen: {
+          arqueoId: arqueo.id,
+          montoInicial: Number(arqueo.montoInicial) || 0,
+          totalEfectivo,
+          totalDebito,
+          totalCredito,
+          totalQR,
+          totalTransfer,
+          totalCtaCte,
+          totalIngresosExtra,
+          totalEgresosExtra,
+          movimientos,
+          montoEstimado,
+          totalVentas,
+          cantidadVentas,
+          ticketPromedio,
+          desde: inicio,
+          hasta: fin,
+        },
+      };
+    } catch (error) {
+      console.error("Error en 'get-informe-x':", error);
+      return { success: false, message: error.message, error: true };
+    }
+  });
+
   // Cerrar caja (transaccional)
   ipcMain.handle("cerrar-caja", async (_event, { arqueoId, montoFinalReal, observaciones }) => {
     let resultado;

@@ -45,6 +45,7 @@ const validInvokeChannels = [
   "abrir-caja",
   "cerrar-caja",
   "get-resumen-cierre",
+  "get-informe-x",
   "get-all-cierres-caja",
   "registrar-movimiento-caja",
   "get-movimientos-caja",
