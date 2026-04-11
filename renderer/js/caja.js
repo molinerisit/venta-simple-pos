@@ -71,6 +71,7 @@ document.addEventListener("app-ready", () => {
   const abrirCajaBtn   = document.getElementById("abrir-caja-btn");
   const cerrarCajaBtn  = document.getElementById("cerrar-caja-btn");
   const movimientoBtn  = document.getElementById("movimiento-caja-btn");
+  const informeXBtn    = document.getElementById("informe-x-btn");
   const aperturaCajaModal = document.getElementById("apertura-caja-modal");
   const aperturaCajaForm = document.getElementById("apertura-caja-form");
   const montoInicialInput = document.getElementById("monto-inicial");
@@ -212,6 +213,7 @@ document.addEventListener("app-ready", () => {
       abrirCajaBtn?.classList.add("oculto");
       cerrarCajaBtn?.classList.add("oculto");
       movimientoBtn?.classList.add("oculto");
+      informeXBtn?.classList.add("oculto");
       desbloquearUI();
       return;
     }
@@ -219,11 +221,13 @@ document.addEventListener("app-ready", () => {
       abrirCajaBtn?.classList.add("oculto");
       cerrarCajaBtn?.classList.remove("oculto");
       movimientoBtn?.classList.remove("oculto");
+      informeXBtn?.classList.remove("oculto");
       desbloquearUI();
     } else {
       abrirCajaBtn?.classList.remove("oculto");
       cerrarCajaBtn?.classList.add("oculto");
       movimientoBtn?.classList.add("oculto");
+      informeXBtn?.classList.add("oculto");
       bloquearUI("Debes realizar la apertura de caja para comenzar a vender.");
     }
   };
@@ -666,13 +670,16 @@ if (event.key === "Enter") {
         if (!CajaState.confirmarVentaPending) {
             CajaState.confirmarVentaPending = true;
             showToast("⚠️ Presiona Enter otra vez para confirmar (Efectivo)", "warning");
-            
+            // W5-F6: Visual state — pulse border on confirm button during the 2s window
+            btnRegistrarVenta?.classList.add('confirm-pending');
+
             // Reiniciamos el timer si existía
             clearTimeout(CajaState.confirmarVentaTimer);
-            
+
             // El usuario tiene 2 segundos para dar el segundo Enter
             CajaState.confirmarVentaTimer = setTimeout(() => {
                 CajaState.confirmarVentaPending = false;
+                btnRegistrarVenta?.classList.remove('confirm-pending');
             }, 2000);
             return; // Detenemos aquí, esperando el segundo Enter
         }
@@ -680,6 +687,7 @@ if (event.key === "Enter") {
         // SI LLEGAMOS ACÁ, ES EL SEGUNDO ENTER (Confirmado)
         CajaState.confirmarVentaPending = false; // Reset flag
         clearTimeout(CajaState.confirmarVentaTimer);
+        btnRegistrarVenta?.classList.remove('confirm-pending'); // W5-F6: clear visual state
 
         // --- Procedimiento de Venta Rápida (Efectivo) ---
         const totalFloat = CajaState.totalFinalRedondeado || 0;
@@ -875,7 +883,13 @@ if (event.key === "Enter") {
   });
 
   montoPagadoInput?.addEventListener("input", actualizarCalculoVuelto);
-  btnCancelarVenta?.addEventListener("click", resetearVenta);
+  // W5-F5: Confirmation guard — only prompt when the cart has items.
+  btnCancelarVenta?.addEventListener("click", () => {
+    if (CajaState.ventaActual.length === 0) { resetearVenta(); return; }
+    if (window.confirm('¿Cancelar la venta actual? Se perderán todos los ítems agregados.')) {
+      resetearVenta();
+    }
+  });
 
   btnRegistrarVenta?.addEventListener("click", async () => {
     if (CajaState.ventaActual.length === 0) {
@@ -1226,6 +1240,37 @@ if (event.key === "Enter") {
   movimientoBtn?.addEventListener("click", abrirMovimientoModal);
   cerrarMovimientoBtn?.addEventListener("click", cerrarMovimientoModal);
   cancelarMovimientoBtn?.addEventListener("click", cerrarMovimientoModal);
+
+  // W5-F12: Informe X — snapshot de totales sin cerrar la caja
+  informeXBtn?.addEventListener("click", async () => {
+    const res = await window.api.invoke("get-informe-x");
+    if (!res?.success) {
+      showToast(res?.message || "No se pudo obtener el Informe X.", "error");
+      return;
+    }
+    const r = res.resumen;
+    const fmt = (v) => (v || 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+    const lines = [
+      `📊 INFORME X — ${new Date().toLocaleTimeString("es-AR")}`,
+      `Desde: ${new Date(r.desde).toLocaleTimeString("es-AR")}`,
+      ``,
+      `Ventas: ${r.cantidadVentas} — Total: ${fmt(r.totalVentas)}`,
+      `Ticket promedio: ${fmt(r.ticketPromedio)}`,
+      ``,
+      `Efectivo: ${fmt(r.totalEfectivo)}`,
+      `Débito: ${fmt(r.totalDebito)}`,
+      `Crédito: ${fmt(r.totalCredito)}`,
+      `QR/MP: ${fmt(r.totalQR)}`,
+      `Transferencia: ${fmt(r.totalTransfer)}`,
+      `Cta. Cte.: ${fmt(r.totalCtaCte)}`,
+      ``,
+      `Ingresos extra: ${fmt(r.totalIngresosExtra)}`,
+      `Egresos extra: ${fmt(r.totalEgresosExtra)}`,
+      ``,
+      `Efectivo esperado en caja: ${fmt(r.montoEstimado)}`,
+    ].join("\n");
+    alert(lines);
+  });
 
   movimientoForm?.addEventListener("submit", async (e) => {
     e.preventDefault();

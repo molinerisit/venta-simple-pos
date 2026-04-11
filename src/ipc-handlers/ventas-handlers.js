@@ -71,10 +71,13 @@ function registerVentasHandlers(models, sequelize) {
     }
 
     // Compute subtotal from authoritative server-side prices only.
+    // W5-F2: Round each line to 2 decimal places to prevent float drift on weighted products.
     let subtotal = 0;
     for (const r of resolvedItems) {
-      subtotal += r.pUnit * r.cantidad;
+      const lineTotal = Math.round(r.pUnit * r.cantidad * 100) / 100;
+      subtotal += lineTotal;
     }
+    subtotal = Math.round(subtotal * 100) / 100;
 
     const adminConfig = await Usuario.findOne({
       where: { rol: "administrador" },

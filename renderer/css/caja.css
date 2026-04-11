@@ -513,6 +513,43 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
 
 .payment-btn.active svg { opacity: 1; stroke: #fff; }
 
+/* W5-F4: Hotkey badges on payment buttons */
+.hotkey-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.07);
+  color: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+.payment-btn.active .hotkey-badge {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+  opacity: 1;
+}
+
+/* W5-F6: Confirm-pending visual state on registrar-venta-btn */
+@keyframes confirm-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(37,99,235,.0); }
+}
+#registrar-venta-btn.confirm-pending {
+  border: 2px solid #2563EB;
+  animation: confirm-pulse 0.9s ease-in-out infinite;
+}
+#registrar-venta-btn.confirm-pending::after {
+  content: ' (Confirmá)';
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
 /* ── Área efectivo ── */
 .pago-efectivo-area {
   margin-top: 10px;
