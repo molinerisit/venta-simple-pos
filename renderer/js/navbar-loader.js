@@ -89,12 +89,36 @@ function inicializarSidebarUI({ user, config }) {
   if (sidebarUserAvatar) sidebarUserAvatar.textContent = displayName.charAt(0).toUpperCase();
   if (sidebarAdminBtn && user.rol !== "administrador") sidebarAdminBtn.style.display = "none";
 
-  // Badge: iniciales del negocio (ej. "Mi Negocio" → "MN")
-  if (sidebarLogoBadge && config && config.nombre_negocio) {
-    const words = config.nombre_negocio.trim().split(/\s+/);
-    sidebarLogoBadge.textContent = words.length >= 2
-      ? (words[0][0] + words[1][0]).toUpperCase()
-      : config.nombre_negocio.substring(0, 2).toUpperCase();
+  // Badge: logo circular si está configurado, o iniciales del negocio como fallback
+  if (sidebarLogoBadge && config) {
+    if (config.logo_url) {
+      const src = `app://${config.logo_url}`;
+      const probe = new Image();
+      probe.onload = () => {
+        sidebarLogoBadge.textContent = "";
+        sidebarLogoBadge.classList.add("sidebar-logo-badge--img");
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = config.nombre_negocio || "Logo";
+        img.className = "sidebar-logo-img";
+        sidebarLogoBadge.appendChild(img);
+      };
+      probe.onerror = () => {
+        // Fallback a iniciales si la imagen no carga
+        if (config.nombre_negocio) {
+          const words = config.nombre_negocio.trim().split(/\s+/);
+          sidebarLogoBadge.textContent = words.length >= 2
+            ? (words[0][0] + words[1][0]).toUpperCase()
+            : config.nombre_negocio.substring(0, 2).toUpperCase();
+        }
+      };
+      probe.src = src;
+    } else if (config.nombre_negocio) {
+      const words = config.nombre_negocio.trim().split(/\s+/);
+      sidebarLogoBadge.textContent = words.length >= 2
+        ? (words[0][0] + words[1][0]).toUpperCase()
+        : config.nombre_negocio.substring(0, 2).toUpperCase();
+    }
   }
 
   // Permisos
