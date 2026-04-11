@@ -1,4 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Cargar logo y nombre del negocio desde configuración ---
+  (async () => {
+    try {
+      const config = await window.electronAPI.invoke("get-admin-config");
+      if (!config) return;
+
+      const logoImg  = document.getElementById("auth-logo-img");
+      const brandEl  = document.getElementById("auth-brand-name");
+
+      if (config.nombre_negocio && brandEl) {
+        brandEl.textContent = config.nombre_negocio;
+      }
+
+      if (config.logo_url && logoImg) {
+        const src = `app://${config.logo_url}`;
+        // Only swap if the image loads successfully; keep default on error
+        const probe = new Image();
+        probe.onload  = () => { logoImg.src = src; };
+        probe.onerror = () => { /* keep ventasimple.png */ };
+        probe.src = src;
+      }
+    } catch (_) {
+      // Config not available yet (first run) — keep defaults silently
+    }
+  })();
+
   const loginForm = document.getElementById("login-form");
   const usernameInput = document.getElementById("username");
   const passwordInput = document.getElementById("password");

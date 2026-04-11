@@ -33,23 +33,27 @@ body {
 .auth-logo-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
-.auth-logo {
-  width: 56px;
-  height: 56px;
-  background: #EFF6FF;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #2563EB;
+.auth-logo-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e2e8f0;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.10),
+    0 0 0 5px #f1f5f9;
+  display: block;
+  background: #f1f5f9;
+  transition: box-shadow 0.2s;
 }
 
-.auth-logo svg {
-  width: 28px;
-  height: 28px;
+.auth-logo-circle:hover {
+  box-shadow:
+    0 4px 16px rgba(37, 99, 235, 0.18),
+    0 0 0 5px #eff6ff;
 }
 
 /* ─── Typography ─────────────────────────────────────────── */
