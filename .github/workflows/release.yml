@@ -16,13 +16,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: "npm"
+
+      - name: Configure node-gyp for VS 2022
+        run: npm config set msvs_version 2022
 
       - name: Install dependencies
         run: npm install
+        env:
+          npm_config_msvs_version: "2022"
 
       - name: Build & publish to GitHub Releases
         run: npm run release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          npm_config_msvs_version: "2022"
