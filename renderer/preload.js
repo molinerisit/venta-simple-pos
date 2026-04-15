@@ -100,6 +100,8 @@ const validInvokeChannels = [
   "get-data-for-seleccion",
   "generar-vista-impresion",
   "get-subscription-status",
+  "save-license",
+  "open-external-url",
   "run-manual-sync",
 
   // Cuentas Corrientes
@@ -118,6 +120,36 @@ const validInvokeChannels = [
   "crear-lote",
   "actualizar-lote",
   "eliminar-lote",
+
+  // Ofertas
+  "get-ofertas",
+  "get-oferta-activa",
+  "guardar-oferta",
+  "toggle-oferta-activa",
+  "eliminar-oferta",
+
+  // Gmail y recuperación de contraseña
+  "get-gmail-config",
+  "save-gmail-config",
+  "test-gmail-config",
+  "send-recovery-token",
+  "verify-recovery-token",
+  "reset-password-with-token",
+  "save-scale-config",
+
+  // Sesión / Setup
+  "check-admin-exists",
+  "open-setup-window",
+
+  // Acceso remoto
+  "remote-get-config",
+  "remote-save-config",
+  "remote-regenerate-token",
+  "remote-get-metrics",
+  "remote-start",
+  "remote-stop",
+  "remote-exec-cmd",
+  "remote-list-commands",
 ];
 
 const validSendChannels = [

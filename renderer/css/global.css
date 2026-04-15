@@ -531,3 +531,115 @@ tbody tr:last-child td{ border-bottom:none; }
 
 .ix-pos { color: #059669 !important; }
 .ix-neg { color: #dc2626 !important; }
+
+/* ── Banner modo prueba (estilo activación Windows) ─────────────────────── */
+#vs-trial-banner {
+  position: fixed;
+  bottom: 6px;
+  right: 14px;
+  z-index: 9990;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.01em;
+}
+#vs-trial-banner a {
+  pointer-events: all;
+  color: rgba(0, 0, 0, 0.35);
+  text-decoration: underline;
+  cursor: pointer;
+}
+#vs-trial-banner a:hover { color: rgba(0, 0, 0, 0.55); }
+
+/* ── Popup modo prueba ───────────────────────────────────────────────────── */
+#vs-trial-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+.vs-trial-popup-box {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 40px 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+  text-align: center;
+}
+.vs-trial-popup-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+}
+.vs-trial-popup-close:hover { color: #475569; }
+.vs-trial-popup-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563EB, #10B981);
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+}
+.vs-trial-popup-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 12px;
+}
+.vs-trial-popup-body {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.65;
+  margin: 0 0 28px;
+}
+.vs-trial-popup-body strong { color: #1e293b; }
+.vs-trial-popup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.vs-trial-btn-primary {
+  display: block;
+  padding: 12px 24px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563EB, #10B981);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+}
+.vs-trial-btn-primary:hover { opacity: 0.9; }
+.vs-trial-btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 11px 24px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+}
+.vs-trial-btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
