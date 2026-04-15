@@ -18,6 +18,7 @@
   "build": {
     "appId": "com.ventasimple.app",
     "productName": "Venta Simple",
+    "npmRebuild": false,
     "directories": {
       "output": "dist"
     },
