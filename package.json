@@ -1,11 +1,12 @@
 {
-  "name": "sistema-gestion-desktop",
+  "name": "venta-simple",
   "version": "1.0.0",
-  "description": "Sistema de Gestión de Escritorio con Node.js y Electron",
+  "description": "Sistema de gestión de ventas offline con sincronización cloud",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
+    "release": "electron-builder --publish always",
     "test:phase2": "node tests/run-phase-2.js",
     "test:phase3": "node tests/run-phase-3.js",
     "test:phase4": "node tests/run-phase-4.js",
@@ -15,8 +16,8 @@
     "test:phase8": "node tests/run-phase-8.js"
   },
   "build": {
-    "appId": "com.julianmolineris.sistemagestion",
-    "productName": "Sistema de Gestión La Macelleria",
+    "appId": "com.ventasimple.app",
+    "productName": "Venta Simple",
     "directories": {
       "output": "dist"
     },
@@ -33,15 +34,23 @@
         "schemes": ["ventasimple"]
       }
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "molinerisit",
+      "repo": "venta-simple-pos"
+    },
     "win": {
-      "target": "nsis",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
       "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "shortcutName": "Venta Simple"
     }
   },
   "author": "Julian Molineris",
@@ -52,6 +61,7 @@
     "sequelize-cli": "^6.6.2"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "@tillpos/xml-escpos-helper": "^0.3.1",
     "afip-apis": "^0.5.5",
     "axios": "^1.6.5",

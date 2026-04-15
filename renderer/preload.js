@@ -168,6 +168,7 @@ const validOnChannels = [
   "block-message",
   "license-activated",
   "license-activation-error",
+  "update-available",
 ];
 
 contextBridge.exposeInMainWorld("electronAPI", {

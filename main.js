@@ -7,7 +7,9 @@ const {
   protocol,
   session,
   powerMonitor,
+  dialog,
 } = require("electron");
+const { autoUpdater } = require("electron-updater");
 
 const path = require("path");
 
@@ -328,6 +330,42 @@ app.on("ready", async () => {
 
     const { registerLicenseHandlers } = require("./src/ipc-handlers/license-handlers");
     registerLicenseHandlers();
+
+    // ── Auto-updater ──────────────────────────────────────────────────────────
+    // Solo corre cuando la app está empaquetada (no en desarrollo)
+    if (app.isPackaged) {
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = true;
+
+      autoUpdater.on("update-available", (info) => {
+        // Notificar a todas las ventanas que hay update disponible
+        BrowserWindow.getAllWindows().forEach(win =>
+          win.webContents.send("update-available", { version: info.version })
+        );
+      });
+
+      autoUpdater.on("update-downloaded", (info) => {
+        // Mostrar diálogo nativo para instalar ahora o después
+        dialog.showMessageBox({
+          type: "info",
+          title: "Actualización lista",
+          message: `Venta Simple ${info.version} está listo para instalarse.`,
+          detail: "La app se va a reiniciar para aplicar la actualización.",
+          buttons: ["Instalar y reiniciar", "Más tarde"],
+          defaultId: 0,
+        }).then(({ response }) => {
+          if (response === 0) autoUpdater.quitAndInstall();
+        });
+      });
+
+      autoUpdater.on("error", (err) => {
+        console.error("[AutoUpdater] Error:", err.message);
+      });
+
+      // Chequear al iniciar, luego cada 4 horas
+      autoUpdater.checkForUpdatesAndNotify();
+      setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000);
+    }
 
     const sessionHandlers = require("./src/ipc-handlers/session-handlers");
 
