@@ -1,7 +1,7 @@
 {
-  "name": "venta-simple",
-  "version": "1.0.0",
-  "description": "Sistema de gestión de ventas offline con sincronización cloud",
+  "name": "venta-simple-hub",
+  "version": "1.1.0",
+  "description": "Sistema de gestión para negocios — ventas, stock, clientes y reportes con sincronización en la nube",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -16,8 +16,9 @@
     "test:phase8": "node tests/run-phase-8.js"
   },
   "build": {
-    "appId": "com.ventasimple.app",
-    "productName": "Venta Simple",
+    "appId": "com.ventasimplehub.app",
+    "productName": "Venta Simple Hub",
+    "copyright": "Copyright © 2026 Julian Matias Molineris. Todos los derechos reservados.",
     "npmRebuild": false,
     "directories": {
       "output": "dist"
@@ -51,17 +52,25 @@
           ]
         }
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "publisherName": "Julian Matias Molineris",
+      "fileDescription": "Venta Simple Hub — Sistema de gestión para negocios",
+      "legalTrademarks": "Venta Simple Hub"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Venta Simple"
+      "shortcutName": "Venta Simple Hub",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeader": "build/icon.ico",
+      "createStartMenuShortcut": true,
+      "menuCategory": "Venta Simple Hub"
     }
   },
-  "author": "Julian Molineris",
+  "author": "Julian Matias Molineris",
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.0.0",
