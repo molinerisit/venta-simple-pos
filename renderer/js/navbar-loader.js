@@ -18,17 +18,24 @@ let __NAVBAR_INIT_DONE__ = false;
       // 1) Inyectar sidebar
       await cargarSidebarHTML();
 
-      // 2) Obtener sesión + config
-      const [user, config] = await Promise.all([
+      // 2) Obtener sesión + config + plan
+      const [user, config, subscription] = await Promise.all([
         window.electronAPI.invoke("get-user-session"),
         window.electronAPI.invoke("get-admin-config"),
+        window.electronAPI.invoke("get-subscription-status"),
       ]);
       if (!user || !user.id) throw new Error("Sesión inválida.");
 
-      window.APP_SESSION = { user, config: config || {} };
+      window.APP_SESSION = { user, config: config || {}, subscription: subscription || { plan: "FREE" } };
 
       // 3) Inicializar UI
       inicializarSidebarUI(window.APP_SESSION);
+
+      // 4) UI de prueba si el plan es FREE
+      if (!subscription || subscription.plan === "FREE") {
+        _inyectarBannerPrueba();
+        _mostrarPopupPrueba();
+      }
     } catch (err) {
       console.error("[NavbarLoader] Error inicializando:", err);
       const ph = document.getElementById("sidebar-placeholder");
@@ -146,6 +153,61 @@ function inicializarSidebarUI({ user, config }) {
 
   // Logout
   sidebarLogoutBtn?.addEventListener("click", () => window.electronAPI.send("logout"));
+}
+
+// ─── Banner modo prueba (estilo activación Windows) ──────────────────────────
+
+function _inyectarBannerPrueba() {
+  if (document.getElementById("vs-trial-banner")) return;
+  const banner = document.createElement("div");
+  banner.id = "vs-trial-banner";
+  banner.innerHTML =
+    'Venta Simple &mdash; Modo de prueba &nbsp;·&nbsp; ' +
+    '<a href="#" id="vs-trial-banner-link">Activar licencia</a>';
+  document.body.appendChild(banner);
+
+  document.getElementById("vs-trial-banner-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    _mostrarPopupPrueba(true);
+  });
+}
+
+function _mostrarPopupPrueba(forzar = false) {
+  // Solo una vez por sesión (a menos que el usuario haga clic en el banner)
+  if (!forzar && sessionStorage.getItem("vs-trial-popup-shown")) return;
+  sessionStorage.setItem("vs-trial-popup-shown", "1");
+
+  if (document.getElementById("vs-trial-popup")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "vs-trial-popup";
+  overlay.innerHTML = `
+    <div class="vs-trial-popup-box">
+      <button class="vs-trial-popup-close" id="vs-trial-close" title="Cerrar">&times;</button>
+      <div class="vs-trial-popup-icon">VS</div>
+      <h2 class="vs-trial-popup-title">Modo de prueba</h2>
+      <p class="vs-trial-popup-body">
+        Estás usando <strong>Venta Simple</strong> sin una licencia activa.<br>
+        Podés usar el sistema normalmente, pero la sincronización en la nube
+        está limitada a <strong>productos y ventas</strong>.<br><br>
+        Activá tu licencia para sincronizar clientes, proveedores y más.
+      </p>
+      <div class="vs-trial-popup-actions">
+        <a class="vs-trial-btn-primary" href="#" id="vs-trial-buy">Activar licencia</a>
+        <button class="vs-trial-btn-secondary" id="vs-trial-close2">Continuar en modo prueba</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const cerrar = () => overlay.remove();
+  document.getElementById("vs-trial-close")?.addEventListener("click", cerrar);
+  document.getElementById("vs-trial-close2")?.addEventListener("click", cerrar);
+  document.getElementById("vs-trial-buy")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.electronAPI.invoke("open-external-url", "https://ventasimple.com/planes").catch(() => {});
+    cerrar();
+  });
 }
 
 // ─── Sonido de ingreso de pago por transferencia MP ──────────────────────────

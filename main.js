@@ -48,17 +48,7 @@ if (!gotLock) {
     } else {
       // Si no hay ventanas, creamos la adecuada
 
-      if (models?.Usuario) {
-        models.Usuario.findOne({ where: { rol: "administrador" } })
-
-          .then((admin) =>
-            admin ? createLoginWindow() : createAdminSetupWindow()
-          )
-
-          .catch(() => createLoginWindow());
-      } else {
-        createLoginWindow();
-      }
+      createLoginWindow();
     }
   });
 }
@@ -287,6 +277,8 @@ app.on("ready", async () => {
       Lote: require("./src/database/models/Lote")(sequelize),
 
       MovimientoCaja: require("./src/database/models/MovimientoCaja")(sequelize),
+
+      Oferta: require("./src/database/models/Oferta")(sequelize),
     };
 
     const { applyAssociations } = require("./src/database/associations");
@@ -298,9 +290,30 @@ app.on("ready", async () => {
 
     console.log("✅ Esquema actualizado.");
 
+    // ── Seed superadmin (primera ejecución) ──────────────────────────
+    {
+      const bcryptSeed = require("bcryptjs");
+      const existingSuperAdmin = await models.Usuario.findOne({ where: { rol: "superadmin" } });
+      if (!existingSuperAdmin) {
+        const defaultPass = "ventasimple";
+        const hashed = await bcryptSeed.hash(defaultPass, 8);
+        await models.Usuario.create({
+          nombre:       "superadmin",
+          password:     hashed,
+          email:        "superadmin@ventasimple.com",
+          rol:          "superadmin",
+          permisos:     ["all"],
+        });
+        console.log("✅ Superadmin creado. Usuario: superadmin | Contraseña: ventasimple");
+      }
+    }
+
     // Handlers IPC
 
     console.log("[MAIN] Registrando handlers IPC…");
+
+    const { registerLicenseHandlers } = require("./src/ipc-handlers/license-handlers");
+    registerLicenseHandlers();
 
     const sessionHandlers = require("./src/ipc-handlers/session-handlers");
 
@@ -343,6 +356,9 @@ app.on("ready", async () => {
       { name: "ventas-handlers", needsSequelize: true },
 
       { name: "lotes-handlers", needsSequelize: false },
+
+      { name: "ofertas-handlers",  needsSequelize: true },
+      { name: "remote-handlers",   needsSequelize: false },
     ];
 
     const toRegisterFn = (name) =>
@@ -447,14 +463,24 @@ app.on("ready", async () => {
 
     // Ventanas iniciales
 
+    // ── Auto-arrancar servidor remoto si estaba habilitado ───────────
+    try {
+      const sa = await models.Usuario.findOne({ where: { rol: 'superadmin' } });
+      if (sa?.remote_access_enabled && sa?.remote_access_token) {
+        const remoteServer = require('./src/remote/server');
+        const result = await remoteServer.start(models, sa.remote_access_token, sa.remote_access_port || 4827);
+        if (result.success) console.log(`✅ Servidor remoto en puerto ${sa.remote_access_port || 4827}`);
+        else console.warn(`[REMOTE] No se pudo iniciar: ${result.error}`);
+      }
+    } catch (e) {
+      console.warn('[REMOTE] Error al auto-iniciar:', e.message);
+    }
+
     console.log("--- Boot windows ---");
 
-    const adminExists = await models.Usuario.findOne({
-      where: { rol: "administrador" },
-    });
-
-    if (adminExists) createLoginWindow();
-    else createAdminSetupWindow();
+    // Superadmin siempre existe desde el primer boot → siempre mostramos login.
+    // El link "Crear administrador" en el login se muestra si no hay admin regular.
+    createLoginWindow();
 
     // ====== POWER EVENTS (SIN SYNC) ======
 
@@ -499,6 +525,10 @@ const handleLogout = () => {
 ipcMain.on("logout", handleLogout);
 
 ipcMain.on("switch-user", handleLogout);
+
+ipcMain.handle("open-setup-window", () => {
+  createAdminSetupWindow();
+});
 
 ipcMain.on("setup-complete", (event) => {
   const setupWin = BrowserWindow.fromWebContents(event.sender);
@@ -588,12 +618,7 @@ app.on("activate", () => {
     if (!models) return;
     (async () => {
       try {
-        const adminExists = await models.Usuario.findOne({
-          where: { rol: "administrador" },
-        });
-
-        if (adminExists) createLoginWindow();
-        else createAdminSetupWindow();
+        createLoginWindow();
       } catch (error) {
         console.error("Error en 'activate':", error);
       }
