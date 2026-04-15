@@ -19,21 +19,16 @@ jobs:
           node-version: 20
           cache: "npm"
 
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v2
+      - name: Install Windows SDK
+        run: choco install windows-sdk-10-version-2004-all -y --no-progress
 
       - name: Install dependencies
         run: npm install
-        env:
-          GYP_MSVS_VERSION: "2022"
 
       - name: Rebuild native modules for Electron
         run: npx @electron/rebuild --force
-        env:
-          GYP_MSVS_VERSION: "2022"
 
       - name: Build & publish to GitHub Releases
         run: npm run release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GYP_MSVS_VERSION: "2022"
