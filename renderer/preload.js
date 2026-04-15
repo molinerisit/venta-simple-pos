@@ -166,6 +166,8 @@ const validOnChannels = [
   "venta-data",
   "show-toast",
   "block-message",
+  "license-activated",
+  "license-activation-error",
 ];
 
 contextBridge.exposeInMainWorld("electronAPI", {

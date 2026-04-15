@@ -31,27 +31,41 @@ let mainWindow, loginWindow, setupWindow, hardwareWindow, qrWindow;
 
 // ====== INSTANCIA ÚNICA ======
 
+// Registrar protocolo custom ventasimple:// (debe ir antes de ready)
+app.setAsDefaultProtocolClient("ventasimple");
+
 const gotLock = app.requestSingleInstanceLock();
 
 if (!gotLock) {
   app.quit();
 } else {
-  app.on("second-instance", () => {
-    // Enviar al frente alguna ventana existente
+  app.on("second-instance", (_event, argv) => {
+    // Windows: el deep link llega como argumento del proceso
+    const { handleDeepLink } = require("./src/ipc-handlers/license-handlers");
+    const deepLink = argv.find((a) => a.startsWith("ventasimple://"));
+    if (deepLink) {
+      handleDeepLink(deepLink);
+    }
 
+    // Traer la ventana principal al frente
     const win = BrowserWindow.getAllWindows()[0];
-
     if (win) {
       if (win.isMinimized()) win.restore();
-
       win.focus();
     } else {
-      // Si no hay ventanas, creamos la adecuada
-
       createLoginWindow();
     }
   });
 }
+
+// macOS: deep link en instancia ya corriendo
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  if (url.startsWith("ventasimple://")) {
+    const { handleDeepLink } = require("./src/ipc-handlers/license-handlers");
+    handleDeepLink(url);
+  }
+});
 
 // ====== HELPERS ======
 
@@ -481,6 +495,14 @@ app.on("ready", async () => {
     // Superadmin siempre existe desde el primer boot → siempre mostramos login.
     // El link "Crear administrador" en el login se muestra si no hay admin regular.
     createLoginWindow();
+
+    // Windows: cold start con deep link en process.argv
+    const coldDeepLink = process.argv.find((a) => a.startsWith("ventasimple://"));
+    if (coldDeepLink) {
+      const { handleDeepLink } = require("./src/ipc-handlers/license-handlers");
+      // Esperar un tick para que la ventana esté lista antes de notificarla
+      setTimeout(() => handleDeepLink(coldDeepLink), 1500);
+    }
 
     // ====== POWER EVENTS (SIN SYNC) ======
 

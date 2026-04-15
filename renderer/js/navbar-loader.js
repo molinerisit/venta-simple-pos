@@ -210,6 +210,46 @@ function _mostrarPopupPrueba(forzar = false) {
   });
 }
 
+// ─── Eventos de licencia desde main process ──────────────────────────────────
+
+(function () {
+  if (!window.electronAPI?.on) return;
+
+  // Licencia activada exitosamente (deep link o save-license)
+  window.electronAPI.on('license-activated', function (data) {
+    // Remover banner y popup
+    document.getElementById('vs-trial-banner')?.remove();
+    document.getElementById('vs-trial-popup')?.remove();
+    sessionStorage.removeItem('vs-trial-popup-shown');
+
+    // Mostrar toast de éxito
+    const toast = document.createElement('div');
+    toast.style.cssText = [
+      'position:fixed', 'top:20px', 'right:20px', 'z-index:10000',
+      'background:rgba(34,197,94,.15)', 'border:1px solid rgba(34,197,94,.3)',
+      'color:#86efac', 'padding:12px 18px', 'border-radius:10px',
+      'font-size:14px', 'font-weight:500', 'display:flex', 'align-items:center', 'gap:8px',
+    ].join(';');
+    toast.textContent = '✓ Licencia activada — Plan ' + (data?.plan || '') + ' activo';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  });
+
+  // Error al activar (token expirado, etc.)
+  window.electronAPI.on('license-activation-error', function () {
+    const toast = document.createElement('div');
+    toast.style.cssText = [
+      'position:fixed', 'top:20px', 'right:20px', 'z-index:10000',
+      'background:rgba(239,68,68,.15)', 'border:1px solid rgba(239,68,68,.3)',
+      'color:#fca5a5', 'padding:12px 18px', 'border-radius:10px',
+      'font-size:14px', 'font-weight:500',
+    ].join(';');
+    toast.textContent = '⚠ El link de activación expiró. Generá uno nuevo desde el panel web.';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 6000);
+  });
+})();
+
 // ─── Sonido de ingreso de pago por transferencia MP ──────────────────────────
 // Se registra en cada página que carga navbar-loader.js.
 // El canal mp-payment-approved se dispara desde main.js cuando el pago QR es aprobado.
