@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const setupForm = document.getElementById('setup-form');
     const nombreInput = document.getElementById('nombre');
+    const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     // ✅ CORREGIDO: Apunta al ID correcto que añadimos en el HTML
     const messageDiv = document.getElementById('message'); 
@@ -35,10 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.className = 'auth-message';
 
         const nombre = nombreInput.value;
+        const email = emailInput ? emailInput.value.trim() : '';
         const password = passwordInput.value;
 
         try {
-            const result = await window.electronAPI.invoke('submit-setup', { nombre, password });
+            const result = await window.electronAPI.invoke('submit-setup', { nombre, email, password });
 
             if (result.success) {
                 messageDiv.textContent = '¡Administrador creado con éxito! Redirigiendo al login...';

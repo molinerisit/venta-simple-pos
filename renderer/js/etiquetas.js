@@ -12,6 +12,7 @@
     const searchInput          = document.getElementById("search-input");
     const deptoFilter          = document.getElementById("depto-filter");
     const familiaFilter        = document.getElementById("familia-filter");
+    const btnRecientes         = document.getElementById("btn-recientes");
     const btnSelectAll         = document.getElementById("select-all");
     const btnDeselectAll       = document.getElementById("deselect-all");
     const btnImprimirEtiquetas = document.getElementById("btn-imprimir-etiquetas");
@@ -38,6 +39,7 @@
     // --- Estado ---
     let allProducts    = [];
     let allFamilias    = [];
+    let showRecentsOnly = false;
     let toastTimer, filterTimer;
 
     // --- Utilidades ---
@@ -116,6 +118,7 @@
 
         item.dataset.deptoId   = deptoId;
         item.dataset.familiaId = familiaId;
+        item.dataset.updatedAt = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
         item.title = p.nombre || "";
 
         const cb     = document.createElement("input");
@@ -165,6 +168,8 @@
       const d = deptoFilter?.value  || "all";
       const f = familiaFilter?.value || "all";
 
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
       const items   = productList.getElementsByClassName("product-item");
       let visible   = 0;
 
@@ -177,7 +182,8 @@
         const matchesSearch   = !q || nombre.includes(q) || sub.includes(q);
         const matchesDepto    = d === "all" || item.dataset.deptoId   === d;
         const matchesFamilia  = f === "all" || item.dataset.familiaId === f;
-        const show = matchesSearch && matchesDepto && matchesFamilia;
+        const matchesRecents  = !showRecentsOnly || Number(item.dataset.updatedAt) >= sevenDaysAgo;
+        const show = matchesSearch && matchesDepto && matchesFamilia && matchesRecents;
 
         item.classList.toggle("hidden", !show);
         if (show) visible++;
@@ -328,6 +334,14 @@
         productList?.querySelectorAll(".product-checkbox")
           .forEach(cb => { cb.checked = false; });
         updateSelectionState();
+      });
+    }
+
+    if (btnRecientes) {
+      btnRecientes.addEventListener("click", () => {
+        showRecentsOnly = !showRecentsOnly;
+        btnRecientes.classList.toggle("active", showRecentsOnly);
+        filterProducts();
       });
     }
 

@@ -173,6 +173,30 @@ body {
 /* Legacy compat */
 .error-text { display: none; }
 
+/* ─── Remember me ────────────────────────────────────────── */
+.remember-row {
+  margin-bottom: 14px;
+}
+
+.remember-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #475569;
+  user-select: none;
+}
+
+.remember-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #2563EB;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+}
+
 /* ─── Submit button ──────────────────────────────────────── */
 .login-button {
   width: 100%;
@@ -219,6 +243,63 @@ body {
 
 @keyframes auth-spin {
   to { transform: rotate(360deg); }
+}
+
+/* ─── Forgot password link ───────────────────────────────── */
+.btn-forgot {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin-top: 12px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.84rem;
+  color: #2563EB;
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.btn-forgot:hover {
+  color: #1D4ED8;
+  text-decoration: underline;
+}
+
+/* ─── Recovery panel ─────────────────────────────────────── */
+.recovery-panel {
+  animation: fadeSlideIn 0.18s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.recovery-desc {
+  font-size: 0.875rem;
+  color: #475569;
+  text-align: center;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+/* ─── Token input ────────────────────────────────────────── */
+.token-input {
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.28em !important;
+  text-align: center !important;
+  color: #1d4ed8 !important;
+  padding: 12px 8px !important;
+  border: 2px solid #2563EB !important;
+  border-radius: 10px !important;
+  background: #eff6ff !important;
+}
+
+.token-input:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+  border-color: #1d4ed8 !important;
 }
 
 /* ─── Footer ─────────────────────────────────────────────── */

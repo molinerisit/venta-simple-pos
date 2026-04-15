@@ -6,7 +6,7 @@ function applyAssociations(models) {
     Producto, ProductoDepartamento, ProductoFamilia, Proveedor, Venta,
     DetalleVenta, Usuario, Cliente, Factura, Empleado, GastoFijo, Insumo,
     InsumoDepartamento, InsumoFamilia, Compra, DetalleCompra, MovimientoCuentaCorriente,
-    ArqueoCaja, Lote, MovimientoCaja
+    ArqueoCaja, Lote, MovimientoCaja, Oferta
   } = models;
 
   // --- 1) Clasificación de PRODUCTOS ---
@@ -233,6 +233,18 @@ function applyAssociations(models) {
   });
 
   // --- 11) Movimientos administrativos de Caja ---
+  if (Oferta) {
+    Producto.hasMany(Oferta, {
+      foreignKey: { name: 'ProductoId', type: DataTypes.UUID },
+      as: 'ofertas',
+      onDelete: 'CASCADE',
+    });
+    Oferta.belongsTo(Producto, {
+      foreignKey: { name: 'ProductoId', type: DataTypes.UUID },
+      as: 'producto',
+    });
+  }
+
   if (MovimientoCaja) {
     ArqueoCaja.hasMany(MovimientoCaja, {
       foreignKey: { name: 'ArqueoCajaId', type: DataTypes.UUID },

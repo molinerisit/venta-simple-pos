@@ -26,6 +26,7 @@ document.addEventListener("app-ready", () => {
 
   // Balanza/PLU
   const pesableChk = document.getElementById("pesable");
+  const manejaLotesChk = document.getElementById("maneja_lotes");
   const pluRow = document.getElementById("plu-row");
   const pluInput = document.getElementById("plu");
   const pluHelp = document.getElementById("plu-help");
@@ -182,6 +183,7 @@ document.addEventListener("app-ready", () => {
     }
 
     pesableChk.checked = !!producto.pesable;
+    if (manejaLotesChk) manejaLotesChk.checked = !!producto.maneja_lotes;
 
     calcularRentabilidad();
     refreshPluUI();

@@ -1,5 +1,6 @@
 // src/ipc-handlers/admin-handlers.js (Limpiado)
 const { ipcMain, BrowserWindow } = require("electron");
+const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs"); // B-1: pure-JS, no native rebuild needed
 const { getActiveUserId } = require("./session-handlers"); // S-1: role checks
 
@@ -19,12 +20,12 @@ const KNOWN_MODULE_IDS = new Set([
 function registerAdminHandlers(models) {
   const { Usuario, Empleado, GastoFijo } = models;
 
-  /** S-1: returns true only if the active session user has rol === "administrador" */
+  /** S-1: returns true if the active session user is an admin or superadmin */
   async function requireAdmin() {
     const userId = getActiveUserId();
     if (!userId) return false;
     const user = await Usuario.findByPk(userId, { attributes: ["rol"] });
-    return user?.rol === "administrador";
+    return user?.rol === "administrador" || user?.rol === "superadmin";
   }
 
   // -----------------------------
@@ -33,6 +34,7 @@ function registerAdminHandlers(models) {
   ipcMain.handle("get-all-users", async () => {
     try {
       const users = await Usuario.findAll({
+        where: { rol: { [Op.ne]: "superadmin" } }, // ocultar superadmin del panel
         attributes: { exclude: ["password"] },
         order: [["nombre", "ASC"]],
         raw: true,
@@ -101,7 +103,8 @@ function registerAdminHandlers(models) {
         userToUpdate.permisos = permsArray;
 
         if (cleanPassword) {
-          const salt = await bcrypt.genSalt(10);
+          // 8 rounds = 2^8 = 256 iterations; ~4× faster than 10 rounds while still secure.
+          const salt = await bcrypt.genSalt(8);
           userToUpdate.password = await bcrypt.hash(cleanPassword, salt);
         }
         await userToUpdate.save();
@@ -109,7 +112,7 @@ function registerAdminHandlers(models) {
         if (!cleanPassword) {
           return { success: false, message: "La contraseña es obligatoria para usuarios nuevos." };
         }
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(8);
         const hashedPassword = await bcrypt.hash(cleanPassword, salt);
         await Usuario.create({
           nombre: cleanNombre,
@@ -136,6 +139,10 @@ function registerAdminHandlers(models) {
       }
       const userToDelete = await Usuario.findByPk(userId);
       if (!userToDelete) return { success: false, message: "El usuario no existe." };
+
+      if (userToDelete.rol === "superadmin") {
+        return { success: false, message: "El superadmin del sistema no puede eliminarse." };
+      }
 
       if (userToDelete.rol === "administrador") {
         const admins = await Usuario.count({ where: { rol: "administrador" } });

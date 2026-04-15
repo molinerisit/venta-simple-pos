@@ -73,15 +73,15 @@
           </div>
         </div>
 
-        <!-- ── Metrics grid ────────────────────────────────── -->
+        <!-- ── Section 1: Metrics ──────────────────────────── -->
         <div class="metrics-grid">
 
           <div class="metric-card metric-card--revenue">
             <p class="metric-label">Total Facturado</p>
             <p class="metric-value" id="total-facturado">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-              <span class="metric-pct">—</span>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <span class="metric-pct" id="pct-facturado">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
           </div>
@@ -90,7 +90,7 @@
             <p class="metric-label">Ganancia Bruta</p>
             <p class="metric-value" id="ganancia-bruta">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
@@ -99,8 +99,8 @@
           <div class="metric-card metric-card--expense">
             <p class="metric-label">Gastos Operativos</p>
             <p class="metric-value" id="total-gastos">$0.00</p>
-            <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            <div class="metric-trend metric-trend--neutral">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
@@ -110,7 +110,7 @@
             <p class="metric-label">Número de Ventas</p>
             <p class="metric-value" id="numero-ventas">0</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
@@ -120,7 +120,7 @@
             <p class="metric-label">Ticket Promedio</p>
             <p class="metric-value" id="ticket-promedio">$0.00</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
@@ -130,7 +130,7 @@
             <p class="metric-label">Margen %</p>
             <p class="metric-value" id="margen-pct">0%</p>
             <div class="metric-trend metric-trend--up">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               <span class="metric-pct">—</span>
               <span class="metric-vs">vs ayer</span>
             </div>
@@ -138,7 +138,7 @@
 
         </div>
 
-        <!-- ── Insights bar ────────────────────────────────── -->
+        <!-- ── Section 2: Insights bar ────────────────────── -->
         <div class="insights-bar">
           <div class="insights-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -156,7 +156,7 @@
           </div>
         </div>
 
-        <!-- ── Fila 1: Ventas del Período + Métodos de Pago ── -->
+        <!-- ── Section 3: Charts ───────────────────────────── -->
         <div class="dash-grid-2">
           <div class="dash-card">
             <div class="dash-card-header">
@@ -187,62 +187,73 @@
           </div>
         </div>
 
-        <!-- ── Fila 2: Ranking + Productos sin Ventas ──────── -->
+        <!-- ── Section 4: Top productos + Problemas ──────── -->
         <div class="dash-grid-2">
+
+          <!-- Top Productos (tabbed) -->
           <div class="dash-card">
             <div class="dash-card-header">
               <h3>
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                Ranking de Ventas
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+                Top Productos
               </h3>
-              <select id="ranking-sort-by">
-                <option value="cantidad_desc">Más Vendidos (Cant.)</option>
-                <option value="facturado_desc">Más Vendidos (Monto)</option>
-                <option value="ganancia_desc">Más Rentables</option>
-                <option value="cantidad_asc">Menos Vendidos (Cant.)</option>
-                <option value="facturado_asc">Menos Vendidos (Monto)</option>
-                <option value="ganancia_asc">Menos Rentables</option>
-              </select>
+              <div class="dash-tab-list">
+                <button class="dash-tab active" data-toptab="vendidos">Más vendidos</button>
+                <button class="dash-tab" data-toptab="rentables">Más rentables</button>
+              </div>
             </div>
             <div class="dash-card-body no-pad">
               <table>
                 <thead>
                   <tr>
+                    <th>#</th>
                     <th>Producto</th>
                     <th>Cant.</th>
                     <th>Facturado</th>
                     <th>Ganancia</th>
-                    <th>Stock</th>
                   </tr>
                 </thead>
-                <tbody id="full-ranking-tbody"></tbody>
+                <tbody id="top-products-tbody"></tbody>
               </table>
             </div>
           </div>
 
-          <div class="dash-card dash-card--alert">
+          <!-- Productos con Problemas -->
+          <div class="dash-card">
             <div class="dash-card-header">
               <h3>
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="color:#d97706"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                Productos sin Ventas
+                Productos con Problemas
               </h3>
-              <span class="dash-alert-badge" id="inactive-count-badge">con stock</span>
             </div>
-            <div class="dash-card-body no-pad">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Stock Actual</th>
-                  </tr>
-                </thead>
-                <tbody id="inactive-products-tbody"></tbody>
-              </table>
+            <div class="dash-card-body">
+              <div id="problem-products-list" class="problem-list"></div>
             </div>
+          </div>
+
+        </div>
+
+        <!-- ── Section 5: Alertas ─────────────────────────── -->
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <h3>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              Alertas
+            </h3>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="alerts-count-badge" class="dash-alert-badge" style="display:none;"></span>
+              <a href="productos.html" class="btn-dash-action btn-dash-action--neutral">
+                Ver más
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+            </div>
+          </div>
+          <div class="dash-card-body">
+            <div class="dash-alerts-grid" id="alerts-panel"></div>
           </div>
         </div>
 
-        <!-- ── Fila 3: Ventas por Catálogo + Horarios Pico ── -->
+        <!-- ── Section 6: Catálogo + Horarios Pico ────────── -->
         <div class="dash-grid-2">
           <div class="dash-card">
             <div class="dash-card-header">
@@ -281,6 +292,38 @@
                 <canvas id="peak-hours-chart"></canvas>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- ── Section 7: Ranking completo ────────────────── -->
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <h3>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Ranking de Ventas
+            </h3>
+            <select id="ranking-sort-by">
+              <option value="cantidad_desc">Más Vendidos (Cant.)</option>
+              <option value="facturado_desc">Más Vendidos (Monto)</option>
+              <option value="ganancia_desc">Más Rentables</option>
+              <option value="cantidad_asc">Menos Vendidos (Cant.)</option>
+              <option value="facturado_asc">Menos Vendidos (Monto)</option>
+              <option value="ganancia_asc">Menos Rentables</option>
+            </select>
+          </div>
+          <div class="dash-card-body no-pad">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Cant.</th>
+                  <th>Facturado</th>
+                  <th>Ganancia</th>
+                  <th>Stock</th>
+                </tr>
+              </thead>
+              <tbody id="full-ranking-tbody"></tbody>
+            </table>
           </div>
         </div>
 

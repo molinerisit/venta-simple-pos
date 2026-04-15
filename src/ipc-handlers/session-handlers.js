@@ -88,6 +88,16 @@ function registerSessionHandlers(models, sequelize, createMainWindow, createLogi
     }
   });
 
+  // CHECK ADMIN EXISTS — para que el login muestre el link de setup si no hay admin
+  ipcMain.handle("check-admin-exists", async () => {
+    try {
+      const admin = await Usuario.findOne({ where: { rol: "administrador" } });
+      return { exists: !!admin };
+    } catch {
+      return { exists: true }; // fail-safe: si hay error no mostramos el link
+    }
+  });
+
   // SESIÓN ACTIVA — S-3: explicit allowlist, no credential fields exposed
   ipcMain.handle("get-user-session", async () => {
     if (!activeUserId) return null;

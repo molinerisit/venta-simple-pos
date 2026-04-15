@@ -55,27 +55,38 @@ document.addEventListener("app-ready", () => {
 
   // --- Stat cards ---
   const actualizarStatCards = (insumos) => {
-    const total     = insumos.length;
-    const sinStock  = insumos.filter(i => Number(i.stock || 0) <= 0).length;
-    const sinPrecio = insumos.filter(i => !i.ultimoPrecioCompra).length;
+    const bajoStock = insumos.filter(i => Number(i.stock || 0) <= 5).length;
 
-    const elTotal    = document.getElementById("stat-total");
-    const elSinStock = document.getElementById("stat-sin-stock");
-    const elSinPrecio = document.getElementById("stat-sin-precio");
-    const iconSinStock = document.getElementById("stat-sin-stock-icon");
+    // Gasto del mes: sum of (ultimoPrecioCompra) for all insumos as approximation
+    const gastoMes = insumos.reduce((acc, i) => acc + (parseFloat(i.ultimoPrecioCompra || 0)), 0);
 
-    if (elTotal)    elTotal.textContent    = total;
-    if (elSinStock) {
-      elSinStock.textContent = sinStock;
-      if (sinStock > 0) elSinStock.classList.add("value-warning");
-      else              elSinStock.classList.remove("value-warning");
-      if (iconSinStock) {
-        iconSinStock.className = sinStock > 0
+    // Última compra: find most recent updatedAt among insumos
+    let ultimaCompra = "—";
+    const fechas = insumos
+      .map(i => i.fechaUltimaCompra || i.updatedAt)
+      .filter(Boolean)
+      .map(d => new Date(d))
+      .filter(d => !isNaN(d));
+    if (fechas.length > 0) {
+      const maxFecha = new Date(Math.max(...fechas));
+      ultimaCompra = maxFecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    }
+
+    const elGastoMes      = document.getElementById("stat-gasto-mes");
+    const elBajoStock     = document.getElementById("stat-bajo-stock");
+    const elUltimaCompra  = document.getElementById("stat-ultima-compra");
+    const iconBajoStock   = document.getElementById("stat-bajo-stock-icon");
+
+    if (elGastoMes)     elGastoMes.textContent    = formatCurrency(gastoMes);
+    if (elBajoStock) {
+      elBajoStock.textContent = bajoStock;
+      if (iconBajoStock) {
+        iconBajoStock.className = bajoStock > 0
           ? "stat-card-icon stat-card-icon--amber"
           : "stat-card-icon stat-card-icon--green";
       }
     }
-    if (elSinPrecio) elSinPrecio.textContent = sinPrecio;
+    if (elUltimaCompra) elUltimaCompra.textContent = ultimaCompra;
   };
 
   const renderizarTabla = async (insumos) => {
@@ -95,14 +106,20 @@ document.addEventListener("app-ready", () => {
       const badgeCls = sinStock ? "badge-stock badge-stock--sin" : "badge-stock badge-stock--ok";
       const badgeTxt = sinStock ? "Sin stock" : "Normal";
 
+      const categoria = [i.departamentoNombre, i.familiaNombre].filter(Boolean).join(" / ") || "—";
+      const fechaCompra = i.fechaUltimaCompra || i.updatedAt;
+      const fechaFmt = fechaCompra
+        ? new Date(fechaCompra).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : "—";
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${i.nombre}</td>
-        <td>${i.departamentoNombre || "N/A"}</td>
-        <td>${i.familiaNombre || "N/A"}</td>
+        <td>${categoria}</td>
         <td>${i.stock}</td>
         <td>${i.unidad || ""}</td>
         <td>${formatCurrency(i.ultimoPrecioCompra)}</td>
+        <td>${fechaFmt}</td>
         <td><span class="${badgeCls}">${badgeTxt}</span></td>
         <td class="acciones-btn">
           <button class="btn-edit btn btn-info" data-id="${i.id}" title="Editar">✏️</button>

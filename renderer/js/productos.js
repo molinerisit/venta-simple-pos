@@ -6,12 +6,19 @@ document.addEventListener("app-ready", () => {
   const btnNuevoProducto = document.getElementById("btn-nuevo-producto");
   const searchInput = document.getElementById("search-input");
   const alertasContainer = document.getElementById("alertas-container");
-  const toast = document.getElementById("toast-notification");
   const contadorDisplay = document.getElementById("contador-productos");
-const filterSort = document.getElementById("filter-sort");
+  const filterSort = document.getElementById("filter-sort");
+
+  // Stat card refs
+  const statTotal       = document.getElementById("stat-total");
+  const statStockCrit   = document.getElementById("stat-stock-critico");
+  const statVencimiento = document.getElementById("stat-vencimiento");
+  const statSinCosto    = document.getElementById("stat-sin-costo");
+
   // Configuración
-  const MARGEN_ADVERTENCIA = 39; // %
-  let toastTimer;
+  const MARGEN_ADVERTENCIA    = 39;  // %
+  const LIMITE_STOCK_BAJO     = 5.0;
+  const DIAS_PARA_VENCIMIENTO = 7;
 
   // Confirm modal (no bloqueante)
   const confirmOverlay = document.createElement("div");
@@ -21,8 +28,8 @@ const filterSort = document.getElementById("filter-sort");
       <h4 id="confirm-title">Confirmar eliminación</h4>
       <p id="confirm-msg">¿Estás seguro de eliminar este producto?</p>
       <div class="confirm-actions">
-        <button type="button" class="btn btn-secundario" data-action="cancelar">Cancelar</button>
-        <button type="button" class="btn btn-danger" data-action="aceptar">Eliminar</button>
+        <button type="button" class="btn btn-secundario btn-sm" data-action="cancelar">Cancelar</button>
+        <button type="button" class="btn btn-danger btn-sm" data-action="aceptar">Eliminar</button>
       </div>
     </div>
   `;
@@ -41,12 +48,11 @@ const filterSort = document.getElementById("filter-sort");
     );
 
   const showNotification = (message, type = "success") => {
-    if (!toast) return;
-    clearTimeout(toastTimer);
-    toast.textContent = message;
-    toast.className = "toast";
-    toast.classList.add(type, "visible");
-    toastTimer = setTimeout(() => toast.classList.remove("visible"), 2500);
+    if (window.toast?.show) {
+      window.toast.show(message, type === "error" ? "error" : "success");
+    } else {
+      console.log(`[${type}] ${message}`);
+    }
   };
 
   const confirmar = (mensaje = "¿Estás seguro?") =>
@@ -81,110 +87,105 @@ const filterSort = document.getElementById("filter-sort");
   };
 
   // ------------------------------
-  // === NUEVA LÓGICA DE ALERTAS ESPECÍFICAS ===
+  // === STAT CARDS ===
   // ------------------------------
-  const generarAlertasEspecificas = (productos) => {
-    if (!alertasContainer) return;
-    alertasContainer.innerHTML = "";
-
-    const fragment = document.createDocumentFragment();
-    
-    const LIMITE_STOCK_BAJO = 5.0;
-    const DIAS_PARA_VENCIMIENTO = 7;
-
-    // Fechas base: Hora 00:00:00 para comparar días completos
+  const renderStatCards = (productos) => {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
+    const limiteVenc = new Date(hoy);
+    limiteVenc.setDate(hoy.getDate() + DIAS_PARA_VENCIMIENTO);
 
-    const limiteVencimiento = new Date(hoy);
-    limiteVencimiento.setDate(hoy.getDate() + DIAS_PARA_VENCIMIENTO);
-
-    // Helper para crear HTML de alerta
-    const crearElementoAlerta = (mensaje, tipo) => {
-      const div = document.createElement("div");
-      // Usamos clases como 'alerta-vencido', 'alerta-stock', etc. para CSS
-      div.className = `alerta alerta-${tipo}`; 
-      
-      let icon = "⚠️";
-      if (tipo === "vencido") icon = "⛔"; 
-      if (tipo === "vencimiento") icon = "⏰";
-      if (tipo === "stock") icon = "📦";
-      if (tipo === "margen") icon = "📉";
-
-      div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:1.2em;">${icon}</span>
-            <span>${mensaje}</span>
-        </div>
-        <button class="alerta-cerrar" title="Cerrar">&times;</button>
-      `;
-      
-      div.querySelector(".alerta-cerrar").addEventListener("click", () => div.remove());
-      return div;
-    };
+    let stockCritico = 0;
+    let proximosVencer = 0;
+    let sinCosto = 0;
 
     for (const p of productos) {
-      if (!p || !p.activo) continue;
-
-      const nombre = p.nombre || "Producto";
-      const stock = formatFloat(p.stock ?? p.Stock ?? 0);
+      if (!p.activo) continue;
+      const stock        = formatFloat(p.stock ?? 0);
       const precioCompra = formatFloat(p.precioCompra ?? p.precio_compra ?? p.costo ?? 0);
-      const precioVenta = formatFloat(p.precioVenta ?? p.precio_venta ?? p.precio ?? 0);
 
-      // 1) VENCIMIENTOS
+      if (stock <= LIMITE_STOCK_BAJO) stockCritico++;
+      if (precioCompra <= 0) sinCosto++;
       if (p.fecha_vencimiento) {
-        // Split seguro para evitar problemas de timezone UTC
-        const [year, month, day] = String(p.fecha_vencimiento).split("-");
-        // Mes en JS es 0-index
-        const fechaVenc = new Date(year, month - 1, day);
-        
-        if (!isNaN(fechaVenc.getTime())) {
-            const fechaStr = `${day}/${month}/${year}`; // Formato visual
-
-            if (fechaVenc < hoy) {
-                // YA VENCIDO
-                const msg = `<strong>${nombre}</strong> venció el <strong>${fechaStr}</strong>.`;
-                fragment.appendChild(crearElementoAlerta(msg, "vencido"));
-            } else if (fechaVenc >= hoy && fechaVenc <= limiteVencimiento) {
-                // PRÓXIMO A VENCER
-                // Diferencia en milisegundos
-                const diffTime = fechaVenc - hoy;
-                // Convertir a días (redondear hacia arriba)
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                let textoTiempo = "";
-                if (diffDays === 0) textoTiempo = "HOY";
-                else if (diffDays === 1) textoTiempo = "MAÑANA";
-                else textoTiempo = `en ${diffDays} días`;
-
-                const msg = `<strong>${nombre}</strong> vence <strong>${textoTiempo}</strong> (${fechaStr}).`;
-                fragment.appendChild(crearElementoAlerta(msg, "vencimiento"));
-            }
-        }
-      }
-
-      // 2) STOCK BAJO
-      if (stock <= LIMITE_STOCK_BAJO) {
-        const msg = `<strong>${nombre}</strong>: Stock crítico (<strong>${stock}</strong> un.).`;
-        fragment.appendChild(crearElementoAlerta(msg, "stock"));
-      }
-
-      // 3) MARGEN BAJO
-      // Solo calculamos si está a la venta
-      if (precioVenta > 0) {
-        let margen = 0;
-        if (precioCompra > 0) {
-           margen = ((precioVenta - precioCompra) / precioCompra) * 100;
-        }
-        // Si el margen es bajo (y tenemos costo o asumimos 0)
-        if (margen < MARGEN_ADVERTENCIA) {
-            const msg = `<strong>${nombre}</strong> tiene margen bajo (<strong>${margen.toFixed(0)}%</strong>).`;
-            fragment.appendChild(crearElementoAlerta(msg, "margen"));
-        }
+        const [y, m, d] = String(p.fecha_vencimiento).split("-");
+        const f = new Date(y, m - 1, d);
+        if (!isNaN(f.getTime()) && f >= hoy && f <= limiteVenc) proximosVencer++;
       }
     }
 
-    alertasContainer.appendChild(fragment);
+    if (statTotal)       statTotal.textContent       = productos.length;
+    if (statStockCrit)   {
+      statStockCrit.textContent  = stockCritico;
+      statStockCrit.className    = "stat-card-value" + (stockCritico > 0 ? " value-warning" : "");
+    }
+    if (statVencimiento) {
+      statVencimiento.textContent = proximosVencer;
+      statVencimiento.className   = "stat-card-value" + (proximosVencer > 0 ? " value-danger" : "");
+    }
+    if (statSinCosto)    {
+      statSinCosto.textContent   = sinCosto;
+      statSinCosto.className     = "stat-card-value" + (sinCosto > 0 ? " value-warning" : "");
+    }
+  };
+
+  // ------------------------------
+  // === ALERT SUMMARY BAR ===
+  // ------------------------------
+  const generarAlertasEspecificas = (productos) => {
+    if (!alertasContainer) return;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const limiteVenc = new Date(hoy);
+    limiteVenc.setDate(hoy.getDate() + DIAS_PARA_VENCIMIENTO);
+
+    const vencidos = [];
+    const porVencer = [];
+    const stockBajo = [];
+    const margenBajo = [];
+
+    for (const p of productos) {
+      if (!p.activo) continue;
+      const nombre       = p.nombre || "Producto";
+      const stock        = formatFloat(p.stock ?? 0);
+      const precioCompra = formatFloat(p.precioCompra ?? p.precio_compra ?? p.costo ?? 0);
+      const precioVenta  = formatFloat(p.precioVenta ?? p.precio_venta ?? p.precio ?? 0);
+
+      if (p.fecha_vencimiento) {
+        const [y, m, d] = String(p.fecha_vencimiento).split("-");
+        const f = new Date(y, m - 1, d);
+        if (!isNaN(f.getTime())) {
+          if (f < hoy) vencidos.push(nombre);
+          else if (f <= limiteVenc) porVencer.push(nombre);
+        }
+      }
+      if (stock <= LIMITE_STOCK_BAJO) stockBajo.push(nombre);
+      if (precioVenta > 0) {
+        const margen = precioCompra > 0
+          ? ((precioVenta - precioCompra) / precioCompra) * 100
+          : 0;
+        if (margen < MARGEN_ADVERTENCIA) margenBajo.push(nombre);
+      }
+    }
+
+    const pills = [];
+    if (vencidos.length)   pills.push({ cls: "pill--danger",  text: `${vencidos.length} vencido${vencidos.length !== 1 ? "s" : ""}`,       title: vencidos.join(", ") });
+    if (porVencer.length)  pills.push({ cls: "pill--warning", text: `${porVencer.length} próximo${porVencer.length !== 1 ? "s" : ""} a vencer`, title: porVencer.join(", ") });
+    if (stockBajo.length)  pills.push({ cls: "pill--amber",   text: `${stockBajo.length} stock crítico`,                                   title: stockBajo.join(", ") });
+    if (margenBajo.length) pills.push({ cls: "pill--info",    text: `${margenBajo.length} margen bajo`,                                    title: margenBajo.join(", ") });
+
+    if (!pills.length) {
+      alertasContainer.innerHTML = "";
+      return;
+    }
+
+    alertasContainer.innerHTML = `
+      <div class="alert-summary">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span class="alert-summary__label">Atención:</span>
+        ${pills.map(p => `<span class="alert-pill ${p.cls}" title="${p.title}">${p.text}</span>`).join("")}
+      </div>
+    `;
   };
 
 
@@ -252,19 +253,16 @@ const aplicarOrdenamiento = (productos, criterio) => {
     await nextFrame();
 
     if (contadorDisplay) {
-      const count = productos ? productos.length : 0;
-      contadorDisplay.textContent = `(${count} productos)`;
+      contadorDisplay.textContent = productos ? productos.length : 0;
     }
 
     if (!productos || productos.length === 0) {
-      tablaBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 2rem;">No se encontraron productos.</td></tr>`;
+      tablaBody.innerHTML = `<tr><td colspan="7" class="td-empty">No se encontraron productos.</td></tr>`;
       return;
     }
 
     const frag = document.createDocumentFragment();
 
-    const LIMITE_STOCK_BAJO = 5.0;
-    const DIAS_PARA_VENCIMIENTO = 7;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const limiteVencimiento = new Date(hoy);
@@ -272,86 +270,73 @@ const aplicarOrdenamiento = (productos, criterio) => {
 
     productos.forEach((p) => {
       const tr = document.createElement("tr");
-      const estadoClass = p.activo ? "estado-activo" : "estado-inactivo";
-      const estadoTexto = p.activo ? "Activo" : "Inactivo";
-      const departamento = p.familia?.departamento?.nombre || "N/A";
-      const familia = p.familia?.nombre || "N/A";
-      const codigoBarras = p.codigo_barras || p.codigoBarras || "-";
 
-      // Calculos
-      const stock = formatFloat(p.stock);
+      const departamento  = p.familia?.departamento?.nombre || "";
+      const familia       = p.familia?.nombre || "";
+      const codigoBarras  = p.codigo_barras || p.codigoBarras || "";
+
+      const stock        = formatFloat(p.stock);
       const precioCompra = formatFloat(p.precioCompra ?? p.precio_compra ?? p.costo ?? 0);
-      const precioVenta = formatFloat(p.precioVenta ?? p.precio_venta ?? p.precio ?? 0);
-      
-      const margen =
-        precioVenta > 0 && precioCompra > 0
-          ? ((precioVenta - precioCompra) / precioCompra) * 100
-          : 0;
+      const precioVenta  = formatFloat(p.precioVenta ?? p.precio_venta ?? p.precio ?? 0);
 
-      // Badge Margen
-      let badgeClass = "";
-      let badgeStyle = "";
-      if (precioVenta <= 0) {
-        badgeClass = "margen-none";
-        badgeStyle = "background:#e0e0e0;color:#333;";
-      } else if (margen > 50) {
-        badgeClass = "margen-alto-50";
-        badgeStyle = "background:#2e7d32;color:#fff;"; // verde
-      } else if (margen >= 39) {
-        badgeClass = "margen-alto-40";
-        badgeStyle = "background:#1565c0;color:#fff;"; // azul
-      } else {
-        badgeClass = "margen-bajo";
-        badgeStyle = "background:#c62828;color:#fff;"; // rojo
-      }
+      const margen = precioVenta > 0 && precioCompra > 0
+        ? ((precioVenta - precioCompra) / precioCompra) * 100
+        : null;
 
-      // Resaltado de Fila (Prioridad)
-      let filaClase = "";
-      
-      // 1. Vencimiento (Prioridad máxima visual)
+      // Row accent class
+      let rowAccent = "";
       if (p.fecha_vencimiento) {
         const [y, m, d] = String(p.fecha_vencimiento).split("-");
         const f = new Date(y, m - 1, d);
         if (!isNaN(f.getTime())) {
-            if (f < hoy) filaClase = "fila-vencido"; // Nueva clase CSS sugerida
-            else if (f >= hoy && f <= limiteVencimiento) filaClase = "fila-prox-vencer";
+          if (f < hoy) rowAccent = "row--vencido";
+          else if (f <= limiteVencimiento) rowAccent = "row--por-vencer";
         }
       }
-      
-      // 2. Stock (Si no está vencido)
-      if (!filaClase && p.activo && stock <= LIMITE_STOCK_BAJO) {
-        filaClase = "fila-bajo-stock";
-      }
-      
-      // 3. Compra (Si no hay otros problemas graves)
-      if (!filaClase && (!precioCompra || precioCompra <= 0)) {
-        filaClase = "fila-sin-compra";
-      }
-      
-      // 4. Margen
-      if (!filaClase && precioVenta > 0 && margen < MARGEN_ADVERTENCIA) {
-        filaClase = "fila-margen-bajo";
+      if (!rowAccent && p.activo && stock <= LIMITE_STOCK_BAJO) rowAccent = "row--stock-bajo";
+      if (rowAccent) tr.classList.add(rowAccent);
+
+      // Margin badge class
+      let margenBadgeClass = "margen-badge--sin";
+      let margenText = "—";
+      if (precioVenta > 0) {
+        margenText = margen !== null ? `${margen.toFixed(1)}%` : "0%";
+        if (margen === null || margen < MARGEN_ADVERTENCIA) margenBadgeClass = "margen-badge--bajo";
+        else if (margen <= 50) margenBadgeClass = "margen-badge--ok";
+        else margenBadgeClass = "margen-badge--alto";
       }
 
-      if (filaClase) tr.classList.add(filaClase);
+      // Stock badge
+      const stockBadgeClass = p.activo && stock <= LIMITE_STOCK_BAJO ? "stock-badge--low" : "";
+      const stockText = `${formatFloat(stock)}${p.unidad ? " " + p.unidad : ""}`;
 
-      const margenDisplay = `${precioVenta > 0 ? margen.toFixed(1) : "-"}%`;
-      const margenTd = `<td><span class="margen-badge ${badgeClass}" style="display:inline-block;padding:6px 8px;border-radius:6px;font-weight:700;${badgeStyle}" title="Margen: ${margenDisplay}">${margenDisplay}</span></td>`;
+      // Estado
+      const estadoClass = p.activo ? "estado-activo" : "estado-inactivo";
+      const estadoTexto = p.activo ? "Activo" : "Inactivo";
 
       tr.innerHTML = `
-        ${margenTd}
-        <td>${codigoBarras}</td>
-        <td>${p.nombre}</td>
-        <td>${departamento}</td>
-        <td>${familia}</td>
-        <td>${p.codigo || "N/A"}</td>
-        <td>${formatFloat(p.stock)} ${p.unidad || ""}</td>
-        <td>${formatCurrency(p.precioVenta ?? p.precio_venta ?? p.precio)}</td>
-        <td style="text-align:center;"><span class="${estadoClass}">${estadoTexto}</span></td>
+        <td>
+          <div class="prod-name">${p.nombre}</div>
+          ${codigoBarras ? `<div class="prod-barcode">${codigoBarras}</div>` : ""}
+        </td>
+        <td>
+          ${departamento ? `<div class="prod-depto">${departamento}</div>` : ""}
+          ${familia ? `<div class="prod-familia">${familia}</div>` : ""}
+        </td>
+        <td><span class="stock-badge ${stockBadgeClass}">${stockText}</span></td>
+        <td class="td-right">${formatCurrency(precioVenta)}</td>
+        <td><span class="margen-badge ${margenBadgeClass}">${margenText}</span></td>
+        <td><span class="${estadoClass}">${estadoTexto}</span></td>
         <td class="acciones-btn">
-          <button class="btn-toggle-active btn btn-sm" data-id="${p.id}" title="Activar/Desactivar">🔄</button>
-          <button class="btn-edit btn btn-info btn-sm" data-id="${p.id}" title="Editar">✏️</button>
-          <button class="btn-delete btn btn-danger btn-sm" data-id="${p.id}" title="Eliminar">🗑️</button>
+          <button class="btn-toggle-active action-btn" data-id="${p.id}" title="${p.activo ? "Desactivar" : "Activar"}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          </button>
+          <button class="btn-edit action-btn action-btn--edit" data-id="${p.id}" title="Editar">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-delete action-btn action-btn--delete" data-id="${p.id}" title="Eliminar">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
         </td>
       `;
       frag.appendChild(tr);
@@ -395,18 +380,16 @@ const aplicarOrdenamiento = (productos, criterio) => {
 
   const cargarProductos = async () => {
     try {
-      tablaBody.innerHTML = '<tr><td colspan="10" class="text-center">Cargando…</td></tr>';
+      tablaBody.innerHTML = '<tr><td colspan="7" class="td-empty">Cargando productos…</td></tr>';
       const data = await window.electronAPI.invoke("get-productos");
       listaDeProductos = Array.isArray(data) ? data : [];
-      
-      // Generar las alertas nuevas específicas
+      renderStatCards(listaDeProductos);
       generarAlertasEspecificas(listaDeProductos);
-      
       await filtrarYRenderizar();
     } catch (e) {
       console.error("Error al cargar productos:", e);
       showNotification("No se pudieron cargar los productos.", "error");
-      tablaBody.innerHTML = '<tr><td colspan="10" class="text-center" style="color:red;">Error al cargar.</td></tr>';
+      tablaBody.innerHTML = '<tr><td colspan="7" class="td-empty" style="color:var(--danger-color);">Error al cargar productos.</td></tr>';
     }
   };
 

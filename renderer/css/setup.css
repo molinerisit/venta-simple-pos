@@ -224,6 +224,14 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ─── Optional field hint ────────────────────────────────── */
+.field-optional {
+  font-size: 0.78em;
+  font-weight: 400;
+  color: #94A3B8;
+  margin-left: 5px;
+}
+
 /* ─── Footer ─────────────────────────────────────────────── */
 .auth-footer {
   font-size: 0.78rem;

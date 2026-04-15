@@ -121,6 +121,32 @@ document.addEventListener("app-ready", () => {
     return `$${num}`; // Ejemplo: $1000
   };
 
+  // Compute effective line subtotal applying an offer (mirrors server logic)
+  const calcularSubtotalConOferta = (oferta, precioVenta, cantidad) => {
+    const pv = Number(precioVenta);
+    const qty = Number(cantidad);
+    if (!oferta) return pv * qty;
+    switch (oferta.tipo) {
+      case 'porcentaje': {
+        const pct = Number(oferta.valor) || 0;
+        return Math.round(pv * qty * (1 - pct / 100) * 100) / 100;
+      }
+      case '2x1':
+        return pv * Math.ceil(qty / 2);
+      case '3x2':
+        return pv * (qty - Math.floor(qty / 3));
+      default:
+        return pv * qty;
+    }
+  };
+
+  const getOfertaLabel = (oferta) => {
+    if (!oferta) return null;
+    if (oferta.nombre) return oferta.nombre;
+    if (oferta.tipo === 'porcentaje') return oferta.valor + '% OFF';
+    return oferta.tipo.toUpperCase();
+  };
+
   const showErrorModal = (message) => {
     if (!modalContainer) return;
     modalMessage.textContent = message;
@@ -283,7 +309,7 @@ document.addEventListener("app-ready", () => {
 
       let subtotal = 0;
       CajaState.ventaActual.forEach((item, index) => {
-        const itemSubtotal = item.precioUnitario * item.cantidad;
+        const itemSubtotal = calcularSubtotalConOferta(item.oferta, item.precioUnitario, item.cantidad);
         subtotal += itemSubtotal;
 
         const row = document.createElement("tr");
@@ -295,12 +321,12 @@ document.addEventListener("app-ready", () => {
           item.nombreProducto
         }" width="40" height="40"
                    style="object-fit:cover;border-radius:4px;" onerror="this.style.display='none';"></td>
-          <td>${item.nombreProducto}</td>
+          <td>${item.nombreProducto}${item.oferta ? "<span class=\"oferta-badge\">" + getOfertaLabel(item.oferta) + "</span>" : ""}</td>
           <td><input type="number" class="cantidad-input" value="${
             item.cantidad
           }" data-index="${index}"
                    min="0.01" step="any" style="width:70px;"></td>
-          <td>${formatCurrency(item.precioUnitario)}</td>
+          <td>${item.oferta ? "<span class=\"precio-tachado\">" + formatCurrency(item.precioUnitario) + "</span>" : formatCurrency(item.precioUnitario)}</td>
           <td>${formatCurrency(itemSubtotal)}</td>
           <td><button data-index="${index}" class="btn-delete-item" title="Quitar">X</button></td>
         `;
@@ -407,6 +433,7 @@ document.addEventListener("app-ready", () => {
         precioUnitario:
           precioOverride !== null ? precioOverride : producto.precioVenta,
         cantidad,
+        oferta: precioOverride === null ? (producto.ofertaActiva || null) : null,
       });
     }
     renderizarVenta();
@@ -500,6 +527,8 @@ document.addEventListener("app-ready", () => {
       );
       texto += nombreProd + "\n";
 
+      if (it.ofertaLabel) texto += ` ** ${it.ofertaLabel} **
+`;
       const detalleIzq = ` (${it.cantidad} x ${pu}) = ${sub}`;
       texto += detalleIzq.substring(0, ANCHO_LINEA) + "\n";
     });

@@ -26,6 +26,7 @@ module.exports = (sequelize) => {
     activo:       { type: DataTypes.BOOLEAN, defaultValue: true },
     pesable:      { type: DataTypes.BOOLEAN, defaultValue: false },
     acceso_rapido:{ type: DataTypes.BOOLEAN, defaultValue: false },
+    maneja_lotes: { type: DataTypes.BOOLEAN, defaultValue: false },
 
     DepartamentoId: { type: DataTypes.UUID, allowNull: true },
     FamiliaId:      { type: DataTypes.UUID, allowNull: true },

@@ -206,6 +206,13 @@
     const certFilePathDisplay = document.getElementById("cert-file-path");
     const keyFilePathDisplay = document.getElementById("key-file-path");
 
+    // Gmail
+    const gmailForm      = document.getElementById("gmail-config-form");
+    const gmailUserInput = document.getElementById("gmail-user");
+    const gmailPassInput = document.getElementById("gmail-pass");
+    const gmailStatus    = document.getElementById("gmail-status");
+    const btnTestGmail   = document.getElementById("btn-test-gmail");
+
     // Arqueo
     const arqueoToggle = document.getElementById("arqueo-toggle");
     const horariosArqueoContainer = document.getElementById(
@@ -566,6 +573,14 @@
             config.afip_key_path || "No seleccionado";
         }
 
+        // Gmail: load only the user address (never the password)
+        if (gmailForm) {
+          try {
+            const gmailCfg = await ipcInvoke("get-gmail-config");
+            if (gmailCfg?.gmailUser) gmailUserInput.value = gmailCfg.gmailUser;
+          } catch (_) {}
+        }
+
         if (businessInfoForm) {
           businessNameInput.value = config.nombre_negocio || "";
           businessSloganInput.value = config.slogan_negocio || "";
@@ -687,14 +702,177 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
       }
     };
 
+    // ── Referencias DOM: Acceso Remoto ──────────────────────────
+    const tabRemoto          = document.getElementById("tab-remoto");
+    const remoteStatusDot    = document.getElementById("remote-status-dot");
+    const remoteStatusText   = document.getElementById("remote-status-text");
+    const remoteClientsCount = document.getElementById("remote-clients-count");
+    const remoteEnabledTog   = document.getElementById("remote-enabled-toggle");
+    const remotePortInput    = document.getElementById("remote-port");
+    const btnSaveRemote      = document.getElementById("btn-save-remote");
+    const remoteTokenSection = document.getElementById("remote-token-section");
+    const remoteTokenDisplay = document.getElementById("remote-token-display");
+    const btnCopyToken       = document.getElementById("btn-copy-token");
+    const btnRegenToken      = document.getElementById("btn-regen-token");
+    const remoteApiUrl       = document.getElementById("remote-api-url");
+    const remoteWsUrl        = document.getElementById("remote-ws-url");
+    const btnRefreshMetrics  = document.getElementById("btn-refresh-metrics");
+    const remoteMetricsGrid  = document.getElementById("remote-metrics-grid");
+    const remoteCmdSelect    = document.getElementById("remote-cmd-select");
+    const btnExecCmd         = document.getElementById("btn-exec-cmd");
+    const remoteCmdOutput    = document.getElementById("remote-cmd-output");
+
+    function formatBytes(b) {
+      if (!b) return "—";
+      if (b >= 1e9) return (b / 1e9).toFixed(1) + " GB";
+      if (b >= 1e6) return (b / 1e6).toFixed(0) + " MB";
+      return (b / 1e3).toFixed(0) + " KB";
+    }
+    function formatUptime(s) {
+      if (!s) return "—";
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+      return `${h}h ${m}m`;
+    }
+
+    function applyRemoteStatus(cfg) {
+      if (!remoteStatusDot) return;
+      const running = cfg.running;
+      remoteStatusDot.className  = "remote-dot " + (running ? "remote-dot--on" : "remote-dot--off");
+      remoteStatusText.textContent = running
+        ? `Servidor activo en puerto ${cfg.port}`
+        : "Servidor detenido";
+      if (running && cfg.clients > 0) {
+        remoteClientsCount.textContent = `${cfg.clients} cliente(s) conectado(s)`;
+        remoteClientsCount.style.display = "";
+      } else {
+        remoteClientsCount.style.display = "none";
+      }
+      if (remoteEnabledTog) remoteEnabledTog.checked = !!cfg.enabled;
+      if (remotePortInput)  remotePortInput.value    = cfg.port || 4827;
+      if (cfg.token) {
+        if (remoteTokenSection) remoteTokenSection.style.display = "";
+        if (remoteTokenDisplay) remoteTokenDisplay.textContent = cfg.token;
+        const port = cfg.port || 4827;
+        if (remoteApiUrl) remoteApiUrl.textContent = `http://[IP_PC]:${port}/api/v1`;
+        if (remoteWsUrl)  remoteWsUrl.textContent  = `ws://[IP_PC]:${port}/ws?token=${cfg.token.slice(0,8)}...`;
+      }
+    }
+
+    function applyMetrics(m) {
+      const g = id => document.getElementById(id);
+      if (!m) return;
+      g("m-cpu").textContent    = m.cpu?.loadPct != null ? `${m.cpu.loadPct}%`  : "—";
+      g("m-temp").textContent   = m.cpu?.tempC   != null ? `${m.cpu.tempC} °C` : "N/D";
+      g("m-ram").textContent    = m.ram ? `${m.ram.usePct}% (${formatBytes(m.ram.used)} / ${formatBytes(m.ram.total)})` : "—";
+      g("m-uptime").textContent = formatUptime(m.os?.uptime);
+      g("m-os").textContent     = m.os ? `${m.os.hostname} · ${m.os.version}` : "—";
+      if (m.disks?.length) {
+        g("m-disks").textContent = m.disks
+          .map(d => `${d.mount || d.fs}: ${formatBytes(d.free)} libre / ${formatBytes(d.size)}`)
+          .join("  |  ");
+      }
+    }
+
+    async function loadRemoteConfig() {
+      const cfg = await ipcInvoke("remote-get-config");
+      applyRemoteStatus(cfg);
+    }
+
+    async function loadRemoteMetrics() {
+      if (btnRefreshMetrics) btnRefreshMetrics.disabled = true;
+      try {
+        const m = await ipcInvoke("remote-get-metrics");
+        applyMetrics(m);
+      } finally {
+        if (btnRefreshMetrics) btnRefreshMetrics.disabled = false;
+      }
+    }
+
+    async function loadRemoteCommands() {
+      if (!remoteCmdSelect) return;
+      const cmds = await ipcInvoke("remote-list-commands");
+      remoteCmdSelect.innerHTML = cmds.map(c =>
+        `<option value="${c.key}">${c.key} — ${c.desc}</option>`
+      ).join("");
+    }
+
+    if (btnSaveRemote) {
+      btnSaveRemote.addEventListener("click", async () => {
+        setBtnLoading(btnSaveRemote, true, "Guardando...");
+        const res = await ipcInvoke("remote-save-config", {
+          enabled: remoteEnabledTog?.checked || false,
+          port:    Number(remotePortInput?.value) || 4827,
+        });
+        setBtnLoading(btnSaveRemote, false);
+        if (res.success) {
+          toast.show("Configuración guardada.", "success");
+          await loadRemoteConfig();
+        } else {
+          toast.show(res.error || "Error al guardar.", "error");
+        }
+      });
+    }
+
+    if (btnCopyToken) {
+      btnCopyToken.addEventListener("click", () => {
+        const t = remoteTokenDisplay?.textContent;
+        if (t && t !== "—") navigator.clipboard.writeText(t).then(() => toast.show("Token copiado.", "success"));
+      });
+    }
+
+    if (btnRegenToken) {
+      btnRegenToken.addEventListener("click", async () => {
+        const ok = await confirmar("¿Regenerar el token? Los paneles web conectados dejarán de funcionar hasta que los actualices.");
+        if (!ok) return;
+        setBtnLoading(btnRegenToken, true, "...");
+        const res = await ipcInvoke("remote-regenerate-token");
+        setBtnLoading(btnRegenToken, false);
+        if (res.success) { await loadRemoteConfig(); toast.show("Token regenerado.", "success"); }
+        else toast.show(res.error || "Error.", "error");
+      });
+    }
+
+    if (btnRefreshMetrics) {
+      btnRefreshMetrics.addEventListener("click", loadRemoteMetrics);
+    }
+
+    if (btnExecCmd) {
+      btnExecCmd.addEventListener("click", async () => {
+        const cmd = remoteCmdSelect?.value;
+        if (!cmd) return;
+        setBtnLoading(btnExecCmd, true, "Ejecutando...");
+        if (remoteCmdOutput) { remoteCmdOutput.style.display = ""; remoteCmdOutput.textContent = "Ejecutando..."; }
+        const res = await ipcInvoke("remote-exec-cmd", { cmd });
+        setBtnLoading(btnExecCmd, false);
+        if (remoteCmdOutput) {
+          remoteCmdOutput.textContent = res.output || "(sin salida)";
+        }
+      });
+    }
+
     // --- 5. INIT ---
     (async () => {
+      // Ocultar sección Gmail para todos excepto superadmin
+      try {
+        const session = await ipcInvoke("get-user-session");
+        if (session?.rol !== "superadmin") {
+          const gmailSection = document.getElementById("gmail-section");
+          if (gmailSection) gmailSection.style.display = "none";
+        } else {
+          // Superadmin: mostrar tab remoto
+          if (tabRemoto) tabRemoto.style.display = "";
+        }
+      } catch (_) {}
+
       await Promise.all([
         loadUsers(),
         loadModules(),
         loadAvailablePorts(),
         loadEmpleados(),
         loadGastosFijos(),
+        loadRemoteConfig(),
+        loadRemoteMetrics(),
+        loadRemoteCommands(),
       ]);
       await loadAdminConfig();
     })();
@@ -708,6 +886,8 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
 
     on(userForm, "submit", async (e) => {
       e.preventDefault();
+      const submitBtn = userForm.querySelector('button[type="submit"]');
+      setBtnLoading(submitBtn, true, "Guardando...");
       try {
         const permissions = [];
         if (rolSelect?.value === "cajero" && permisosContainer) {
@@ -736,6 +916,8 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
       } catch (err) {
         console.error(err);
         toast.show("Error al guardar el usuario.", "error");
+      } finally {
+        setBtnLoading(submitBtn, false);
       }
     });
 
@@ -1361,5 +1543,72 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
         btnImportarCSV.textContent = "Importar Productos (CSV)";
       }
     });
+
+    // ── Gmail config ─────────────────────────────────────────────
+    const showGmailStatus = (msg, ok) => {
+      if (!gmailStatus) return;
+      gmailStatus.textContent = msg;
+      gmailStatus.style.display = msg ? "block" : "none";
+      gmailStatus.className = "gmail-status-msg " + (ok ? "gmail-ok" : "gmail-err");
+    };
+
+    // Toggle password visibility for Gmail pass field
+    const gmailToggle = gmailForm?.querySelector(".toggle-password");
+    if (gmailToggle && gmailPassInput) {
+      gmailToggle.addEventListener("click", () => {
+        const isHidden = gmailPassInput.type === "password";
+        gmailPassInput.type = isHidden ? "text" : "password";
+        gmailToggle.querySelector(".eye-show").style.display = isHidden ? "none" : "";
+        gmailToggle.querySelector(".eye-hide").style.display = isHidden ? "" : "none";
+      });
+    }
+
+    on(btnTestGmail, "click", async () => {
+      const user = gmailUserInput?.value.trim();
+      const pass = gmailPassInput?.value.trim();
+      if (!user || !pass) {
+        showGmailStatus("Completá el correo y la contraseña de aplicación para probar.", false);
+        return;
+      }
+      btnTestGmail.disabled = true;
+      btnTestGmail.textContent = "Probando...";
+      showGmailStatus("", false);
+      try {
+        const res = await ipcInvoke("test-gmail-config", { gmailUser: user, gmailPass: pass });
+        if (res.success) {
+          showGmailStatus("Conexión exitosa. El correo está listo para enviar mensajes.", true);
+        } else {
+          showGmailStatus("Error: " + (res.message || "No se pudo conectar."), false);
+        }
+      } catch (e) {
+        showGmailStatus("Error inesperado: " + e.message, false);
+      } finally {
+        btnTestGmail.disabled = false;
+        btnTestGmail.textContent = "Probar conexión";
+      }
+    });
+
+    on(gmailForm, "submit", async (e) => {
+      e.preventDefault();
+      const user = gmailUserInput?.value.trim();
+      const pass = gmailPassInput?.value.trim();
+      const btn = gmailForm.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
+      showGmailStatus("", false);
+      try {
+        const res = await ipcInvoke("save-gmail-config", { gmailUser: user, gmailPass: pass });
+        if (res.success) {
+          toast.show("Configuración Gmail guardada correctamente.", "success");
+          showGmailStatus("", false);
+        } else {
+          showGmailStatus(res.message || "Error al guardar.", false);
+        }
+      } catch (err) {
+        showGmailStatus("Error inesperado: " + err.message, false);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Guardar configuración Gmail"; }
+      }
+    });
+
   });
 })();

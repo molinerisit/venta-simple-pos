@@ -1414,3 +1414,25 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
   border-radius: 8px;
   font-size: .9em;
 }
+
+
+/* -- Ofertas en el carrito -- */
+.oferta-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.precio-tachado {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 0.88em;
+}

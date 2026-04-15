@@ -1,6 +1,7 @@
 // src/ipc-handlers/ventas-handlers.js (Limpiado)
 const { ipcMain } = require("electron");
 const { Op } = require("sequelize");
+const { getOfertaActiva, calcularLineaConOferta } = require("./ofertas-handlers");
 
 // ELIMINADO: const { generarFacturaAFIP } = require("../services/afip-service");
 // ELIMINADO: const { findPaymentByReference } = require("../services/mercadoPago-Service");
@@ -11,7 +12,7 @@ const { Op } = require("sequelize");
 let _cachedAdminConfig = null;
 
 function registerVentasHandlers(models, sequelize) {
-  const { Producto, Venta, DetalleVenta, Cliente, Usuario, Factura } = models;
+  const { Producto, Venta, DetalleVenta, Cliente, Usuario, Factura, Oferta } = models;
 
   // Strict allowlist for metodoPago. Any value outside this set is rejected.
   const METODOS_PAGO_VALIDOS = ['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte'];
@@ -64,18 +65,20 @@ function registerVentasHandlers(models, sequelize) {
             `Stock insuficiente para "${producto.nombre}". Disponible: ${producto.stock}, solicitado: ${cantidad}.`
           );
         }
-        // Use offer price when active, otherwise regular price. Renderer price is discarded.
-        const pUnit = producto.precio_oferta != null ? producto.precio_oferta : producto.precioVenta;
-        resolvedItems.push({ item, cantidad, pUnit, isManual: false });
+        // Check for dynamic offer first, then legacy precio_oferta field.
+        const ofertaActiva = Oferta ? await getOfertaActiva(Oferta, producto.id) : null;
+        const precioBase = producto.precioVenta;
+        resolvedItems.push({ item, cantidad, pUnit: precioBase, isManual: false, ofertaActiva });
       }
     }
 
-    // Compute subtotal from authoritative server-side prices only.
+    // Compute subtotal from authoritative server-side prices only, applying offers.
     // W5-F2: Round each line to 2 decimal places to prevent float drift on weighted products.
     let subtotal = 0;
     for (const r of resolvedItems) {
-      const lineTotal = Math.round(r.pUnit * r.cantidad * 100) / 100;
-      subtotal += lineTotal;
+      const { subtotal: lineSub } = calcularLineaConOferta(r.ofertaActiva || null, r.pUnit, r.cantidad);
+      r.lineSubtotal = lineSub;
+      subtotal += lineSub;
     }
     subtotal = Math.round(subtotal * 100) / 100;
 
@@ -137,13 +140,14 @@ function registerVentasHandlers(models, sequelize) {
 
     // Build detail rows and decrement stock using already-resolved data.
     const detallesRows = [];
-    for (const { item, cantidad, pUnit, isManual } of resolvedItems) {
+    for (const { item, cantidad, pUnit, isManual, lineSubtotal, ofertaActiva } of resolvedItems) {
+      const lineSub = lineSubtotal !== undefined ? lineSubtotal : cantidad * pUnit;
       detallesRows.push({
         VentaId: venta.id,
         ProductoId: isManual ? null : item.ProductoId,
         cantidad,
         precioUnitario: pUnit,
-        subtotal: cantidad * pUnit,
+        subtotal: lineSub,
         nombreProducto: item.nombreProducto,
       });
       if (!isManual) {
@@ -161,11 +165,15 @@ function registerVentasHandlers(models, sequelize) {
       venta,
       datosRecibo: {
         // Return authoritative prices so the receipt reflects what was actually charged.
-        items: resolvedItems.map(({ item, cantidad, pUnit }) => ({
-          ...item,
-          precioUnitario: pUnit,
-          subtotal: cantidad * pUnit,
-        })),
+        items: resolvedItems.map(({ item, cantidad, pUnit, lineSubtotal, ofertaActiva }) => {
+          const { ofertaLabel } = calcularLineaConOferta(ofertaActiva || null, pUnit, cantidad);
+          return {
+            ...item,
+            precioUnitario: pUnit,
+            subtotal: lineSubtotal !== undefined ? lineSubtotal : cantidad * pUnit,
+            ofertaLabel,
+          };
+        }),
         total: totalFinal,
         descuento: descuentoTotal,
         recargo,
@@ -278,6 +286,7 @@ function registerVentasHandlers(models, sequelize) {
             pj.cantidad = 1;
             pj.precioVenta = valor; // Sobrescribe precio si es por monto
           }
+          if (Oferta) pj.ofertaActiva = await getOfertaActiva(Oferta, pj.id);
           return pj;
         } else {
         }
@@ -304,7 +313,12 @@ function registerVentasHandlers(models, sequelize) {
         });
       }
 
-      return producto ? producto.toJSON() : null;
+      if (!producto) return null;
+      const pj = producto.toJSON();
+      if (Oferta) {
+        pj.ofertaActiva = await getOfertaActiva(Oferta, pj.id);
+      }
+      return pj;
     } catch (error) {
       console.error("Error en búsqueda inteligente:", error);
       return null;

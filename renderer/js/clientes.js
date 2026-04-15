@@ -139,25 +139,30 @@ document.addEventListener("app-ready", () => {
       const lista = await window.electronAPI.invoke("get-clientes");
       if (!lista || lista.length === 0) {
         tablaBody.innerHTML =
-          '<tr><td colspan="4" class="text-center">No se encontraron clientes.</td></tr>';
+          '<tr><td colspan="5" class="text-center">No se encontraron clientes.</td></tr>';
         actualizarStatCards([]);
         return;
       }
       todosLosClientes = lista;
       actualizarStatCards(lista);
       const rows = lista
-        .map(
-          (c) => `
+        .map((c) => {
+          const esDeudor = parseFloat(c.deuda || 0) > 0;
+          const estadoBadge = esDeudor
+            ? '<span class="badge-estado badge-estado--deudor">Deudor</span>'
+            : '<span class="badge-estado badge-estado--activo">Activo</span>';
+          return `
           <tr>
             <td>${c.dni}</td>
             <td>${c.nombre}</td>
             <td>${c.descuento || 0}%</td>
+            <td>${estadoBadge}</td>
             <td class="acciones-btn">
               <button class="btn-edit btn btn-info" data-id="${c.id}" title="Editar">✏️</button>
               <button class="btn-delete btn btn-danger" data-id="${c.id}" title="Eliminar">🗑️</button>
             </td>
-          </tr>`
-        )
+          </tr>`;
+        })
         .join("");
       tablaBody.innerHTML = rows;
       // Re-apply active search filter after reload

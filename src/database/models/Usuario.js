@@ -10,6 +10,7 @@ module.exports = (sequelize) => {
     nombre:           { type: DataTypes.STRING, allowNull: false },
     nombre_canon:     { type: DataTypes.STRING, allowNull: false }, // lower(nombre)
     password:         { type: DataTypes.STRING, allowNull: false },
+    email:            { type: DataTypes.STRING, allowNull: true, validate: { isEmail: true } },
     rol:              { type: DataTypes.STRING, allowNull: false },
     permisos:         { type: DataTypes.JSON },
 
@@ -37,6 +38,19 @@ module.exports = (sequelize) => {
     slogan_negocio:            { type: DataTypes.STRING },
     footer_ticket:             { type: DataTypes.STRING },
     logo_url:                  { type: DataTypes.STRING },
+
+    // --- Config Gmail (recuperación de contraseña) ---
+    config_gmail_user: { type: DataTypes.STRING, allowNull: true },
+    config_gmail_pass: { type: DataTypes.STRING, allowNull: true }, // app password
+
+    // --- Token de recuperación de contraseña ---
+    recovery_token:         { type: DataTypes.STRING, allowNull: true },
+    recovery_token_expires: { type: DataTypes.DATE,   allowNull: true },
+
+    // --- Acceso remoto ---
+    remote_access_enabled: { type: DataTypes.BOOLEAN, defaultValue: false },
+    remote_access_port:    { type: DataTypes.INTEGER, defaultValue: 4827 },
+    remote_access_token:   { type: DataTypes.STRING,  allowNull: true },
 
     // --- Configs MercadoPago (Se mantiene) ---
     mp_access_token:         { type: DataTypes.STRING },

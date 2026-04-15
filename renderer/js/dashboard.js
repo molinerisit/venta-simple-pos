@@ -14,12 +14,16 @@ document.addEventListener("app-ready", () => {
   const totalGastosCard = document.getElementById("total-gastos");
   const numeroVentasCard = document.getElementById("numero-ventas");
   const ticketPromedioCard = document.getElementById("ticket-promedio");
+  const margenPctCard = document.getElementById("margen-pct");
 
   const ventasChartCtx = document.getElementById("ventas-chart")?.getContext("2d");
   const cierresCajaBody = document.getElementById("cierres-caja-tbody");
 
   const fullRankingBody = document.getElementById("full-ranking-tbody");
-  const inactiveProductsBody = document.getElementById("inactive-products-tbody");
+  const inactiveProductsBody = document.getElementById("inactive-products-tbody"); // null — element removed but fn still called
+  const topProductsBody = document.getElementById("top-products-tbody");
+  const problemProductsList = document.getElementById("problem-products-list");
+  const alertsPanel = document.getElementById("alerts-panel");
   const rankingSortSelect = document.getElementById("ranking-sort-by");
   const salesByCatalogBody = document.getElementById("sales-by-catalog-tbody");
   const peakHoursCtx = document.getElementById("peak-hours-chart")?.getContext("2d");
@@ -29,6 +33,9 @@ document.addEventListener("app-ready", () => {
   const btnExportPDF = document.getElementById("btn-export-pdf");
   const btnGotoRentabilidad = document.getElementById("btn-goto-rentabilidad");
   const btnGotoCierres = document.getElementById("btn-goto-cierres");
+
+  // --- TOP PRODUCTS TAB STATE ---
+  let activeTopTab = "vendidos";
 
 
   // --- STATE ---
@@ -48,10 +55,16 @@ document.addEventListener("app-ready", () => {
   const renderTarjetas = (stats) => {
     totalFacturadoCard.textContent = money(stats.totalFacturado);
     gananciaBrutaCard.textContent = money(stats.gananciaBruta);
-    totalComprasCard.textContent = money(stats.totalComprasproducto);
+    if (totalComprasCard) totalComprasCard.textContent = money(stats.totalComprasproducto);
     totalGastosCard.textContent = money(stats.totalGastosFijos);
     numeroVentasCard.textContent = stats.numeroVentas || 0;
     ticketPromedioCard.textContent = money(stats.ticketPromedio);
+    if (margenPctCard) {
+      const facturado = parseFloat(stats.totalFacturado || 0);
+      const ganancia  = parseFloat(stats.gananciaBruta || 0);
+      const margen    = facturado > 0 ? ((ganancia / facturado) * 100).toFixed(1) : 0;
+      margenPctCard.textContent = `${margen}%`;
+    }
   };
 
   const renderGraficoVentas = (ventasPorDia) => {
@@ -167,6 +180,156 @@ document.addEventListener("app-ready", () => {
     `).join("");
   };
 
+  const renderTopProducts = () => {
+    if (!topProductsBody) return;
+    if (!fullRankingData.length) {
+      topProductsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px;">Sin datos para este período</td></tr>';
+      return;
+    }
+    const sorted = [...fullRankingData].sort((a, b) =>
+      activeTopTab === "vendidos"
+        ? b.total_cantidad - a.total_cantidad
+        : b.total_ganancia - a.total_ganancia
+    ).slice(0, 5);
+
+    topProductsBody.innerHTML = sorted.map((p, i) => `
+      <tr>
+        <td><span class="rank-badge rank-badge--${i + 1}">${i + 1}</span></td>
+        <td class="td-product-name">${p.producto.nombre}</td>
+        <td><strong>${Number(p.total_cantidad || 0).toFixed(2)}</strong></td>
+        <td>${money(p.total_facturado_producto)}</td>
+        <td class="td-profit">${money(p.total_ganancia)}</td>
+      </tr>
+    `).join("");
+  };
+
+  const renderProblemProducts = () => {
+    if (!problemProductsList) return;
+
+    const sinVentas   = inactiveProductsData.filter(p => Number(p.stock || 0) > 0);
+    const bajoMargen  = fullRankingData.filter(p => Number(p.total_ganancia || 0) < 0);
+    const sinRotacion = inactiveProductsData.filter(p => Number(p.stock || 0) > 10);
+
+    const items = [
+      {
+        type: "warning",
+        icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+        title: "Productos sin ventas con stock",
+        desc: sinVentas.length > 0
+          ? sinVentas.slice(0, 2).map(p => p.nombre).join(", ") + (sinVentas.length > 2 ? `... y ${sinVentas.length - 2} más` : "")
+          : "Ninguno — ¡todo se está vendiendo!",
+        count: sinVentas.length,
+      },
+      {
+        type: "danger",
+        icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+        title: "Ganancia negativa",
+        desc: bajoMargen.length > 0
+          ? bajoMargen.slice(0, 2).map(p => p.producto.nombre).join(", ") + (bajoMargen.length > 2 ? `... y ${bajoMargen.length - 2} más` : "")
+          : "Ninguno — todos los productos son rentables",
+        count: bajoMargen.length,
+      },
+      {
+        type: "warning",
+        icon: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+        title: "Stock alto sin rotación",
+        desc: sinRotacion.length > 0
+          ? sinRotacion.slice(0, 2).map(p => p.nombre).join(", ") + (sinRotacion.length > 2 ? `... y ${sinRotacion.length - 2} más` : "")
+          : "Stock bien distribuido",
+        count: sinRotacion.length,
+      },
+    ];
+
+    problemProductsList.innerHTML = items.map(item => `
+      <div class="problem-item problem-item--${item.type}">
+        <div class="problem-item__icon problem-item__icon--${item.type}">${item.icon}</div>
+        <div class="problem-item__body">
+          <p class="problem-item__title">${item.title}${item.count > 0 ? ` <span class="problem-count">${item.count}</span>` : ""}</p>
+          <p class="problem-item__desc">${item.desc}</p>
+        </div>
+      </div>
+    `).join("");
+  };
+
+  const renderAlertsPanel = () => {
+    if (!alertsPanel) return;
+
+    const sinVentas  = inactiveProductsData.filter(p => Number(p.stock || 0) > 0);
+    const bajoMargen = fullRankingData.filter(p => Number(p.total_ganancia || 0) < 0);
+    const stockBajo  = fullRankingData.filter(p =>
+      Number(p.total_cantidad || 0) > 0 && Number(p.producto.stock || 0) <= 3
+    );
+
+    const totalAlerts = (sinVentas.length > 0 ? 1 : 0) + (stockBajo.length > 0 ? 1 : 0) + (bajoMargen.length > 0 ? 1 : 0);
+    const badge = document.getElementById("alerts-count-badge");
+    if (badge) {
+      if (totalAlerts > 0) {
+        badge.textContent = `${totalAlerts} alerta${totalAlerts !== 1 ? "s" : ""}`;
+        badge.style.display = "inline-flex";
+      } else {
+        badge.style.display = "none";
+      }
+    }
+
+    const alerts = [
+      {
+        type: sinVentas.length > 0 ? "warning" : "ok",
+        icon: sinVentas.length > 0
+          ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>`
+          : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`,
+        title: sinVentas.length > 0
+          ? `${sinVentas.length} producto${sinVentas.length !== 1 ? "s" : ""} sin ventas en este período`
+          : "Sin productos estancados",
+        desc: sinVentas.length > 0
+          ? "Revisá tu inventario — ese stock es capital inmovilizado"
+          : "Todos los productos con stock se están vendiendo",
+        action: "Ver productos sin ventas",
+        href: "productos.html",
+      },
+      {
+        type: stockBajo.length > 0 ? "danger" : "ok",
+        icon: stockBajo.length > 0
+          ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`
+          : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`,
+        title: stockBajo.length > 0
+          ? `${stockBajo.length} producto${stockBajo.length !== 1 ? "s" : ""} con stock crítico`
+          : "Stock en niveles saludables",
+        desc: stockBajo.length > 0
+          ? stockBajo.slice(0, 3).map(p => p.producto.nombre).join(", ") + (stockBajo.length > 3 ? ` y ${stockBajo.length - 3} más` : "")
+          : "Ningún producto vendido tiene stock ≤ 3 unidades",
+        action: "Reponer stock",
+        href: "productos.html",
+      },
+      {
+        type: bajoMargen.length > 0 ? "info" : "ok",
+        icon: bajoMargen.length > 0
+          ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`
+          : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`,
+        title: bajoMargen.length > 0
+          ? `${bajoMargen.length} producto${bajoMargen.length !== 1 ? "s" : ""} con ganancia negativa`
+          : "Márgenes positivos en todos los productos",
+        desc: bajoMargen.length > 0
+          ? "Considerá ajustar precios o revisar costos con tus proveedores"
+          : "Todos los productos vendidos generan ganancia",
+        action: "Analizar rentabilidad",
+        href: "reportes.html",
+      },
+    ];
+
+    alertsPanel.innerHTML = alerts.map(a => `
+      <div class="dash-alert-card dash-alert-card--${a.type}">
+        <div class="dash-alert-card__head">
+          <div class="dash-alert-card__icon dash-alert-card__icon--${a.type}">${a.icon}</div>
+          <div class="dash-alert-card__text">
+            <p class="dash-alert-card__title">${a.title}</p>
+            <p class="dash-alert-card__desc">${a.desc}</p>
+          </div>
+        </div>
+        <a href="${a.href}" class="dash-alert-card__btn dash-alert-card__btn--${a.type}">${a.action}</a>
+      </div>
+    `).join("");
+  };
+
   const renderSalesByCatalog = (catalogData) => {
     if (!salesByCatalogBody) return;
     if (!catalogData || catalogData.length === 0) {
@@ -278,7 +441,7 @@ document.addEventListener("app-ready", () => {
   const setLoading = () => {
     totalFacturadoCard.textContent = "Cargando...";
     gananciaBrutaCard.textContent = "Cargando...";
-    totalComprasCard.textContent = "Cargando...";
+    if (totalComprasCard) totalComprasCard.textContent = "Cargando...";
     totalGastosCard.textContent = "Cargando...";
     numeroVentasCard.textContent = "...";
     ticketPromedioCard.textContent = "...";
@@ -305,9 +468,9 @@ document.addEventListener("app-ready", () => {
 
   const cargarStats = async () => {
     setLoading();
-    if(fullRankingBody) fullRankingBody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
-    if(inactiveProductsBody) inactiveProductsBody.innerHTML = '<tr><td colspan="2">Cargando...</td></tr>';
-    if(salesByCatalogBody) salesByCatalogBody.innerHTML = '<tr><td colspan="3">Cargando...</td></tr>';
+    if (fullRankingBody) fullRankingBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;">Cargando...</td></tr>';
+    if (topProductsBody) topProductsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;">Cargando...</td></tr>';
+    if (salesByCatalogBody) salesByCatalogBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#64748b;">Cargando...</td></tr>';
 
     const [dateFrom, dateTo] = getDateRange();
     const departamentoId = deptoFilter.value || null;
@@ -328,11 +491,14 @@ document.addEventListener("app-ready", () => {
       inactiveProductsData = result.stats.inactiveProducts || []; // Guardar
       salesByCatalogData = result.stats.salesByCatalog || [];   // Guardar
 
-      renderFullRanking(); 
-      renderInactiveProducts(inactiveProductsData); // Usar la variable de estado
-      
+      renderFullRanking();
+      renderTopProducts();
+      renderInactiveProducts(inactiveProductsData);
+      renderProblemProducts();
+      renderAlertsPanel();
+
       // Renderizar widgets
-      renderSalesByCatalog(salesByCatalogData); // Usar la variable de estado
+      renderSalesByCatalog(salesByCatalogData);
       renderPeakHoursChart(result.stats.salesByHour || []);
       renderPaymentMethodsChart(result.stats.salesByPaymentMethod || []);
 
@@ -553,6 +719,16 @@ document.addEventListener("app-ready", () => {
   if (rankingSortSelect) {
     rankingSortSelect.addEventListener("change", renderFullRanking);
   }
+
+  // --- Tabs de Top Productos ---
+  document.querySelectorAll(".dash-tab[data-toptab]").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".dash-tab[data-toptab]").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeTopTab = tab.dataset.toptab;
+      renderTopProducts();
+    });
+  });
 
   // --- LISTENERS DE NAVEGACIÓN Y PDF ---
   if (btnGotoRentabilidad) {
