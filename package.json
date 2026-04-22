@@ -41,7 +41,8 @@
     "publish": {
       "provider": "github",
       "owner": "molinerisit",
-      "repo": "venta-simple-pos"
+      "repo": "venta-simple-pos",
+      "releaseType": "release"
     },
     "win": {
       "target": [
