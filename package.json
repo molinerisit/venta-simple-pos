@@ -1,6 +1,6 @@
 {
   "name": "venta-simple-hub",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Sistema de gestión para negocios — ventas, stock, clientes y reportes con sincronización en la nube",
   "main": "main.js",
   "scripts": {
@@ -54,7 +54,6 @@
       ],
       "icon": "build/icon.ico",
       "publisherName": "Julian Matias Molineris",
-      "fileDescription": "Venta Simple Hub — Sistema de gestión para negocios",
       "legalTrademarks": "Venta Simple Hub"
     },
     "nsis": {
