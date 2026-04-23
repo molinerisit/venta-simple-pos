@@ -168,13 +168,15 @@
 
     // Negocio
     const businessInfoForm = document.getElementById("business-info-form");
-    const businessNameInput = document.getElementById("business-name");
+    const businessNameInput    = document.getElementById("business-name");
+      const businessAddressInput = document.getElementById("business-address");
     const businessSloganInput = document.getElementById("business-slogan");
     const ticketFooterInput = document.getElementById("ticket-footer");
     const logoUploadInput = document.getElementById("logo-upload");
     const previewLogo = document.getElementById("preview-logo");
     const previewName = document.getElementById("preview-name");
-    const previewSlogan = document.getElementById("preview-slogan");
+    const previewSlogan  = document.getElementById("preview-slogan");
+    const previewAddress = document.getElementById("preview-address");
     const previewFooter = document.getElementById("preview-footer");
 
     // Empleados
@@ -323,6 +325,8 @@
       if (previewName)
         previewName.textContent =
           businessNameInput?.value || "Nombre del Negocio";
+      if (previewAddress)
+        previewAddress.textContent = businessAddressInput?.value || "";
       if (previewSlogan)
         previewSlogan.textContent =
           businessSloganInput?.value || "Slogan del Negocio";
@@ -582,7 +586,8 @@
         }
 
         if (businessInfoForm) {
-          businessNameInput.value = config.nombre_negocio || "";
+          businessNameInput.value    = config.nombre_negocio    || "";
+          businessAddressInput.value = config.direccion_negocio || "";
           businessSloganInput.value = config.slogan_negocio || "";
           ticketFooterInput.value = config.footer_ticket || "";
           if (config.logo_url) {
@@ -1375,13 +1380,19 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
         reader.readAsDataURL(file);
       });
 
+      on(businessAddressInput, "input", () => {
+        const addr = document.getElementById("preview-address");
+        if (addr) addr.textContent = businessAddressInput?.value || "";
+      });
+
       on(businessInfoForm, "submit", async (e) => {
         e.preventDefault();
         try {
           const data = {
-            nombre: businessNameInput?.value || "",
-            slogan: businessSloganInput?.value || "",
-            footer: ticketFooterInput?.value || "",
+            nombre:     businessNameInput?.value    || "",
+            direccion:  businessAddressInput?.value   || "",
+            slogan:     businessSloganInput?.value     || "",
+            footer:     ticketFooterInput?.value       || "",
             logoBase64: newLogoBase64,
           };
           const result = await ipcInvoke("save-business-info", data);

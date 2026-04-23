@@ -38,6 +38,7 @@ module.exports = (sequelize) => {
     slogan_negocio:            { type: DataTypes.STRING },
     footer_ticket:             { type: DataTypes.STRING },
     logo_url:                  { type: DataTypes.STRING },
+    direccion_negocio:         { type: DataTypes.STRING, allowNull: true },
 
     // --- Config Gmail (recuperación de contraseña) ---
     config_gmail_user: { type: DataTypes.STRING, allowNull: true },

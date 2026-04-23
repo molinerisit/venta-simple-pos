@@ -75,6 +75,34 @@
       <button type="submit" class="setup-button">Crear y Empezar</button>
     </form>
   </div>
+  <div class="auth-card" id="card-negocio" style="display:none;">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+    </div>
+    <h1 class="auth-brand">Tu Negocio</h1>
+    <p class="auth-subtitle">Completá los datos de tu negocio — aparecerán en los tickets</p>
+    <form id="negocio-form" autocomplete="off" novalidate>
+      <div class="field-group">
+        <label for="neg-nombre">Nombre del negocio</label>
+        <input type="text" id="neg-nombre" placeholder="Ej: Almacén El Sol" autofocus autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label for="neg-direccion">Dirección</label>
+        <input type="text" id="neg-direccion" placeholder="Ej: Av. San Martín 1234, Buenos Aires" autocomplete="off" />
+      </div>
+      <div id="negocio-message" class="auth-message" role="alert"></div>
+      <button type="submit" class="setup-button">Guardar y Comenzar</button>
+      <button type="button" id="btn-skip-negocio" class="setup-button" style="margin-top:8px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">
+        Omitir por ahora
+      </button>
+    </form>
+  </div>
+
   <p class="auth-footer">Venta Simple · Sistema de Punto de Venta</p>
   <script src="../js/form-enter-nav.js"></script>
   <script src="../js/setup.js" defer></script>

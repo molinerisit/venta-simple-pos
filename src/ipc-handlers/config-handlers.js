@@ -82,7 +82,7 @@ function registerConfigHandlers(models, sequelize) {
           "config_puerto_scanner", "config_puerto_impresora",
           "config_balanza", "config_balanza_conexion", "config_arqueo_caja",
           "config_redondeo_automatico", "config_recargo_credito", "config_descuento_efectivo",
-          "nombre_negocio", "slogan_negocio", "footer_ticket", "logo_url",
+          "nombre_negocio", "slogan_negocio", "footer_ticket", "logo_url", "direccion_negocio",
         ],
         raw: true,
       });
@@ -221,9 +221,10 @@ function registerConfigHandlers(models, sequelize) {
       }
 
       const updateData = {
-        nombre_negocio: data?.nombre || "",
-        slogan_negocio: data?.slogan || "",
-        footer_ticket: data?.footer || "",
+        nombre_negocio:    data?.nombre    || "",
+        slogan_negocio:    data?.slogan    || "",
+        footer_ticket:     data?.footer    || "",
+        direccion_negocio: data?.direccion || "",
       };
 
       if (logoPath) {
