@@ -7,7 +7,8 @@ module.exports = (sequelize) => {
 
     // 🟢 'codigo' será la clave única para import/export
     codigo: { type: DataTypes.STRING, allowNull: false, unique: true },
-    nombre: { type: DataTypes.STRING, allowNull: false, validate: { notEmpty: true } },
+    nombre:            { type: DataTypes.STRING, allowNull: false, validate: { notEmpty: true } },
+    nombre_normalizado: { type: DataTypes.STRING, allowNull: true },
     
     // Phase 5.1 — ORM-layer validators (defense-in-depth; handler validation is primary)
     stock:        { type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0 } },
@@ -47,6 +48,17 @@ module.exports = (sequelize) => {
       { fields: ['updatedAt'] },
       { fields: ['deletedAt'] },
     ]
+  });
+
+  Producto.addHook('beforeValidate', (p) => {
+    if (p.nombre) {
+      p.nombre_normalizado = String(p.nombre)
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ');
+    }
   });
 
   return Producto;

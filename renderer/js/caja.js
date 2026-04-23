@@ -450,38 +450,105 @@ document.addEventListener("app-ready", () => {
     renderizarVenta();
   };
 
+  // ── Dropdown de sugerencias fuzzy ──────────────────────────────────────────
+  let _suggestionBox = null;
+
+  function getSuggestionBox() {
+    if (_suggestionBox) return _suggestionBox;
+    const box = document.createElement('ul');
+    box.id = 'fuzzy-suggestions';
+    box.style.cssText = [
+      'position:fixed','z-index:9999','background:#fff',
+      'border:1px solid #cbd5e1','border-radius:8px','box-shadow:0 4px 16px rgba(0,0,0,.12)',
+      'list-style:none','margin:0','padding:4px 0','min-width:260px',
+      'max-height:220px','overflow-y:auto','display:none',
+    ].join(';');
+    document.body.appendChild(box);
+    _suggestionBox = box;
+    return box;
+  }
+
+  function positionSuggestionBox() {
+    if (!mainInput || !_suggestionBox) return;
+    const rect = mainInput.getBoundingClientRect();
+    _suggestionBox.style.left  = rect.left + 'px';
+    _suggestionBox.style.top   = (rect.bottom + 4) + 'px';
+    _suggestionBox.style.width = rect.width + 'px';
+  }
+
+  function hideSuggestions() {
+    if (_suggestionBox) _suggestionBox.style.display = 'none';
+  }
+
+  function showSuggestions(results) {
+    const box = getSuggestionBox();
+    box.innerHTML = '';
+    results.forEach((p) => {
+      const li = document.createElement('li');
+      li.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;';
+      const scoreLabel = Math.round((p._score || 0) * 100);
+      li.innerHTML = `<span>${p.nombre}</span><span style="color:#64748b;font-size:12px;">${formatCurrency(p.precioVenta)}</span>`;
+      li.title = `Similitud: ${scoreLabel}%`;
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        hideSuggestions();
+        agregarProductoALaVenta(p, 1, null);
+        if (mainInput) mainInput.value = '';
+      });
+      li.addEventListener('mouseover', () => li.style.background = '#f8fafc');
+      li.addEventListener('mouseout',  () => li.style.background = '');
+      box.appendChild(li);
+    });
+    positionSuggestionBox();
+    box.style.display = 'block';
+  }
+
+  // Un valor es "código de barras" si es solo dígitos o es muy largo (scanner)
+  const esCodigoBarras = (val) => /^[0-9-]+$/.test(val.trim());
+
   const procesarEntrada = async (valor) => {
     if (!valor) return;
+    hideSuggestions();
     try {
-      const esNumeroValido = /^[0-9]+(\.[0-9]+)?$/.test(valor);
+      const esNumeroValido = /^[0-9]+(.[0-9]+)?$/.test(valor);
       const numero = parseFloat(valor);
 
-      // Siempre buscar producto primero (barcode o nombre).
-      // Un número puede ser tanto un código de barras como un precio manual,
-      // por lo que la búsqueda tiene prioridad sobre el ingreso manual.
-      const encontrado = await window.electronAPI.invoke(
-        "busqueda-inteligente",
-        valor
-      );
+      // Códigos numéricos (barcodes): busqueda-inteligente sin fuzzy
+      if (esCodigoBarras(valor)) {
+        const encontrado = await window.electronAPI.invoke("busqueda-inteligente", valor);
+        if (encontrado) {
+          agregarProductoALaVenta(encontrado, encontrado.cantidad || 1, encontrado.precioVenta);
+        } else if (esNumeroValido && numero > 0 && numero <= 999999) {
+          agregarIngresoManual(numero);
+        } else {
+          showErrorModal(`Producto no encontrado para: "${valor}"`);
+        }
+        if (mainInput) mainInput.value = '';
+        return;
+      }
 
-      if (encontrado) {
-        agregarProductoALaVenta(
-          encontrado,
-          encontrado.cantidad || 1,
-          encontrado.precioVenta
-        );
-      } else if (esNumeroValido && numero > 0 && numero <= 999999) {
-        // Fallback: no hay producto con ese código → tratar como monto manual
-        agregarIngresoManual(numero);
+      // Texto de nombre: búsqueda fuzzy con ranking
+      const results = await window.electronAPI.invoke("buscar-productos-nombre", valor);
+
+      if (results.length === 0) {
+        showErrorModal(`No se encontró ningún producto para: "${valor}"`);
+        if (mainInput) mainInput.value = '';
+      } else if (results.length === 1 || (results[0]._score >= 0.85)) {
+        // Coincidencia clara → agregar directo
+        agregarProductoALaVenta(results[0], 1, null);
+        if (mainInput) mainInput.value = '';
       } else {
-        showErrorModal(`Producto no encontrado para: "${valor}"`);
+        // Múltiples opciones → mostrar dropdown para elegir
+        showSuggestions(results.slice(0, 6));
+        // No limpiamos el input para que el usuario pueda refinar la búsqueda
       }
     } catch (e) {
       console.error("procesarEntrada", e);
       showErrorModal("Ocurrió un error al buscar el producto.");
+      if (mainInput) mainInput.value = '';
     }
-    if (mainInput) mainInput.value = "";
   };
+
 
   const generarReciboTexto = (ventaId, datosRecibo) => {
     const cfg = getCfg();
@@ -766,6 +833,12 @@ if (event.key === "Enter") {
       CajaState.barcodeBuffer = [];
     }, 200);
   });
+
+  document.addEventListener('click', (e) => {
+    if (_suggestionBox && !_suggestionBox.contains(e.target) && e.target !== mainInput) {
+      hideSuggestions();
+    }
+  });
 
   modalAcceptBtn?.addEventListener("click", hideErrorModal);
 

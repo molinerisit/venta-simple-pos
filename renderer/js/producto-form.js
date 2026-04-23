@@ -1,106 +1,111 @@
 // renderer/js/producto-form.js (Versión Completa y Funcional)
 document.addEventListener("app-ready", () => {
-  // --- 1. REFERENCIAS ---
-  const productoForm = document.getElementById("producto-form");
-  const formTitulo = document.getElementById("form-titulo");
-  const btnSubmit = document.getElementById("btn-guardar-producto");
-  const inputId = document.getElementById("producto-id");
-  const inputNombre = document.getElementById("nombre");
-  const inputCodigo = document.getElementById("codigo");
-  const inputCodigoBarras = document.getElementById("codigo_barras");
-  const deptoSelect = document.getElementById("departamento-select");
-  const familiaSelect = document.getElementById("familia-select");
-  const btnNuevoDepto = document.getElementById("btn-nuevo-depto");
-  const btnNuevaFamilia = document.getElementById("btn-nueva-familia");
-  const inputStock = document.getElementById("stock");
-  const inputUnidad = document.getElementById("unidad");
-  const inputFechaVencimiento = document.getElementById("fecha_vencimiento");
-  const inputPrecioCompra = document.getElementById("precioCompra");
-  const inputPrecioVenta = document.getElementById("precioVenta");
-  const inputImagenProducto = document.getElementById("imagen_producto");
-  const imagenPreview = document.getElementById("imagen-preview");
-  const gananciaDisplay = document.getElementById("ganancia-unidad");
-  const margenDisplay = document.getElementById("margen-ganancia");
-  const toast = document.getElementById("toast-notification");
-  let toastTimer;
+  // --- 1. REFERENCIAS ---
+  const productoForm = document.getElementById("producto-form");
+  const formTitulo = document.getElementById("form-titulo");
+  const btnSubmit = document.getElementById("btn-guardar-producto");
+  const inputId = document.getElementById("producto-id");
+  const inputNombre = document.getElementById("nombre");
+  const inputCodigo = document.getElementById("codigo");
+  const inputCodigoBarras = document.getElementById("codigo_barras");
+  const deptoSelect = document.getElementById("departamento-select");
+  const familiaSelect = document.getElementById("familia-select");
+  const btnNuevoDepto = document.getElementById("btn-nuevo-depto");
+  const btnNuevaFamilia = document.getElementById("btn-nueva-familia");
+  const inputStock = document.getElementById("stock");
+  const inputUnidad = document.getElementById("unidad");
+  const inputFechaVencimiento = document.getElementById("fecha_vencimiento");
+  const inputPrecioCompra = document.getElementById("precioCompra");
+  const inputPrecioVenta = document.getElementById("precioVenta");
+  const inputImagenProducto = document.getElementById("imagen_producto");
+  const imagenPreview = document.getElementById("imagen-preview");
+  const gananciaDisplay = document.getElementById("ganancia-unidad");
+  const margenDisplay = document.getElementById("margen-ganancia");
+  const toast = document.getElementById("toast-notification");
+  let toastTimer;
 
-  // Balanza/PLU
-  const pesableChk = document.getElementById("pesable");
+  // Balanza/PLU
+  const pesableChk = document.getElementById("pesable");
   const manejaLotesChk = document.getElementById("maneja_lotes");
-  const pluRow = document.getElementById("plu-row");
-  const pluInput = document.getElementById("plu");
-  const pluHelp = document.getElementById("plu-help");
+  const pluRow = document.getElementById("plu-row");
+  const pluInput = document.getElementById("plu");
+  const pluHelp = document.getElementById("plu-help");
 
-  // Elementos del formulario inline de Departamento
-  const nuevoDeptoContainer = document.getElementById("nuevo-depto-container");
-  const nuevoDeptoNombre = document.getElementById("nuevo-depto-nombre");
-  const btnGuardarDepto = document.getElementById("btn-guardar-depto");
-  const btnCancelarDepto = document.getElementById("btn-cancelar-depto");
+  // Elementos del formulario inline de Departamento
+  const nuevoDeptoContainer = document.getElementById("nuevo-depto-container");
+  const nuevoDeptoNombre = document.getElementById("nuevo-depto-nombre");
+  const btnGuardarDepto = document.getElementById("btn-guardar-depto");
+  const btnCancelarDepto = document.getElementById("btn-cancelar-depto");
 
-  // Elementos del formulario inline de Familia
-  const nuevaFamiliaContainer = document.getElementById("nueva-familia-container");
-  const nuevaFamiliaNombre = document.getElementById("nueva-familia-nombre");
-  const btnGuardarFamilia = document.getElementById("btn-guardar-familia");
-  const btnCancelarFamilia = document.getElementById("btn-cancelar-familia");
+  // Elementos del formulario inline de Familia
+  const nuevaFamiliaContainer = document.getElementById("nueva-familia-container");
+  const nuevaFamiliaNombre = document.getElementById("nueva-familia-nombre");
+  const btnGuardarFamilia = document.getElementById("btn-guardar-familia");
+  const btnCancelarFamilia = document.getElementById("btn-cancelar-familia");
 
-  // --- MODAL AJUSTE PRECIO ---
-  const modalAjustePrecio = document.getElementById("modal-ajuste-precio");
-  const btnActual = document.getElementById("modal-precio-actual");
-  const btn40 = document.getElementById("modal-aplicar-40");
-  const btn50 = document.getElementById("modal-aplicar-50");
-  const btn60 = document.getElementById("modal-aplicar-60");
-  const celda40 = document.getElementById("precio40"); 
-  const celda50 = document.getElementById("precio50");
-  const celda60 = document.getElementById("precio60");
-  const precioCompraActualizadoDisplay = document.getElementById("precio-compra-actualizado");
-  // --- 2. ESTADO Y FUNCIONES ---
-  let departamentosData = [];
-  let familiasData = [];
-  let imagenBase64 = null;
-  
-  // Valor de referencia del precio de compra de la DB (CLAVE)
-  let precioCompraOriginal = 0; 
-  
-  // FLAG DE ESTADO DEL PRECIO: Indica si ya se ha tomado una decisión sobre la subida de precio
-  let precioBloqueado = false; 
+  // --- MODAL AJUSTE PRECIO ---
+  const modalAjustePrecio = document.getElementById("modal-ajuste-precio");
+  const btnActual = document.getElementById("modal-precio-actual");
+  const btn40 = document.getElementById("modal-aplicar-40");
+  const btn50 = document.getElementById("modal-aplicar-50");
+  const btn60 = document.getElementById("modal-aplicar-60");
+  const celda40 = document.getElementById("precio40"); 
+  const celda50 = document.getElementById("precio50");
+  const celda60 = document.getElementById("precio60");
+  const precioCompraActualizadoDisplay = document.getElementById("precio-compra-actualizado");
+  // --- 2. ESTADO Y FUNCIONES ---
+  let departamentosData = [];
+  let familiasData = [];
+  let imagenBase64 = null;
+  
+  // Valor de referencia del precio de compra de la DB (CLAVE)
+  let precioCompraOriginal = 0; 
+  
+  // FLAG DE ESTADO DEL PRECIO: Indica si ya se ha tomado una decisión sobre la subida de precio
+  let precioBloqueado = false; 
 
-  const parseFloatOrZero = (val) => {
-    if (val === null || val === undefined || val === '') return 0;
-    return Math.max(0, parseFloat(String(val).replace(",", ".")) || 0);
-  };
+  // Duplicate validation state
+  let _dupNombre = false;
+  let _dupCodigo = false;
+  let _dupTimer  = null;
 
-  const showNotification = (message, type = "success") => {
-    if (!toast) return;
-    clearTimeout(toastTimer);
-    toast.textContent = message;
-    toast.className = "toast";
-    toast.classList.add(type, "visible");
-    toastTimer = setTimeout(() => toast.classList.remove("visible"), 2500);
-  };
+  const parseFloatOrZero = (val) => {
+    if (val === null || val === undefined || val === '') return 0;
+    return Math.max(0, parseFloat(String(val).replace(",", ".")) || 0);
+  };
 
-  const toggleSubmitButtonState = (isLoading) => {
-    if (!btnSubmit) return;
-    btnSubmit.disabled = isLoading;
-    btnSubmit.textContent = isLoading ? "Guardando..." : "Guardar Producto";
-  };
+  const showNotification = (message, type = "success") => {
+    if (!toast) return;
+    clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.className = "toast";
+    toast.classList.add(type, "visible");
+    toastTimer = setTimeout(() => toast.classList.remove("visible"), 2500);
+  };
 
-  // Markup (Margen sobre Costo)
-  const calcularRentabilidad = () => {
-    const compra = parseFloatOrZero(inputPrecioCompra.value);
-    const venta = parseFloatOrZero(inputPrecioVenta.value);
-    const ganancia = venta - compra;
-    
-    // Markup (Margen sobre Costo) = (Ganancia / Compra) * 100
-    const margen = compra > 0 ? (ganancia / compra) * 100 : 0;
-    
-    gananciaDisplay.textContent = `$${ganancia.toFixed(2)}`;
-    margenDisplay.textContent = `${margen.toFixed(0)}%`;
+  const toggleSubmitButtonState = (isLoading) => {
+    if (!btnSubmit) return;
+    btnSubmit.disabled = isLoading;
+    btnSubmit.textContent = isLoading ? "Guardando..." : "Guardar Producto";
+  };
 
-    margenDisplay.style.color = margen < 40 ? 'red' : 'green';
-    return margen;
-  };
+  // Markup (Margen sobre Costo)
+  const calcularRentabilidad = () => {
+    const compra = parseFloatOrZero(inputPrecioCompra.value);
+    const venta = parseFloatOrZero(inputPrecioVenta.value);
+    const ganancia = venta - compra;
+    
+    // Markup (Margen sobre Costo) = (Ganancia / Compra) * 100
+    const margen = compra > 0 ? (ganancia / compra) * 100 : 0;
+    
+    gananciaDisplay.textContent = `$${ganancia.toFixed(2)}`;
+    margenDisplay.textContent = `${margen.toFixed(0)}%`;
 
-  const cargarClasificaciones = async () => { 
+    margenDisplay.style.color = margen < 40 ? 'red' : 'green';
+    return margen;
+  };
+
+  const cargarClasificaciones = async () => { 
       try {
           const data = await window.electronAPI.invoke("get-clasificaciones");
           departamentosData = data.departamentos || [];
@@ -111,7 +116,7 @@ document.addEventListener("app-ready", () => {
       }
     };
 
-  const renderizarDepartamentos = (idSeleccionar = null) => { 
+  const renderizarDepartamentos = (idSeleccionar = null) => { 
       deptoSelect.innerHTML = '<option value="">-- Departamento --</option>';
       departamentosData.forEach((depto) => {
           deptoSelect.innerHTML += `<option value="${depto.id}">${depto.nombre}</option>`;
@@ -119,7 +124,7 @@ document.addEventListener("app-ready", () => {
       if (idSeleccionar) deptoSelect.value = idSeleccionar;
     };
 
-  const actualizarFamiliasSelect = (familiaASeleccionarId = null) => { 
+  const actualizarFamiliasSelect = (familiaASeleccionarId = null) => { 
       const deptoId = deptoSelect.value;
       familiaSelect.innerHTML = '<option value="">-- Familia --</option>';
       familiaSelect.disabled = !deptoId;
@@ -133,7 +138,7 @@ document.addEventListener("app-ready", () => {
       if (familiaASeleccionarId) familiaSelect.value = familiaASeleccionarId;
     };
 
-  const refreshPluUI = () => { 
+  const refreshPluUI = () => { 
       const isPesable = !!pesableChk?.checked;
 
       if (isPesable) {
@@ -146,25 +151,25 @@ document.addEventListener("app-ready", () => {
       }
     };
 
-  const poblarFormulario = (producto) => {
-    inputId.value = producto.id;
-    inputNombre.value = producto.nombre || "";
-    inputCodigo.value = producto.codigo || "";
-    inputCodigoBarras.value = producto.codigo_barras || "";
-    inputStock.value = producto.stock ?? 0;
-    inputUnidad.value = producto.unidad || "unidad";
-    inputPrecioCompra.value = producto.precioCompra ?? 0;
-    inputPrecioVenta.value = producto.precioVenta ?? 0;
-    inputFechaVencimiento.value = producto.fecha_vencimiento || "";
+  const poblarFormulario = (producto) => {
+    inputId.value = producto.id;
+    inputNombre.value = producto.nombre || "";
+    inputCodigo.value = producto.codigo || "";
+    inputCodigoBarras.value = producto.codigo_barras || "";
+    inputStock.value = producto.stock ?? 0;
+    inputUnidad.value = producto.unidad || "unidad";
+    inputPrecioCompra.value = producto.precioCompra ?? 0;
+    inputPrecioVenta.value = producto.precioVenta ?? 0;
+    inputFechaVencimiento.value = producto.fecha_vencimiento || "";
 
     // Inicializar precioCompraOriginal y precioBloqueado
-    precioCompraOriginal = parseFloatOrZero(inputPrecioCompra.value); 
+    precioCompraOriginal = parseFloatOrZero(inputPrecioCompra.value); 
     precioBloqueado = false; 
 
-    if (producto.imagen_url) {
-      imagenPreview.src = `app://${String(producto.imagen_url).replace(/\\/g, "/")}`;
-      imagenPreview.classList.remove("imagen-preview-oculta");
-    }
+    if (producto.imagen_url) {
+      imagenPreview.src = `app://${String(producto.imagen_url).replace(/\\/g, "/")}`;
+      imagenPreview.classList.remove("imagen-preview-oculta");
+    }
 
     const deptoId =
         producto.DepartamentoId ||
@@ -182,14 +187,14 @@ document.addEventListener("app-ready", () => {
         );
     }
 
-    pesableChk.checked = !!producto.pesable;
+    pesableChk.checked = !!producto.pesable;
     if (manejaLotesChk) manejaLotesChk.checked = !!producto.maneja_lotes;
 
-    calcularRentabilidad();
-    refreshPluUI();
-  };
+    calcularRentabilidad();
+    refreshPluUI();
+  };
 
-  const inicializar = async () => { 
+  const inicializar = async () => { 
       await cargarClasificaciones();
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -213,70 +218,140 @@ document.addEventListener("app-ready", () => {
     };
 
 
-  // --- 3. EVENTOS ---
+  // ── Validación de duplicados ─────────────────────────────────────────────────
+  const productoIdActual = () => inputId?.value || null;
 
-  // ELIMINADO: No hay listener 'change' en inputPrecioCompra para evitar actualización de precioCompraOriginal antes del submit.
+  function setDupAlert(fieldEl, alertId, message) {
+    let el = document.getElementById(alertId);
+    if (!el) {
+      el = document.createElement('p');
+      el.id = alertId;
+      el.style.cssText = 'color:#dc2626;font-size:12px;margin:2px 0 0;display:none;';
+      fieldEl.parentNode.insertBefore(el, fieldEl.nextSibling);
+    }
+    if (message) {
+      el.innerHTML = message;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
 
-  inputPrecioCompra.addEventListener("input", calcularRentabilidad);
-  inputPrecioVenta.addEventListener("input", calcularRentabilidad);
-  deptoSelect.addEventListener("change", () => actualizarFamiliasSelect());
+  function updateSubmitByDups() {
+    if (!btnSubmit) return;
+    if (_dupNombre || _dupCodigo) {
+      btnSubmit.disabled = true;
+      btnSubmit.title = 'Hay productos duplicados — corregí antes de guardar';
+    } else {
+      btnSubmit.disabled = false;
+      btnSubmit.title = '';
+    }
+  }
 
-  // --- Eventos de Clasificación ---
-  btnNuevoDepto.addEventListener("click", () => {
-    nuevaFamiliaContainer.style.display = "none";
-    nuevoDeptoContainer.style.display = "flex";
-    nuevoDeptoNombre.focus();
-  });
-  btnCancelarDepto.addEventListener("click", () => {
-    nuevoDeptoContainer.style.display = "none";
-  });
-  btnGuardarDepto.addEventListener("click", async () => { 
-    const nombre = (nuevoDeptoNombre.value || "").trim();
-    if (!nombre) return showNotification("El nombre no puede estar vacío.", "error");
+  async function checkDuplicates({ nombre, codigoBarras }) {
+    const res = await window.electronAPI.invoke('check-producto-duplicado', {
+      nombre:       nombre       ?? inputNombre?.value.trim()       ?? null,
+      codigoBarras: codigoBarras ?? inputCodigoBarras?.value.trim() ?? null,
+      productoId:   productoIdActual(),
+    });
 
-    const res = await window.electronAPI.invoke("guardar-departamento", { nombre });
-    if (res?.success) {
-      await cargarClasificaciones();
-      deptoSelect.value = res.data.id;
-      deptoSelect.dispatchEvent(new Event("change"));
-      nuevoDeptoNombre.value = "";
-      nuevoDeptoContainer.style.display = "none";
-      showNotification("Departamento creado.");
-    } else {
-      showNotification(`Error: ${res?.message || "No se pudo crear el departamento."}`, "error");
-    }
-  });
+    _dupNombre = !!res.duplicadoNombre;
+    _dupCodigo = !!res.duplicadoCodigo;
 
-  btnNuevaFamilia.addEventListener("click", () => { 
-    if (!deptoSelect.value) return showNotification("Seleccione un departamento primero.", "error");
-    nuevoDeptoContainer.style.display = "none";
-    nuevaFamiliaContainer.style.display = "flex";
-    nuevaFamiliaNombre.focus();
-  });
-  btnCancelarFamilia.addEventListener("click", () => { 
-    nuevaFamiliaContainer.style.display = "none";
-  });
-  btnGuardarFamilia.addEventListener("click", async () => { 
-    const nombre = (nuevaFamiliaNombre.value || "").trim();
-    const DepartamentoId = deptoSelect.value;
-    if (!nombre) return showNotification("El nombre no puede estar vacío.", "error");
+    if (nombre !== undefined) {
+      setDupAlert(inputNombre, 'dup-alert-nombre',
+        res.duplicadoNombre
+          ? `Ya existe un producto con ese nombre: <strong>${res.duplicadoNombre.nombre}</strong>`
+          : null
+      );
+    }
+    if (codigoBarras !== undefined) {
+      setDupAlert(inputCodigoBarras, 'dup-alert-codigo',
+        res.duplicadoCodigo
+          ? `Este código ya está registrado para: <strong>${res.duplicadoCodigo.nombre}</strong>`
+          : null
+      );
+    }
+    updateSubmitByDups();
+  }
 
-    const res = await window.electronAPI.invoke("guardar-familia", { nombre, DepartamentoId });
-    if (res?.success) {
-      await cargarClasificaciones();
-      deptoSelect.value = DepartamentoId;
-      actualizarFamiliasSelect(res.data.id);
+  function scheduleDupCheck(field) {
+    clearTimeout(_dupTimer);
+    _dupTimer = setTimeout(() => {
+      const args = {};
+      if (field === 'nombre')  args.nombre       = inputNombre?.value.trim();
+      if (field === 'codigo')  args.codigoBarras = inputCodigoBarras?.value.trim();
+      checkDuplicates(args);
+    }, 300);
+  }
 
-      nuevaFamiliaNombre.value = "";
-      nuevaFamiliaContainer.style.display = "none";
-      showNotification("Familia creada.");
-    } else {
-      showNotification(`Error: ${res?.message || "No se pudo crear la familia."}`, "error");
-    }
-  });
+  // --- 3. EVENTOS ---
 
-  // --- Eventos de Imagen y PLU ---
-  inputImagenProducto.addEventListener("change", (e) => { 
+  // ELIMINADO: No hay listener 'change' en inputPrecioCompra para evitar actualización de precioCompraOriginal antes del submit.
+
+  inputPrecioCompra.addEventListener("input", calcularRentabilidad);
+  inputPrecioVenta.addEventListener("input", calcularRentabilidad);
+  inputNombre?.addEventListener("input", () => scheduleDupCheck('nombre'));
+  inputCodigoBarras?.addEventListener("input", () => scheduleDupCheck('codigo'));
+  inputCodigoBarras?.addEventListener("change", () => scheduleDupCheck('codigo'));
+  deptoSelect.addEventListener("change", () => actualizarFamiliasSelect());
+
+  // --- Eventos de Clasificación ---
+  btnNuevoDepto.addEventListener("click", () => {
+    nuevaFamiliaContainer.style.display = "none";
+    nuevoDeptoContainer.style.display = "flex";
+    nuevoDeptoNombre.focus();
+  });
+  btnCancelarDepto.addEventListener("click", () => {
+    nuevoDeptoContainer.style.display = "none";
+  });
+  btnGuardarDepto.addEventListener("click", async () => { 
+    const nombre = (nuevoDeptoNombre.value || "").trim();
+    if (!nombre) return showNotification("El nombre no puede estar vacío.", "error");
+
+    const res = await window.electronAPI.invoke("guardar-departamento", { nombre });
+    if (res?.success) {
+      await cargarClasificaciones();
+      deptoSelect.value = res.data.id;
+      deptoSelect.dispatchEvent(new Event("change"));
+      nuevoDeptoNombre.value = "";
+      nuevoDeptoContainer.style.display = "none";
+      showNotification("Departamento creado.");
+    } else {
+      showNotification(`Error: ${res?.message || "No se pudo crear el departamento."}`, "error");
+    }
+  });
+
+  btnNuevaFamilia.addEventListener("click", () => { 
+    if (!deptoSelect.value) return showNotification("Seleccione un departamento primero.", "error");
+    nuevoDeptoContainer.style.display = "none";
+    nuevaFamiliaContainer.style.display = "flex";
+    nuevaFamiliaNombre.focus();
+  });
+  btnCancelarFamilia.addEventListener("click", () => { 
+    nuevaFamiliaContainer.style.display = "none";
+  });
+  btnGuardarFamilia.addEventListener("click", async () => { 
+    const nombre = (nuevaFamiliaNombre.value || "").trim();
+    const DepartamentoId = deptoSelect.value;
+    if (!nombre) return showNotification("El nombre no puede estar vacío.", "error");
+
+    const res = await window.electronAPI.invoke("guardar-familia", { nombre, DepartamentoId });
+    if (res?.success) {
+      await cargarClasificaciones();
+      deptoSelect.value = DepartamentoId;
+      actualizarFamiliasSelect(res.data.id);
+
+      nuevaFamiliaNombre.value = "";
+      nuevaFamiliaContainer.style.display = "none";
+      showNotification("Familia creada.");
+    } else {
+      showNotification(`Error: ${res?.message || "No se pudo crear la familia."}`, "error");
+    }
+  });
+
+  // --- Eventos de Imagen y PLU ---
+  inputImagenProducto.addEventListener("change", (e) => { 
         const file = e.target.files?.[0];
         if (!file) {
             imagenPreview.classList.add("imagen-preview-oculta");
@@ -292,14 +367,14 @@ document.addEventListener("app-ready", () => {
         reader.readAsDataURL(file);
     });
 
-  pesableChk.addEventListener("change", refreshPluUI);
-  inputCodigo.addEventListener("input", refreshPluUI);
+  pesableChk.addEventListener("change", refreshPluUI);
+  inputCodigo.addEventListener("input", refreshPluUI);
 
 
-  // --- GUARDAR PRODUCTO (LÓGICA BLOQUEANTE) ---
-  productoForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
+  // --- GUARDAR PRODUCTO (LÓGICA BLOQUEANTE) ---
+  productoForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
     const nuevoPrecioCompra = parseFloatOrZero(inputPrecioCompra.value);
     
     // 1. CHEQUEO BLOQUEANTE: Si el precio de compra subió Y no se ha tomado una decisión
@@ -355,65 +430,72 @@ document.addEventListener("app-ready", () => {
 
     // 3. Si llegamos aquí, guardamos (precio no subió o usuario ya decidió)
 
+    // Block save if duplicates are detected
+    await checkDuplicates({ nombre: inputNombre?.value.trim(), codigoBarras: inputCodigoBarras?.value.trim() });
+    if (_dupNombre || _dupCodigo) {
+      toggleSubmitButtonState(false);
+      return;
+    }
+
     toggleSubmitButtonState(true);
     precioBloqueado = false; // Resetear el flag después de guardar
 
-    try {
-      const isPesable = !!pesableChk.checked;
-      const codigoVal = inputCodigo.value.trim();
-      let pluToSend = null;
+    try {
+      const isPesable = !!pesableChk.checked;
+      const codigoVal = inputCodigo.value.trim();
+      let pluToSend = null;
 
-      if (isPesable) {
-        if (!codigoVal) {
-          toggleSubmitButtonState(false);
-          return showNotification("El 'Código (Único)' no puede estar vacío si es pesable.", "error");
-        }
-        pluToSend = codigoVal;
-      }
+      if (isPesable) {
+        if (!codigoVal) {
+          toggleSubmitButtonState(false);
+          return showNotification("El 'Código (Único)' no puede estar vacío si es pesable.", "error");
+        }
+        pluToSend = codigoVal;
+      }
 
-      const compra = parseFloatOrZero(inputPrecioCompra.value);
-      const venta = parseFloatOrZero(inputPrecioVenta.value);
-      
-      // Resto de datos para enviar
-      const productoData = {
-        id: inputId.value || undefined,
-        nombre: inputNombre.value.trim(),
-        codigo: codigoVal,
-        stock: parseFloatOrZero(inputStock.value),
-        unidad: inputUnidad.value || "unidad",
-        precioCompra: compra,
-        precioVenta: venta,
-        codigo_barras: (inputCodigoBarras.value || "").trim() || null,
-        fecha_vencimiento: inputFechaVencimiento.value || null,
-        FamiliaId: familiaSelect.value || null,
-        DepartamentoId: deptoSelect.value || null,
-        imagen_base64: imagenBase64,
-        activo: true,
-        pesable: isPesable,
-        plu: pluToSend,
-      };
+      const compra = parseFloatOrZero(inputPrecioCompra.value);
+      const venta = parseFloatOrZero(inputPrecioVenta.value);
+      
+      // Resto de datos para enviar
+      const productoData = {
+        id: inputId.value || undefined,
+        nombre: inputNombre.value.trim(),
+        codigo: codigoVal,
+        stock: parseFloatOrZero(inputStock.value),
+        unidad: inputUnidad.value || "unidad",
+        precioCompra: compra,
+        precioVenta: venta,
+        codigo_barras: (inputCodigoBarras.value || "").trim() || null,
+        fecha_vencimiento: inputFechaVencimiento.value || null,
+        FamiliaId: familiaSelect.value || null,
+        DepartamentoId: deptoSelect.value || null,
+        imagen_base64: imagenBase64,
+        activo: true,
+        pesable: isPesable,
+        plu: pluToSend,
+      };
 
-      const result = await window.electronAPI.invoke("guardar-producto", productoData);
+      const result = await window.electronAPI.invoke("guardar-producto", productoData);
 
-      if (result?.success) {
-        showNotification("Producto guardado con éxito.", "success");
-        setTimeout(() => (window.location.href = "productos.html"), 900);
-      } else {
-        showNotification(`Error: ${result?.message || "No se pudo guardar el producto."}`, "error");
-      }
-    } catch (error) {
-      console.error(error);
-      showNotification("Ocurrió un error inesperado.", "error");
-    } finally {
-      toggleSubmitButtonState(false);
-    }
-  });
+      if (result?.success) {
+        showNotification("Producto guardado con éxito.", "success");
+        setTimeout(() => (window.location.href = "productos.html"), 900);
+      } else {
+        showNotification(`Error: ${result?.message || "No se pudo guardar el producto."}`, "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showNotification("Ocurrió un error inesperado.", "error");
+    } finally {
+      toggleSubmitButtonState(false);
+    }
+  });
 
-  attachEnterNav(productoForm, { submitBtn: btnSubmit });
+  attachEnterNav(productoForm, { submitBtn: btnSubmit });
 
-  // --- ARRANQUE ---
-  (async () => {
-    await inicializar();
-    calcularRentabilidad();
-  })();
+  // --- ARRANQUE ---
+  (async () => {
+    await inicializar();
+    calcularRentabilidad();
+  })();
 });

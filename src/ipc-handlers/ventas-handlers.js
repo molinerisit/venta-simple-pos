@@ -2,6 +2,7 @@
 const { ipcMain } = require("electron");
 const { Op } = require("sequelize");
 const { getOfertaActiva, calcularLineaConOferta } = require("./ofertas-handlers");
+const { similarity, normalizeText, getThreshold } = require("../utils/similarity");
 
 // ELIMINADO: const { generarFacturaAFIP } = require("../services/afip-service");
 // ELIMINADO: const { findPaymentByReference } = require("../services/mercadoPago-Service");
@@ -303,14 +304,12 @@ function registerVentasHandlers(models, sequelize) {
         },
       });
 
-      // Paso 2: solo si no hubo match exacto, buscar por nombre
+      // Paso 2: solo si no hubo match exacto, usar fuzzy ranking por nombre
       if (!producto) {
-        producto = await Producto.findOne({
-          where: {
-            activo: true,
-            nombre: { [Op.like]: `%${String(texto)}%` },
-          },
-        });
+        const ranked = await fuzzySearchProductos(Producto, String(texto));
+        if (ranked.length > 0) {
+          producto = await Producto.findByPk(ranked[0].id);
+        }
       }
 
       if (!producto) return null;
@@ -319,13 +318,56 @@ function registerVentasHandlers(models, sequelize) {
         pj.ofertaActiva = await getOfertaActiva(Oferta, pj.id);
       }
       return pj;
-    } catch (error) {
-      console.error("Error en búsqueda inteligente:", error);
-      return null;
-    }
-  });
+    } catch (error) {
+      console.error("Error en búsqueda inteligente:", error);
+      return null;
+    }
+  });
 
-  // Registrar venta
+  // Búsqueda por nombre con ranking fuzzy — devuelve lista ordenada por score.
+  ipcMain.handle("buscar-productos-nombre", async (_event, texto) => {
+    if (!texto || String(texto).trim().length < 2) return [];
+    try {
+      return await fuzzySearchProductos(Producto, String(texto));
+    } catch (e) {
+      console.error("[buscar-productos-nombre]", e);
+      return [];
+    }
+  });
+
+  // Verificar duplicados antes de guardar un producto (nombre normalizado + código de barras).
+  ipcMain.handle("check-producto-duplicado", async (_event, { nombre, codigoBarras, productoId }) => {
+    try {
+      const result = { duplicadoCodigo: null, duplicadoNombre: null };
+      const excl = productoId ? { id: { [Op.ne]: productoId } } : {};
+
+      if (codigoBarras && codigoBarras.trim()) {
+        const ex = await Producto.findOne({
+          where: { codigo_barras: codigoBarras.trim(), ...excl },
+          attributes: ["id", "nombre"], paranoid: true,
+        });
+        if (ex) result.duplicadoCodigo = { id: ex.id, nombre: ex.nombre };
+      }
+
+      if (nombre && nombre.trim()) {
+        const normQuery = normalizeText(nombre);
+        const firstWord = nombre.trim().split(/s+/)[0];
+        const candidates = await Producto.findAll({
+          where: { nombre: { [Op.like]: '%' + firstWord + '%' }, ...excl },
+          attributes: ["id", "nombre"], paranoid: true,
+        });
+        const dup = candidates.find(c => normalizeText(c.nombre) === normQuery);
+        if (dup) result.duplicadoNombre = { id: dup.id, nombre: dup.nombre };
+      }
+
+      return result;
+    } catch (e) {
+      console.error("[check-producto-duplicado]", e);
+      return { duplicadoCodigo: null, duplicadoNombre: null };
+    }
+  });
+
+    // Registrar venta
   ipcMain.handle("registrar-venta", async (_event, ventaData) => {
     const t = await sequelize.transaction();
     try {
@@ -353,6 +395,48 @@ function registerVentasHandlers(models, sequelize) {
     _cachedAdminConfig = null;
   });
 
+}
+
+
+// ── Fuzzy search helper ───────────────────────────────────────────────────────
+// Loads all active product names into memory, scores each against the query,
+// and returns results above threshold sorted by score descending.
+//
+// Performance note: for SQLite installations with <10 000 products this is fine.
+// The broad SQL filter (LIKE on each query word) keeps the in-memory set small.
+// If the catalog grows past ~50 000 rows, consider a pre-computed index.
+async function fuzzySearchProductos(Producto, query, limit = 8) {
+  const { similarity, normalizeText, getThreshold } = require('../utils/similarity');
+  const { Op } = require('sequelize');
+
+  const q = normalizeText(query);
+  if (!q || q.length < 2) return [];
+
+  const threshold = getThreshold(query);
+
+  // Broad SQL pre-filter: products whose name contains at least one query word.
+  // Avoids loading the full catalog for common single-word searches.
+  const words = q.split(' ').filter(Boolean);
+  const whereOr = words.map(w => ({ nombre: { [Op.like]: '%' + w + '%' } }));
+
+  const candidates = await Producto.findAll({
+    where: { activo: true, [Op.or]: whereOr },
+    attributes: ['id', 'nombre', 'precioVenta', 'codigo_barras', 'stock', 'unidad', 'imagen_url', 'pesable', 'plu'],
+    paranoid: true,
+  });
+
+  // Score and filter in memory
+  const scored = candidates
+    .map(p => {
+      const score = similarity(query, p.nombre);
+      console.log('[fuzzy]', JSON.stringify(p.nombre), '← query:', JSON.stringify(query), '→ score:', score.toFixed(2));
+      return { ...p.toJSON(), _score: score };
+    })
+    .filter(p => p._score >= threshold)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, limit);
+
+  return scored;
 }
 
 module.exports = { registerVentasHandlers };
