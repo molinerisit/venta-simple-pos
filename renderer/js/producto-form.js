@@ -68,6 +68,7 @@ document.addEventListener("app-ready", () => {
   let _dupNombre = false;
   let _dupCodigo = false;
   let _dupTimer  = null;
+  let _catalogSuggestion = null;
 
   const parseFloatOrZero = (val) => {
     if (val === null || val === undefined || val === '') return 0;
@@ -285,6 +286,75 @@ document.addEventListener("app-ready", () => {
     }, 300);
   }
 
+  // ── Catálogo maestro — sugerencia de autocompletado ────────────────────────
+  function _showCatalogBanner(data) {
+    _catalogSuggestion = data;
+    let banner = document.getElementById('catalog-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'catalog-banner';
+      banner.style.cssText = [
+        'background:#f0f9ff','border:1px solid #0ea5e9','border-radius:8px',
+        'padding:12px 14px','margin:8px 0 0','font-size:13px','line-height:1.4',
+      ].join(';');
+      const anchor = inputCodigoBarras?.closest('.form-campo') || inputCodigoBarras?.parentNode;
+      if (anchor) anchor.after(banner);
+    }
+    const conf = Math.round((data.confidence || 0) * 100);
+    banner.innerHTML =
+      '<div style="font-weight:600;color:#0369a1;margin-bottom:6px;">Encontramos este producto en el catálogo sugerido</div>' +
+      '<div style="margin-bottom:3px;"><strong>' + (data.canonical_name || '') + '</strong></div>' +
+      (data.department ? '<div style="color:#475569;">Departamento: ' + data.department + '</div>' : '') +
+      (data.family     ? '<div style="color:#475569;">Familia: '      + data.family     + '</div>' : '') +
+      (data.brand      ? '<div style="color:#475569;">Marca: '        + data.brand      + '</div>' : '') +
+      (data.unit       ? '<div style="color:#475569;">Unidad: '       + data.unit       + '</div>' : '') +
+      '<div style="color:#94a3b8;font-size:11px;margin-top:3px;">Confianza: ' + conf + '% · ' + (data.sources_count || 1) + ' fuentes</div>' +
+      '<div style="margin-top:8px;display:flex;gap:8px;">' +
+        '<button type="button" id="btn-usar-catalogo" style="background:#0ea5e9;color:#fff;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;font-size:12px;font-weight:500;">Usar sugerencia</button>' +
+        '<button type="button" id="btn-ignorar-catalogo" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;">Ignorar</button>' +
+      '</div>';
+    document.getElementById('btn-usar-catalogo')?.addEventListener('click', _applyCatalog);
+    document.getElementById('btn-ignorar-catalogo')?.addEventListener('click', _hideCatalogBanner);
+    banner.style.display = 'block';
+  }
+
+  function _hideCatalogBanner() {
+    const banner = document.getElementById('catalog-banner');
+    if (banner) banner.style.display = 'none';
+    _catalogSuggestion = null;
+  }
+
+  function _applyCatalog() {
+    if (!_catalogSuggestion) return;
+    const d = _catalogSuggestion;
+    if (d.canonical_name && inputNombre && !inputNombre.value.trim()) {
+      inputNombre.value = d.canonical_name;
+      inputNombre.dispatchEvent(new Event('input'));
+    }
+    if (d.department && deptoSelect) {
+      const opt = Array.from(deptoSelect.options).find(o =>
+        o.text.toLowerCase().includes((d.department || '').toLowerCase())
+      );
+      if (opt) { deptoSelect.value = opt.value; deptoSelect.dispatchEvent(new Event('change')); }
+    }
+    if (d.unit && inputUnidad && !inputUnidad.value.trim()) {
+      inputUnidad.value = d.unit;
+    }
+    _hideCatalogBanner();
+  }
+
+  async function _checkCatalog(barcode) {
+    if (!barcode || barcode.length < 3) { _hideCatalogBanner(); return; }
+    if (inputId?.value) return; // editing existing product — skip
+    try {
+      const result = await window.electronAPI.invoke('buscar-en-catalogo', barcode);
+      if (result) _showCatalogBanner(result);
+      else _hideCatalogBanner();
+    } catch (e) {
+      console.warn('[catalog]', e.message);
+    }
+  }
+
   // --- 3. EVENTOS ---
 
   // ELIMINADO: No hay listener 'change' en inputPrecioCompra para evitar actualización de precioCompraOriginal antes del submit.
@@ -294,6 +364,7 @@ document.addEventListener("app-ready", () => {
   inputNombre?.addEventListener("input", () => scheduleDupCheck('nombre'));
   inputCodigoBarras?.addEventListener("input", () => scheduleDupCheck('codigo'));
   inputCodigoBarras?.addEventListener("change", () => scheduleDupCheck('codigo'));
+  inputCodigoBarras?.addEventListener("blur",   () => _checkCatalog(inputCodigoBarras.value.trim()));
   deptoSelect.addEventListener("change", () => actualizarFamiliasSelect());
 
   // --- Eventos de Clasificación ---

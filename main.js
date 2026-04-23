@@ -295,6 +295,8 @@ app.on("ready", async () => {
       MovimientoCaja: require("./src/database/models/MovimientoCaja")(sequelize),
 
       Oferta: require("./src/database/models/Oferta")(sequelize),
+
+      CatalogCache: require("./src/database/models/CatalogCache")(sequelize),
     };
 
     const { applyAssociations } = require("./src/database/associations");
@@ -409,6 +411,7 @@ app.on("ready", async () => {
 
       { name: "lotes-handlers", needsSequelize: false },
 
+      { name: "catalog-handlers",  needsSequelize: true },
       { name: "ofertas-handlers",  needsSequelize: true },
       { name: "remote-handlers",   needsSequelize: false },
     ];

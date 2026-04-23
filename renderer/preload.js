@@ -137,6 +137,10 @@ const validInvokeChannels = [
   "reset-password-with-token",
   "save-scale-config",
 
+  // Catálogo maestro compartido
+  "buscar-en-catalogo",
+  "enviar-observacion-catalogo",
+
   // Sesión / Setup
   "check-admin-exists",
   "open-setup-window",
