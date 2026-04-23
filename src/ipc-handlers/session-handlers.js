@@ -47,8 +47,12 @@ function registerSessionHandlers(models, sequelize, createMainWindow, createLogi
       }
 
       // B-8j: explicit attribute list instead of scope('withPassword')
+      // Accept either username or email in the same field
+      const { Op } = require("sequelize");
       const user = await Usuario.findOne({
-        where: { nombre: loginName },
+        where: loginName.includes("@")
+          ? { email: loginName }
+          : { nombre_canon: loginName.toLowerCase() },
         attributes: ["id", "nombre_canon", "password"],
       });
       if (!user || !user.password) {

@@ -1,6 +1,6 @@
 {
   "name": "venta-simple-hub",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Sistema de gestión para negocios — ventas, stock, clientes y reportes con sincronización en la nube",
   "main": "main.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.ventasimplehub.app",
-    "productName": "Venta Simple Hub",
+    "productName": "Venta Simple",
     "copyright": "Copyright © 2026 Julian Matias Molineris. Todos los derechos reservados.",
     "npmRebuild": false,
     "directories": {
@@ -62,12 +62,12 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Venta Simple Hub",
+      "shortcutName": "Venta Simple",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeader": "build/icon.ico",
       "createStartMenuShortcut": true,
-      "menuCategory": "Venta Simple Hub"
+      "menuCategory": "Venta Simple"
     }
   },
   "author": "Julian Matias Molineris",
