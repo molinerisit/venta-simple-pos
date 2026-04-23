@@ -3,6 +3,8 @@ const { ipcMain, BrowserWindow } = require("electron");
 
 let activeUserId = null;
 
+const CLOUD_API_URL = "https://backend-py-mauve.vercel.app";
+
 // B-4: In-memory brute-force cooldown
 // Map: loginName → { failures: number, windowStart: number, lockedUntil: number }
 const loginAttempts = new Map();
@@ -25,13 +27,55 @@ function _resetLoginAttempts(name) {
   loginAttempts.delete(name);
 }
 
+// Verifica credenciales contra el backend en la nube.
+// Devuelve { nombre, rol, tenant_id } si OK, o null si falla.
+async function tryCloudLogin(email, password) {
+  try {
+    const fetch = require("node-fetch");
+    const res = await fetch(`${CLOUD_API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      timeout: 8000,
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+// Crea o actualiza el usuario local a partir de los datos de la nube.
+// Guarda un bcrypt del password para que el login siguiente funcione offline.
+async function upsertCloudUser(Usuario, { email, nombre, rol, plainPassword }) {
+  const bcrypt = require("bcryptjs");
+  const hash = await bcrypt.hash(plainPassword, 10);
+  const nombreLimpio = (nombre || email.split("@")[0]).trim();
+
+  let user = await Usuario.findOne({
+    where: { email },
+    attributes: ["id", "nombre_canon", "password"],
+  });
+
+  if (user) {
+    await user.update({ password: hash });
+  } else {
+    user = await Usuario.create({
+      nombre:  nombreLimpio,
+      email,
+      password: hash,
+      rol:     "administrador",
+    });
+  }
+  return user;
+}
+
 function registerSessionHandlers(models, sequelize, createMainWindow, createLoginWindow) {
   const { Usuario } = models;
 
   // LOGIN
   ipcMain.handle("login-attempt", async (event, payload = {}) => {
     try {
-      // B-8k: standardize on payload.nombre only
       const loginName = String(payload.nombre ?? "").trim();
       const plainPass = String(payload.password ?? "").trim();
       if (!loginName || !plainPass) {
@@ -46,46 +90,58 @@ function registerSessionHandlers(models, sequelize, createMainWindow, createLogi
         return { success: false, message: `Cuenta bloqueada temporalmente. Intente en ${wait} segundos.` };
       }
 
-      // B-8j: explicit attribute list instead of scope('withPassword')
-      // Accept either username or email in the same field
-      const { Op } = require("sequelize");
-      const user = await Usuario.findOne({
-        where: loginName.includes("@")
+      const isEmail = loginName.includes("@");
+      const bcrypt  = require("bcryptjs");
+
+      // ── 1. Buscar en base local ────────────────────────────────
+      let localUser = await Usuario.findOne({
+        where: isEmail
           ? { email: loginName }
           : { nombre_canon: loginName.toLowerCase() },
         attributes: ["id", "nombre_canon", "password"],
       });
-      if (!user || !user.password) {
-        return { success: false, message: "Usuario o contraseña incorrectos." };
+
+      // ── 2. Verificar contraseña local ──────────────────────────
+      if (localUser && localUser.password) {
+        const ok = await bcrypt.compare(plainPass, localUser.password);
+        if (ok) {
+          loginAttempts.delete(loginName);
+          activeUserId = localUser.id;
+          return openMainWindow(event, createMainWindow);
+        }
+        // Password local incorrecta: si no es email, falla directo
+        if (!isEmail) {
+          return recordFailure(loginAttempts, loginName, rec, now);
+        }
+        // Si es email: puede que cambiaron la clave en la web → intentar nube
       }
 
-      const bcrypt = require("bcryptjs");
-      const ok = await bcrypt.compare(plainPass, user.password);
-      if (!ok) {
-        // B-4: record failure
-        const windowActive = now - rec.windowStart < WINDOW_MS;
-        const failures = (windowActive ? rec.failures : 0) + 1;
-        const windowStart = windowActive ? rec.windowStart : now;
-        const lockedUntil = failures >= MAX_FAILURES ? now + LOCKOUT_MS : 0;
-        loginAttempts.set(loginName, { failures, windowStart, lockedUntil });
-        return { success: false, message: "Usuario o contraseña incorrectos." };
+      // ── 3. Fallback nube (solo para emails) ───────────────────
+      if (!isEmail) {
+        return recordFailure(loginAttempts, loginName, rec, now);
       }
 
-      // B-4: successful login clears the counter
+      const cloud = await tryCloudLogin(loginName, plainPass);
+      if (!cloud) {
+        // Distinguir entre cuenta no encontrada y sin conexión
+        const msg = localUser
+          ? "Contraseña incorrecta."
+          : "Cuenta no encontrada. Verificá el email o tu conexión a internet.";
+        return recordFailure(loginAttempts, loginName, rec, now, msg);
+      }
+
+      // ── 4. Sincronizar cuenta cloud → local ───────────────────
+      const synced = await upsertCloudUser(Usuario, {
+        email:         loginName,
+        nombre:        cloud.nombre,
+        rol:           cloud.rol,
+        plainPassword: plainPass,
+      });
+
       loginAttempts.delete(loginName);
-      activeUserId = user.id;
+      activeUserId = synced.id;
+      return openMainWindow(event, createMainWindow);
 
-      // Abrimos main y cerramos login cuando esté listo
-      // Guard event?.sender for environments where event is null (e.g. tests)
-      const loginWin = event?.sender ? BrowserWindow.fromWebContents(event.sender) : null;
-      const mainWin = createMainWindow ? createMainWindow() : null;
-      if (mainWin) {
-        mainWin.once("ready-to-show", () => {
-          if (loginWin && !loginWin.isDestroyed()) loginWin.close();
-        });
-      }
-
-      return { success: true };
     } catch (error) {
       console.error("[Session] Error grave en 'login-attempt':", error);
       return { success: false, message: "Ocurrió un error inesperado en el servidor." };
@@ -121,6 +177,28 @@ function registerSessionHandlers(models, sequelize, createMainWindow, createLogi
       return null;
     }
   });
+}
+
+// ── Helpers internos ──────────────────────────────────────────────
+
+function recordFailure(map, key, rec, now, msg = "Usuario o contraseña incorrectos.") {
+  const windowActive = now - rec.windowStart < WINDOW_MS;
+  const failures     = (windowActive ? rec.failures : 0) + 1;
+  const windowStart  = windowActive ? rec.windowStart : now;
+  const lockedUntil  = failures >= MAX_FAILURES ? now + LOCKOUT_MS : 0;
+  map.set(key, { failures, windowStart, lockedUntil });
+  return { success: false, message: msg };
+}
+
+function openMainWindow(event, createMainWindow) {
+  const loginWin = event?.sender ? BrowserWindow.fromWebContents(event.sender) : null;
+  const mainWin  = createMainWindow ? createMainWindow() : null;
+  if (mainWin) {
+    mainWin.once("ready-to-show", () => {
+      if (loginWin && !loginWin.isDestroyed()) loginWin.close();
+    });
+  }
+  return { success: true };
 }
 
 module.exports = { registerSessionHandlers, clearSession, getActiveUserId, _resetLoginAttempts };
