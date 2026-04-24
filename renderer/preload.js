@@ -100,6 +100,12 @@ const validInvokeChannels = [
   "get-data-for-seleccion",
   "generar-vista-impresion",
   "get-subscription-status",
+  // Soporte
+  "open-soporte",
+  "soporte-diagnostics",
+  "soporte-launch-rustdesk",
+  "soporte-open-whatsapp",
+  "soporte-copy-report",
   "save-license",
   "open-external-url",
   "run-manual-sync",

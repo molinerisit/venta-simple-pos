@@ -288,3 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+document.getElementById("btn-abrir-soporte")?.addEventListener("click", () => {
+  window.electronAPI?.invoke("open-soporte").catch(() => {});
+});

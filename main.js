@@ -29,7 +29,7 @@ let models;
 
 // --- GESTIÓN DE VENTANAS ---
 
-let mainWindow, loginWindow, setupWindow, hardwareWindow, qrWindow;
+let mainWindow, loginWindow, setupWindow, hardwareWindow, qrWindow, soporteWindow;
 
 // ====== INSTANCIA ÚNICA ======
 
@@ -332,6 +332,27 @@ app.on("ready", async () => {
 
     const { registerLicenseHandlers } = require("./src/ipc-handlers/license-handlers");
     registerLicenseHandlers();
+
+    const { registerSoporteHandlers } = require("./src/ipc-handlers/soporte-handlers");
+    registerSoporteHandlers();
+    ipcMain.handle('open-soporte', () => {
+      if (soporteWindow && !soporteWindow.isDestroyed()) {
+        soporteWindow.focus();
+        return;
+      }
+      soporteWindow = new BrowserWindow({
+        width: 420,
+        height: 640,
+        minWidth: 360,
+        minHeight: 500,
+        title: 'Soporte VentaSimple',
+        autoHideMenuBar: true,
+        resizable: true,
+        webPreferences: { preload: path.join(__dirname, 'renderer/preload.js') },
+      });
+      soporteWindow.loadFile(path.join(__dirname, 'renderer/windows/soporte.html'));
+      soporteWindow.on('closed', () => { soporteWindow = null; });
+    });
 
     // ── Auto-updater ──────────────────────────────────────────────────────────
     // Solo corre cuando la app está empaquetada (no en desarrollo)

@@ -1623,3 +1623,8 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
 
   });
 })();
+
+
+document.getElementById("btn-admin-soporte")?.addEventListener("click", () => {
+  window.electronAPI?.invoke("open-soporte").catch(() => {});
+});
