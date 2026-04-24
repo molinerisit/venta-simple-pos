@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const { Umzug, SequelizeStorage } = require('umzug');
+const Sequelize = require('sequelize');
 
 /**
  * Runs all pending migrations in ascending order.
@@ -26,8 +27,8 @@ async function runMigrations(sequelize) {
   const umzug = new Umzug({
     migrations: migrationFiles.map((migPath) => ({
       name: path.basename(migPath, '.js'),
-      up: async () => require(migPath).up(sequelize.getQueryInterface()),
-      down: async () => require(migPath).down(sequelize.getQueryInterface()),
+      up: async () => require(migPath).up(sequelize.getQueryInterface(), Sequelize),
+      down: async () => require(migPath).down(sequelize.getQueryInterface(), Sequelize),
     })),
     storage: new SequelizeStorage({ sequelize }),
     logger: console,
