@@ -680,65 +680,62 @@ document.addEventListener("app-ready", () => {
 
   // --- 5. EVENTOS ---
   document.addEventListener("keydown", (event) => {
-    // si hay modal de error visible
-    if (modalContainer && !modalContainer.classList.contains("oculto")) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        modalAcceptBtn.click();
-      }
-      return;
-    }
-    // si está modal de venta exitosa
-    if (ventaExitosaModal && ventaExitosaModal.classList.contains("visible")) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        exBtnCerrar?.click();
-      }
-      return;
-    }
+    // si hay modal de error visible
+    if (modalContainer && !modalContainer.classList.contains("oculto")) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        modalAcceptBtn.click();
+      }
+      return;
+    }
+    // si está modal de venta exitosa
+    if (ventaExitosaModal && ventaExitosaModal.classList.contains("visible")) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        exBtnCerrar?.click();
+      }
+      return;
+    }
 
-    // Hotkeys rápidos
-    let isHot = true;
-    switch (event.key) {
-      case "/":
-        document.querySelector('button[data-metodo="Efectivo"]')?.click();
-        break;
-      case "*":
-        document.querySelector('button[data-metodo="Débito"]')?.click();
-        break;
-      case "-":
-        document.querySelector('button[data-metodo="Crédito"]')?.click();
-        break;
-      case "+":
-        document.querySelector('button[data-metodo="QR"]')?.click();
-        break;
-      // case "ñ": // ❌ ELIMINADO: Ya no se usa para registrar venta
-      // case "Ñ": // ❌ ELIMINADO
-      //    if (!btnRegistrarVenta?.disabled) btnRegistrarVenta.click();
-      //    break;
-      case "{":
-        if (!btnImprimirTicket?.disabled) btnImprimirTicket.click();
-        break;
-      case ".":
-        btnCancelarVenta?.click();
-        break;
-      case "+":
-      case "´":
-        dniInput?.focus();
-        break;
-      default:
-        isHot = false;
-        break;
-    }
-    if (isHot) {
-      event.preventDefault();
-      return;
-    }
+    // Hotkeys rápidos
+    let isHot = true;
+    switch (event.key) {
+      case "*": {
+        // Cicla: Efectivo → Débito → Crédito → QR → Efectivo
+        const _order = ["Efectivo", "Débito", "Crédito", "QR"];
+        const _cur   = CajaState.metodoPagoSeleccionado;
+        const _idx   = _order.indexOf(_cur);
+        const _next  = _order[(_idx + 1) % _order.length];
+        document.querySelector('[data-metodo="' + _next + '"]')?.click();
+        break;
+      }
+      // case "ñ": // ❌ ELIMINADO: Ya no se usa para registrar venta
+      // case "Ñ": // ❌ ELIMINADO
+      //    if (!btnRegistrarVenta?.disabled) btnRegistrarVenta.click();
+      //    break;
+      case "{":
+        if (!btnImprimirTicket?.disabled) btnImprimirTicket.click();
+        break;
+      case ".":
+        btnCancelarVenta?.click();
+        break;
+      case "+":
+      case "´":
+        dniInput?.focus();
+        break;
+      default:
+        isHot = false;
+        break;
+    }
+    if (isHot) {
+      event.preventDefault();
+      return;
+    }
 
-    // Lectura de Enter contextual
-    const active = document.activeElement;
-    const typing =
-      active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
+    // Lectura de Enter contextual
+    const active = document.activeElement;
+    const typing =
+      active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
 
 if (event.key === "Enter") {
       event.preventDefault();
@@ -820,19 +817,19 @@ if (event.key === "Enter") {
       return;
     }
 
-    // buffer de lector si no estoy tipeando en inputs
-    if (typing) return;
-    if (event.key.length > 1) return;
-    mainInput?.focus();
-    CajaState.barcodeBuffer.push(event.key);
-    clearTimeout(CajaState.barcodeTimer);
-    CajaState.barcodeTimer = setTimeout(() => {
-      if (CajaState.barcodeBuffer.length > 2) {
-        procesarEntrada(CajaState.barcodeBuffer.join(""));
-      }
-      CajaState.barcodeBuffer = [];
-    }, 200);
-  });
+    // buffer de lector si no estoy tipeando en inputs
+    if (typing) return;
+    if (event.key.length > 1) return;
+    mainInput?.focus();
+    CajaState.barcodeBuffer.push(event.key);
+    clearTimeout(CajaState.barcodeTimer);
+    CajaState.barcodeTimer = setTimeout(() => {
+      if (CajaState.barcodeBuffer.length > 2) {
+        procesarEntrada(CajaState.barcodeBuffer.join(""));
+      }
+      CajaState.barcodeBuffer = [];
+    }, 200);
+  });
 
   document.addEventListener('click', (e) => {
     if (_suggestionBox && !_suggestionBox.contains(e.target) && e.target !== mainInput) {
@@ -972,17 +969,17 @@ if (event.key === "Enter") {
       paymentButtons.forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
       if (metodo === "Efectivo") {
-        efectivoArea?.classList.remove("oculto");
-        montoPagadoInput?.focus();
-      } else {
-        efectivoArea?.classList.add("oculto");
-        // 🟢 CAMBIO AÑADIDO: Si no es Efectivo, forzar el foco al botón de registro
-        // Esto permite usar ENTER inmediatamente después de un hotkey de pago
-        btnRegistrarVenta?.focus(); 
-      }
-      renderizarVenta();
-    });
-  });
+        efectivoArea?.classList.remove("oculto");
+        montoPagadoInput?.focus();
+      } else {
+        efectivoArea?.classList.add("oculto");
+        // 🟢 CAMBIO AÑADIDO: Si no es Efectivo, forzar el foco al botón de registro
+        // Esto permite usar ENTER inmediatamente después de un hotkey de pago
+        btnRegistrarVenta?.focus(); 
+      }
+      renderizarVenta();
+    });
+  });
 
   montoPagadoInput?.addEventListener("input", actualizarCalculoVuelto);
   // W5-F5: Confirmation guard — only prompt when the cart has items.

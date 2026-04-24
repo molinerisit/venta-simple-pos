@@ -162,7 +162,8 @@
         overlay.querySelector('.app-dialog__btn--cancel').addEventListener('click', () => close(false));
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
         overlay.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') close(false);
+          if (e.key === 'Escape') { close(false); e.stopPropagation(); }
+          if (e.key === 'Enter')  { close(true);  e.stopPropagation(); e.preventDefault(); }
         });
 
         showDialog(overlay);
