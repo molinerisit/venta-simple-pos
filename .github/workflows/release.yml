@@ -22,6 +22,18 @@ jobs:
       - name: Install Windows SDK
         run: choco install windows-sdk-10-version-2004-all -y --no-progress
 
+      - name: Download RustDesk installer
+        shell: pwsh
+        run: |
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/rustdesk/rustdesk/releases/latest"
+          $asset = $release.assets | Where-Object { $_.name -match "x86_64\.exe$" } | Select-Object -First 1
+          if (-not $asset) {
+            Write-Error "No se encontró instalador RustDesk x86_64 en el último release"
+            exit 1
+          }
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "build\rustdesk-installer.exe"
+          Write-Host "RustDesk descargado: $($asset.name) ($([math]::Round($asset.size/1MB,1)) MB)"
+
       - name: Install dependencies
         run: npm install
 

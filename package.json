@@ -66,8 +66,8 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeader": "build/icon.ico",
-      "createStartMenuShortcut": true,
-      "menuCategory": "Venta Simple"
+      "menuCategory": "Venta Simple",
+      "include": "build/installer.nsh"
     }
   },
   "author": "Julian Matias Molineris",

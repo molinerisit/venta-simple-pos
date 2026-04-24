@@ -3,3 +3,6 @@ database.sqlite
 database.sqlite-shm
 database.sqlite-wal
 ingresopagomp.mp3
+
+# RustDesk bundled installer (se descarga en CI, no se sube al repo)
+build/rustdesk-installer.exe
