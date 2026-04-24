@@ -102,6 +102,9 @@ const validInvokeChannels = [
   "get-subscription-status",
   // Soporte
   "open-soporte",
+  "soporte-chat-init",
+  "soporte-chat-send",
+  "soporte-chat-poll",
   "soporte-diagnostics",
   "soporte-launch-rustdesk",
   "soporte-open-whatsapp",
