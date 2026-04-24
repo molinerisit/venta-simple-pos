@@ -58,6 +58,10 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M5.34 5.34l-1.41-1.41M12 2v2M12 20v2"/></svg>
         Avanzado
       </button>
+      <button class="mod-tab" data-panel="atajos">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h4M14 16h4"/></svg>
+        Atajos
+      </button>
       <button class="mod-tab" data-panel="remoto" id="tab-remoto" style="display:none">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
         Remoto
@@ -784,6 +788,80 @@
         </section>
 
       </div><!-- /panel-avanzado -->
+
+      <!-- ════════════════════════════════════════════════════
+           PANEL: ATAJOS DE TECLADO
+           ════════════════════════════════════════════════════ -->
+      <div class="admin-panel" id="panel-atajos">
+        <section class="content-section">
+          <div class="section-header">
+            <div class="section-header-left">
+              <div class="section-icon section-icon--blue">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h4M14 16h4"/></svg>
+              </div>
+              <h2>Atajos de teclado — Caja</h2>
+            </div>
+          </div>
+          <p style="color:#64748b;font-size:13px;margin:0 0 20px;line-height:1.6;">
+            Estos atajos funcionan desde el teclado numérico mientras la caja está abierta.<br>
+            No hace falta hacer clic en ningún botón.
+          </p>
+          <div style="display:grid;gap:8px;">
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">*</kbd>
+              <div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Ciclar medio de pago</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Efectivo → Débito → Crédito → QR → Efectivo</div>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">Enter</kbd>
+              <div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Buscar / agregar producto</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Escaneá o escribí el código de barras o el nombre</div>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">.</kbd>
+              <div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Cancelar venta</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Pide confirmación antes de vaciar el carrito</div>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">{</kbd>
+              <div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Reimprimir último ticket</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Solo disponible después de registrar una venta</div>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+              <div style="display:flex;gap:6px;flex-shrink:0;">
+                <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;text-align:center;">+</kbd>
+                <span style="color:#94a3b8;font-size:12px;align-self:center;">o</span>
+                <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;text-align:center;">´</kbd>
+              </div>
+              <div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Ir al campo cliente / DNI</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Enfoca el buscador de clientes</div>
+              </div>
+            </div>
+
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-top:4px;">
+              <div style="font-size:12px;color:#1e3a8a;font-weight:600;margin-bottom:4px;">Tip: en el modal de cancelar venta</div>
+              <div style="font-size:12px;color:#3b82f6;line-height:1.5;">
+                Presioná <strong>Enter</strong> para confirmar o <strong>Esc</strong> para volver sin cancelar.
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div><!-- /panel-atajos -->
 
       <!-- ════════════════════════════════════════════════════
            PANEL: REMOTO  (solo superadmin)

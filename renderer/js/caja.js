@@ -839,6 +839,33 @@ if (event.key === "Enter") {
 
   modalAcceptBtn?.addEventListener("click", hideErrorModal);
 
+  // ── Shortcuts overlay ─────────────────────────────────────────────────────
+  const shortcutsOverlay = document.getElementById('shortcuts-overlay');
+  const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
+
+  function openShortcuts() {
+    if (shortcutsOverlay) shortcutsOverlay.style.display = 'flex';
+  }
+  function closeShortcuts() {
+    if (shortcutsOverlay) shortcutsOverlay.style.display = 'none';
+    localStorage.setItem('vs-shortcuts-seen', '1');
+  }
+
+  document.getElementById('shortcuts-close')?.addEventListener('click', closeShortcuts);
+  document.getElementById('shortcuts-ok')?.addEventListener('click', closeShortcuts);
+  btnShortcutsHelp?.addEventListener('click', openShortcuts);
+  btnShortcutsHelp?.addEventListener('mouseenter', () => { if (btnShortcutsHelp) btnShortcutsHelp.style.opacity = '1'; });
+  btnShortcutsHelp?.addEventListener('mouseleave', () => { if (btnShortcutsHelp) btnShortcutsHelp.style.opacity = '0.75'; });
+
+  shortcutsOverlay?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Enter') { closeShortcuts(); e.stopPropagation(); }
+  });
+
+  // Show on first launch
+  if (!localStorage.getItem('vs-shortcuts-seen')) {
+    setTimeout(openShortcuts, 800); // small delay so the caja loads first
+  }
+
   btnBuscarCliente?.addEventListener("click", async () => {
     const dni = (dniInput?.value || "").trim();
     if (!dni) {
