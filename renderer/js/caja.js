@@ -16,7 +16,8 @@ document.addEventListener("app-ready", () => {
     totalFinalRedondeado: 0,
     confirmarVentaPending: false, 
     confirmarVentaTimer: null,
-    itemSeleccionado: null
+    itemSeleccionado: null,
+    _autoCloseTimer: null
   };
 
   // DOM
@@ -190,7 +191,10 @@ document.addEventListener("app-ready", () => {
       resumenPagoMP.classList.add("oculto");
     }
     ventaExitosaModal.classList.add("visible");
-    setTimeout(() => exBtnCerrar?.click(), 1500);
+    clearTimeout(CajaState._autoCloseTimer);
+    CajaState._autoCloseTimer = setTimeout(() => {
+      if (ventaExitosaModal.classList.contains("visible")) exBtnCerrar?.click();
+    }, 1500);
   };
 
   const bloquearUI = (mensaje) => {
@@ -1212,6 +1216,7 @@ if (event.key === "Enter") {
 
   // Venta exitosa
   exBtnCerrar?.addEventListener("click", () => {
+    clearTimeout(CajaState._autoCloseTimer);
     ventaExitosaModal?.classList.remove("visible");
     resetearVenta();
   });
