@@ -15,7 +15,8 @@ document.addEventListener("app-ready", () => {
     ultimaExternalReference: null,
     totalFinalRedondeado: 0,
     confirmarVentaPending: false, 
-    confirmarVentaTimer: null
+    confirmarVentaTimer: null,
+    itemSeleccionado: null
   };
 
   // DOM
@@ -189,6 +190,7 @@ document.addEventListener("app-ready", () => {
       resumenPagoMP.classList.add("oculto");
     }
     ventaExitosaModal.classList.add("visible");
+    setTimeout(() => exBtnCerrar?.click(), 1500);
   };
 
   const bloquearUI = (mensaje) => {
@@ -313,6 +315,7 @@ document.addEventListener("app-ready", () => {
         subtotal += itemSubtotal;
 
         const row = document.createElement("tr");
+        if (index === CajaState.itemSeleccionado) row.classList.add('item-seleccionado');
         const imagenSrc = item.producto?.imagen_url
           ? `app://${item.producto.imagen_url.replace(/\\/g, "/")}`
           : "app://images/logo.png";
@@ -636,6 +639,7 @@ document.addEventListener("app-ready", () => {
 
   const resetearVenta = () => {
     CajaState.ventaActual = [];
+    CajaState.itemSeleccionado = null;
     CajaState.metodoPagoSeleccionado = null;
     CajaState.clienteActual = null;
     CajaState.ultimaExternalReference = null;
@@ -719,10 +723,42 @@ document.addEventListener("app-ready", () => {
       case ".":
         btnCancelarVenta?.click();
         break;
-      case "+":
+      case "+": {
+        const _notInput = !document.activeElement || !['INPUT','TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.id === 'main-input';
+        if (_notInput) { mainInput?.focus(); mainInput?.select(); }
+        break;
+      }
       case "´":
         dniInput?.focus();
         break;
+      case "-": {
+        const _aD = document.activeElement;
+        const _inpD = _aD && ['INPUT','TEXTAREA'].includes(_aD.tagName) && _aD.id !== 'main-input';
+        if (_inpD || CajaState.ventaActual.length === 0) { isHot = false; break; }
+        const _idxD = CajaState.itemSeleccionado !== null ? CajaState.itemSeleccionado : CajaState.ventaActual.length - 1;
+        CajaState.ventaActual.splice(_idxD, 1);
+        CajaState.itemSeleccionado = CajaState.ventaActual.length > 0 ? Math.min(_idxD, CajaState.ventaActual.length - 1) : null;
+        renderizarVenta();
+        break;
+      }
+      case "ArrowUp": {
+        const _aU = document.activeElement;
+        const _inpU = _aU && ['INPUT','TEXTAREA'].includes(_aU.tagName) && _aU.id !== 'main-input';
+        if (_inpU || CajaState.ventaActual.length === 0) { isHot = false; break; }
+        const _curU = CajaState.itemSeleccionado;
+        CajaState.itemSeleccionado = _curU === null ? CajaState.ventaActual.length - 1 : Math.max(0, _curU - 1);
+        renderizarVenta();
+        break;
+      }
+      case "ArrowDown": {
+        const _aDD = document.activeElement;
+        const _inpDD = _aDD && ['INPUT','TEXTAREA'].includes(_aDD.tagName) && _aDD.id !== 'main-input';
+        if (_inpDD || CajaState.ventaActual.length === 0) { isHot = false; break; }
+        const _curDD = CajaState.itemSeleccionado;
+        CajaState.itemSeleccionado = _curDD === null ? 0 : Math.min(CajaState.ventaActual.length - 1, _curDD + 1);
+        renderizarVenta();
+        break;
+      }
       default:
         isHot = false;
         break;
@@ -861,10 +897,7 @@ if (event.key === "Enter") {
     if (e.key === 'Escape' || e.key === 'Enter') { closeShortcuts(); e.stopPropagation(); }
   });
 
-  // Show on first launch
-  if (!localStorage.getItem('vs-shortcuts-seen')) {
-    setTimeout(openShortcuts, 800); // small delay so the caja loads first
-  }
+  // Shortcuts overlay available via admin panel
 
   btnBuscarCliente?.addEventListener("click", async () => {
     const dni = (dniInput?.value || "").trim();

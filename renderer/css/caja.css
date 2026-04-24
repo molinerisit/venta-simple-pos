@@ -1436,3 +1436,10 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
   color: #9ca3af;
   font-size: 0.88em;
 }
+
+/* -- Navegación de carrito con teclado -- */
+.item-seleccionado {
+  background: #eff6ff;
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
