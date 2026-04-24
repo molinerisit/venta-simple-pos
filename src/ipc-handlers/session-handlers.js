@@ -3,7 +3,7 @@ const { ipcMain, BrowserWindow } = require("electron");
 
 let activeUserId = null;
 
-const CLOUD_API_URL = "https://backend-py-mauve.vercel.app";
+const { CLOUD_API_URL } = require('../config');
 
 // B-4: In-memory brute-force cooldown
 // Map: loginName → { failures: number, windowStart: number, lockedUntil: number }

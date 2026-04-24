@@ -2,7 +2,7 @@ const { ipcMain } = require('electron');
 const fetch = require('node-fetch');
 const crypto = require('crypto');
 
-const CLOUD_API_URL = 'https://backend-py-mauve.vercel.app';
+const { CLOUD_API_URL } = require('../config');
 const CACHE_TTL_MS  = 7 * 24 * 60 * 60 * 1000; // 7 days — catalog data doesn't change often
 const MISS_TTL_MS   = 24 * 60 * 60 * 1000;      // re-check 404s after 1 day
 

@@ -8,7 +8,7 @@ const path       = require('path');
 const dns        = require('dns').promises;
 
 const SUPPORT_WHATSAPP = '5493417559591';
-const API_URL          = 'https://backend-py-mauve.vercel.app';
+const { CLOUD_API_URL: API_URL } = require('../config');
 
 const RUSTDESK_PATHS = [
   'C:\\Program Files\\RustDesk\\rustdesk.exe',

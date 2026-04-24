@@ -7,8 +7,7 @@ const path  = require('path');
 const fs    = require('fs');
 const https = require('https');
 
-// URL del backend cloud — actualizá antes de buildear para producción
-const CLOUD_API = 'https://venta-simple-web-backend-py.vercel.app';
+const { CLOUD_API_URL: CLOUD_API } = require('../config');
 
 const LICENSE_PATH = path.join(app.getPath('userData'), 'vs-license.json');
 
