@@ -51,17 +51,18 @@ module.exports = {
       return;
     }
 
-    await queryInterface.addIndex('productos', ['nombre_normalizado'], {
-      unique: true,
-      name: 'productos_nombre_normalizado_unique',
-      where: { deletedAt: null },
-    });
+    // Raw SQL partial index — Sequelize's addIndex doesn't reliably pass WHERE to SQLite
+    await queryInterface.sequelize.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS productos_nombre_normalizado_unique
+       ON productos (nombre_normalizado)
+       WHERE deletedAt IS NULL`
+    );
   },
 
   async down(queryInterface) {
-    try {
-      await queryInterface.removeIndex('productos', 'productos_nombre_normalizado_unique');
-    } catch (_) {}
+    await queryInterface.sequelize.query(
+      `DROP INDEX IF EXISTS productos_nombre_normalizado_unique`
+    );
     const tableDesc = await queryInterface.describeTable('productos');
     if (tableDesc.nombre_normalizado) {
       await queryInterface.removeColumn('productos', 'nombre_normalizado');
