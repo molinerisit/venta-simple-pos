@@ -237,6 +237,7 @@ document.addEventListener("app-ready", () => {
     footerTicket:
       CajaState.sesion?.config?.footer_ticket || "¡Gracias por su compra!",
     impresora: CajaState.sesion?.config?.config_puerto_impresora || null,
+    mpConfigurado: !!(CajaState.sesion?.config?.mp_configurado),
   });
 
   const actualizarEstadoVisualCaja = () => {
@@ -967,6 +968,16 @@ if (event.key === "Enter") {
       // 🟢 INICIO: CORRECCIÓN DEL BOTÓN QR
       // ===================================================================
       if (metodo === "QR") {
+        // Si MP no está configurado, QR actúa como método simple (sin generar QR)
+        if (!getCfg().mpConfigurado) {
+          CajaState.metodoPagoSeleccionado = "QR";
+          paymentButtons.forEach((b) => b.classList.remove("active"));
+          button.classList.add("active");
+          efectivoArea?.classList.add("oculto");
+          btnRegistrarVenta?.focus();
+          renderizarVenta();
+          return;
+        }
         const totalString = totalDisplay?.textContent || "$0";
         const clean = totalString.replace(/[^\d,]/g, "").replace(",", ".");
         const total = parseFloat(clean) || 0;
