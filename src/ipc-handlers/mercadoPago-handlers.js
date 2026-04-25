@@ -455,9 +455,8 @@ function registerMercadoPagoHandlers(models) {
       return { ok: false, error: e.message };
     }
   });
-}
 
-  // ── OAuth (conectar cuenta MP del negocio) ────────────────────────────────
+  // ── OAuth (conectar/desconectar cuenta MP del negocio) ────────────────────
 
   ipcMain.handle("mp:connect-oauth", async () => {
     try {
@@ -489,7 +488,6 @@ function registerMercadoPagoHandlers(models) {
       const token = lic?.token;
       const apiUrl = (lic?.api_url || CLOUD_API).replace(/\/$/, "");
 
-      // Notificar al backend (best effort)
       if (token) {
         await fetch(`${apiUrl}/mercadopago/oauth/disconnect`, {
           method: "POST",
@@ -497,7 +495,6 @@ function registerMercadoPagoHandlers(models) {
         }).catch(() => {});
       }
 
-      // Borrar tokens locales
       const admin = await Usuario.findOne({ where: { rol: "administrador" }, attributes: ["id"] });
       if (admin) {
         await Usuario.update(
@@ -508,6 +505,136 @@ function registerMercadoPagoHandlers(models) {
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e.message || "Error al desconectar" };
+    }
+  });
+
+  // ── Configuración de comportamiento por medio de pago ─────────────────────
+
+  ipcMain.handle("get-mp-payment-config", async () => {
+    try {
+      const admin = await Usuario.findOne({
+        where: { rol: "administrador" },
+        attributes: ["mp_payment_config"],
+        raw: true,
+      });
+      const raw = admin?.mp_payment_config;
+      const cfg = typeof raw === "string" ? JSON.parse(raw) : (raw || {});
+      return {
+        qr_mode:        cfg.qr_mode        || "dinamico",
+        debit_mode:     cfg.debit_mode     || "posnet",
+        credit_mode:    cfg.credit_mode    || "posnet",
+        point_device_id: cfg.point_device_id || null,
+      };
+    } catch (e) {
+      return { qr_mode: "dinamico", debit_mode: "posnet", credit_mode: "posnet", point_device_id: null };
+    }
+  });
+
+  ipcMain.handle("save-mp-payment-config", async (_evt, data) => {
+    try {
+      const cfg = {
+        qr_mode:        ["dinamico", "posnet", "none"].includes(data?.qr_mode)    ? data.qr_mode    : "dinamico",
+        debit_mode:     ["posnet", "none"].includes(data?.debit_mode)             ? data.debit_mode  : "posnet",
+        credit_mode:    ["posnet", "none"].includes(data?.credit_mode)            ? data.credit_mode : "posnet",
+        point_device_id: data?.point_device_id || null,
+      };
+      await Usuario.update(
+        { mp_payment_config: cfg },
+        { where: { rol: "administrador" } }
+      );
+      return { success: true };
+    } catch (e) {
+      console.error("[MP][PAYMENT-CONFIG] Error:", e);
+      return { success: false, message: e.message };
+    }
+  });
+
+  // ── MP Point API (posnet físico) ──────────────────────────────────────────
+
+  const POINT_BASE = "https://api.mercadopago.com/point/integration-api";
+
+  ipcMain.handle("mp:point-list-devices", async () => {
+    try {
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      const r = await doFetch(`${POINT_BASE}/devices`, {
+        headers: authHeaders(accessToken, { "Content-Type": undefined }),
+      });
+      if (!r.ok) return { ok: false, error: r.error };
+
+      // Solo dispositivos en Modo PDV (integración)
+      const devices = (r.data?.devices || []).filter(d => d.operating_mode === "PDV");
+      return { ok: true, devices };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle("mp:point-create-intent", async (_evt, { deviceId, amount, externalReference, description }) => {
+    try {
+      if (!deviceId) return { ok: false, error: "deviceId requerido" };
+      const numAmount = Number(amount);
+      if (!Number.isFinite(numAmount) || numAmount <= 0) {
+        return { ok: false, error: `Monto inválido: ${amount}` };
+      }
+
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      const body = {
+        amount: numAmount,
+        additional_info: {
+          external_reference: externalReference || `vs-${Date.now()}`,
+          print_on_terminal: true,
+        },
+      };
+      if (description) body.description = description;
+
+      return await doFetch(
+        `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,
+        { method: "POST", headers: authHeaders(accessToken), body: JSON.stringify(body) }
+      );
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle("mp:point-cancel-intent", async (_evt, { deviceId }) => {
+    try {
+      if (!deviceId) return { ok: false, error: "deviceId requerido" };
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      return await doFetch(
+        `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,
+        { method: "DELETE", headers: authHeaders(accessToken, { "Content-Type": undefined }) }
+      );
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle("mp:point-intent-status", async (_evt, { intentId }) => {
+    try {
+      if (!intentId) return { ok: false, error: "intentId requerido" };
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      return await doFetch(
+        `${POINT_BASE}/payment-intents/${encodeURIComponent(intentId)}`,
+        { headers: authHeaders(accessToken, { "Content-Type": undefined }) }
+      );
+    } catch (e) {
+      return { ok: false, error: e.message };
     }
   });
 }

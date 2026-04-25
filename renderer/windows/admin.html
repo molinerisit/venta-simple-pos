@@ -567,6 +567,55 @@
                 Reconectar
               </button>
             </div>
+
+            <!-- Configuración de comportamiento por medio de pago -->
+            <div id="mp-payment-config-form" style="margin-top:1.5rem;border-top:1px solid #e2e8f0;padding-top:1.25rem;">
+              <p style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 1rem;">Comportamiento por medio de pago</p>
+
+              <!-- Selector de posnet — visible solo si hay algún modo "posnet" -->
+              <div id="mp-device-wrap" style="display:none;margin-bottom:1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;">
+                <label for="mp-point-device" style="display:block;font-size:.8rem;font-weight:600;color:#374151;margin-bottom:6px;">Posnet (dispositivo Point)</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <select id="mp-point-device" style="flex:1;">
+                    <option value="">-- Seleccioná el posnet --</option>
+                  </select>
+                  <button type="button" id="btn-refresh-devices" class="btn btn-secundario btn-sm" title="Actualizar lista de dispositivos">↻</button>
+                </div>
+                <small style="display:block;margin-top:6px;color:#94a3b8;">El dispositivo debe estar en <strong>Modo PDV</strong> (integración) desde la app Mercado Pago.</small>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-campo">
+                  <label for="mp-qr-mode">QR</label>
+                  <select id="mp-qr-mode">
+                    <option value="dinamico">Generar QR dinámico</option>
+                    <option value="posnet">Enviar al posnet</option>
+                    <option value="none">No hacer nada</option>
+                  </select>
+                  <small>QR para escanear con el celular.</small>
+                </div>
+                <div class="form-campo">
+                  <label for="mp-debit-mode">Tarjeta débito</label>
+                  <select id="mp-debit-mode">
+                    <option value="posnet">Cobrar en posnet</option>
+                    <option value="none">No hacer nada</option>
+                  </select>
+                  <small>El cliente pasa la tarjeta físicamente.</small>
+                </div>
+                <div class="form-campo">
+                  <label for="mp-credit-mode">Tarjeta crédito</label>
+                  <select id="mp-credit-mode">
+                    <option value="posnet">Cobrar en posnet</option>
+                    <option value="none">No hacer nada</option>
+                  </select>
+                  <small>El cliente pasa la tarjeta físicamente.</small>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top:.75rem;">
+                <button type="button" id="btn-save-mp-payment-config" class="btn btn-primario btn-sm">Guardar configuración de cobros</button>
+              </div>
+            </div>
           </div>
 
           <!-- Estado: no conectado -->

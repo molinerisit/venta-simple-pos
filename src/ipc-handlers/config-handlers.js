@@ -82,7 +82,8 @@ function registerConfigHandlers(models, sequelize) {
           "config_puerto_scanner", "config_puerto_impresora",
           "config_balanza", "config_balanza_conexion", "config_arqueo_caja",
           "config_redondeo_automatico", "config_recargo_credito", "config_descuento_efectivo",
-          "nombre_negocio", "slogan_negocio", "footer_ticket", "logo_url", "direccion_negocio", "mp_access_token",
+          "nombre_negocio", "slogan_negocio", "footer_ticket", "logo_url", "direccion_negocio",
+          "mp_access_token", "mp_payment_config",
         ],
         raw: true,
       });
@@ -118,6 +119,7 @@ function registerConfigHandlers(models, sequelize) {
       adminUser.permisos = parseJSONField(adminUser.permisos);
       adminUser.mp_configurado = !!adminUser.mp_access_token;
       delete adminUser.mp_access_token;
+      adminUser.mp_payment_config = parseJSONField(adminUser.mp_payment_config);
 
       return adminUser;
     } catch (error) {

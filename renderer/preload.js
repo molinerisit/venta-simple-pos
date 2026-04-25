@@ -167,6 +167,14 @@ const validInvokeChannels = [
   "mp:search-payments",
   "mp:get-payment",
 
+  // Mercado Pago — configuración de cobros y Point API (posnet)
+  "get-mp-payment-config",
+  "save-mp-payment-config",
+  "mp:point-list-devices",
+  "mp:point-create-intent",
+  "mp:point-cancel-intent",
+  "mp:point-intent-status",
+
   // Acceso remoto
   "remote-get-config",
   "remote-save-config",

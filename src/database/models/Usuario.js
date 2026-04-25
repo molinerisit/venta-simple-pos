@@ -57,6 +57,8 @@ module.exports = (sequelize) => {
     mp_access_token:         { type: DataTypes.STRING },
     mp_pos_id:               { type: DataTypes.STRING },
     mp_user_id:              { type: DataTypes.STRING },
+    // Comportamiento por medio de pago: { qr_mode, debit_mode, credit_mode, point_device_id }
+    mp_payment_config:       { type: DataTypes.JSON, allowNull: true, defaultValue: null },
 
     // --- AFIP (ELIMINADO) ---
     // facturacion_activa:  ELIMINADO

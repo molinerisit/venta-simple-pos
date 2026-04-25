@@ -335,6 +335,9 @@ app.on("ready", async () => {
 
     const { registerSoporteHandlers } = require("./src/ipc-handlers/soporte-handlers");
     registerSoporteHandlers();
+
+    const { registerMonitoringHandlers } = require("./src/ipc-handlers/monitoring-handlers");
+    registerMonitoringHandlers();
     ipcMain.handle('open-soporte', () => {
       if (soporteWindow && !soporteWindow.isDestroyed()) {
         soporteWindow.focus();

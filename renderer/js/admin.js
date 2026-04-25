@@ -102,6 +102,77 @@
     const mpOauthBadge       = document.getElementById("mp-oauth-badge");
     const mpConnectedDetail  = document.getElementById("mp-connected-detail");
 
+    // Configuración de cobros por medio de pago
+    const mpQrMode     = document.getElementById("mp-qr-mode");
+    const mpDebitMode  = document.getElementById("mp-debit-mode");
+    const mpCreditMode = document.getElementById("mp-credit-mode");
+    const mpPointDevice           = document.getElementById("mp-point-device");
+    const mpDeviceWrap            = document.getElementById("mp-device-wrap");
+    const btnRefreshDevices       = document.getElementById("btn-refresh-devices");
+    const btnSaveMpPaymentConfig  = document.getElementById("btn-save-mp-payment-config");
+
+    function _mpNeedsDevice() {
+      return [mpQrMode?.value, mpDebitMode?.value, mpCreditMode?.value].includes("posnet");
+    }
+
+    function updateMpDeviceWrap() {
+      if (mpDeviceWrap) mpDeviceWrap.style.display = _mpNeedsDevice() ? "" : "none";
+    }
+
+    async function refreshPointDevices(selectedId = null) {
+      if (!mpPointDevice) return;
+      mpPointDevice.innerHTML = '<option value="">Buscando dispositivos…</option>';
+      const res = await ipcInvoke("mp:point-list-devices").catch(() => null);
+      if (!res?.ok || !res.devices?.length) {
+        mpPointDevice.innerHTML = '<option value="">Sin dispositivos en Modo PDV</option>';
+        return;
+      }
+      mpPointDevice.innerHTML = '<option value="">-- Seleccioná el posnet --</option>';
+      res.devices.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d.id;
+        opt.textContent = `${d.device_name || d.id}`;
+        if (selectedId && d.id === selectedId) opt.selected = true;
+        mpPointDevice.appendChild(opt);
+      });
+    }
+
+    async function loadMpPaymentConfig() {
+      const cfg = await ipcInvoke("get-mp-payment-config").catch(() => null);
+      if (!cfg) return;
+      if (mpQrMode)     mpQrMode.value     = cfg.qr_mode     || "dinamico";
+      if (mpDebitMode)  mpDebitMode.value  = cfg.debit_mode  || "posnet";
+      if (mpCreditMode) mpCreditMode.value = cfg.credit_mode || "posnet";
+      updateMpDeviceWrap();
+      if (_mpNeedsDevice()) await refreshPointDevices(cfg.point_device_id);
+    }
+
+    [mpQrMode, mpDebitMode, mpCreditMode].forEach(sel => {
+      if (!sel) return;
+      sel.addEventListener("change", async () => {
+        updateMpDeviceWrap();
+        if (_mpNeedsDevice() && mpPointDevice && mpPointDevice.options.length <= 1) {
+          await refreshPointDevices();
+        }
+      });
+    });
+
+    on(btnRefreshDevices, "click", () => refreshPointDevices(mpPointDevice?.value));
+
+    on(btnSaveMpPaymentConfig, "click", async () => {
+      setBtnLoading(btnSaveMpPaymentConfig, true, "Guardando…");
+      const result = await ipcInvoke("save-mp-payment-config", {
+        qr_mode:        mpQrMode?.value      || "dinamico",
+        debit_mode:     mpDebitMode?.value   || "posnet",
+        credit_mode:    mpCreditMode?.value  || "posnet",
+        point_device_id: mpPointDevice?.value || null,
+      });
+      setBtnLoading(btnSaveMpPaymentConfig, false, "Guardar configuración de cobros");
+      result?.success
+        ? toast.show("Configuración de cobros guardada.")
+        : toast.show(result?.message || "Error al guardar.", "error");
+    });
+
     function renderMpStatus(ctx) {
       const connected = ctx?.ok && ctx?.ctx?.hasToken;
       mpConnectedView.classList.toggle("hidden", !connected);
@@ -111,6 +182,7 @@
         const uid = ctx.ctx.userId || "";
         const pos = ctx.ctx.posId  || "POS no configurado";
         mpConnectedDetail.textContent = `ID: ${uid} · ${pos}`;
+        loadMpPaymentConfig();
       }
     }
 
@@ -158,7 +230,7 @@
         posId: posId || null,
       });
       const ctx = await ipcInvoke("mp:get-context").catch(() => null);
-      renderMpStatus(ctx);
+      renderMpStatus(ctx); // renderMpStatus llama a loadMpPaymentConfig internamente
       toast.show("Mercado Pago conectado exitosamente.");
     });
 
