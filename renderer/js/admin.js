@@ -1418,6 +1418,83 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
       });
     }
 
+    // ── Horarios Comerciales ─────────────────────────────────────────────────
+    (async function initBusinessHours() {
+      const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+      const grid   = document.getElementById('business-hours-grid');
+      const form   = document.getElementById('business-hours-form');
+      const status = document.getElementById('business-hours-status');
+      if (!grid || !form) return;
+
+      // Construir filas para los 7 días
+      const defaults = DAYS.map((_, i) => ({
+        day: i, open_time: '09:00', close_time: '20:00', is_open: i < 5,
+      }));
+
+      function renderGrid(hours) {
+        grid.innerHTML = '';
+        (hours.length ? hours : defaults).forEach(h => {
+          const day = DAYS[h.day];
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #e2e8f0;';
+          row.innerHTML = `
+            <label style="width:90px;font-size:13px;font-weight:600;color:#374151;flex-shrink:0">${day}</label>
+            <input type="checkbox" id="open-${h.day}" ${h.is_open ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer">
+            <label for="open-${h.day}" style="font-size:12px;color:#64748b;width:50px;flex-shrink:0">Abierto</label>
+            <div id="times-${h.day}" style="display:${h.is_open ? 'flex' : 'none'};gap:8px;align-items:center;flex:1">
+              <input type="time" id="open-time-${h.day}" value="${h.open_time}" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+              <span style="color:#64748b;font-size:12px">→</span>
+              <input type="time" id="close-time-${h.day}" value="${h.close_time}" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+            </div>
+            <div id="times-${h.day}-closed" style="display:${h.is_open ? 'none' : 'block'};font-size:12px;color:#94a3b8">Cerrado</div>
+          `;
+          const chk = row.querySelector(`#open-${h.day}`);
+          chk.addEventListener('change', () => {
+            document.getElementById(`times-${h.day}`).style.display = chk.checked ? 'flex' : 'none';
+            document.getElementById(`times-${h.day}-closed`).style.display = chk.checked ? 'none' : 'block';
+          });
+          grid.appendChild(row);
+        });
+      }
+
+      // Cargar horarios existentes
+      try {
+        const res = await ipcInvoke('monitoring-get-hours', await ipcInvoke('get-session-token'));
+        renderGrid(res.ok && res.hours.length ? res.hours : []);
+      } catch {
+        renderGrid([]);
+      }
+
+      on(form, 'submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true; btn.textContent = 'Guardando...';
+        status.textContent = '';
+
+        const hours = DAYS.map((_, i) => ({
+          day:        i,
+          is_open:    document.getElementById(`open-${i}`)?.checked || false,
+          open_time:  document.getElementById(`open-time-${i}`)?.value || '09:00',
+          close_time: document.getElementById(`close-time-${i}`)?.value || '20:00',
+        }));
+
+        try {
+          const token = await ipcInvoke('get-session-token');
+          const res = await ipcInvoke('monitoring-set-hours', { token, hours });
+          if (res.ok) {
+            toast.show('Horarios guardados correctamente.');
+            status.textContent = 'Guardado. El heartbeat se ajustará al nuevo horario.';
+          } else {
+            toast.show('Error al guardar horarios.', 'error');
+          }
+        } catch {
+          toast.show('Error al guardar horarios.', 'error');
+        } finally {
+          btn.disabled = false; btn.textContent = 'Guardar Horarios';
+        }
+      });
+    })();
+
     // Copiar cURL
     on(btnCopyCurl, "click", () => {
       const curlCommandCode = document.getElementById("curl-command");

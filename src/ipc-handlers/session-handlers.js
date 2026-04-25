@@ -1,7 +1,8 @@
 // src/ipc-handlers/session-handlers.js
 const { ipcMain, BrowserWindow } = require("electron");
 
-let activeUserId = null;
+let activeUserId   = null;
+let activeToken    = null;
 
 const { CLOUD_API_URL } = require('../config');
 
@@ -140,6 +141,16 @@ function registerSessionHandlers(models, sequelize, createMainWindow, createLogi
 
       loginAttempts.delete(loginName);
       activeUserId = synced.id;
+
+      // Arrancar heartbeat inteligente + polling de comandos remotos
+      if (cloud.token) {
+        activeToken = cloud.token;
+        const heartbeat = require('../heartbeat');
+        const executor  = require('../command-executor');
+        heartbeat.loadHoursAndStart(cloud.token).catch(() => {});
+        executor.startPolling(cloud.token);
+      }
+
       return openMainWindow(event, createMainWindow);
 
     } catch (error) {
@@ -157,6 +168,9 @@ function registerSessionHandlers(models, sequelize, createMainWindow, createLogi
       return { exists: true }; // fail-safe: si hay error no mostramos el link
     }
   });
+
+  // Token cloud activo (para IPC handlers que necesitan autenticar al backend)
+  ipcMain.handle("get-session-token", () => activeToken || null);
 
   // SESIÓN ACTIVA — S-3: explicit allowlist, no credential fields exposed
   ipcMain.handle("get-user-session", async () => {

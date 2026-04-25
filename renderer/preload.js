@@ -109,6 +109,12 @@ const validInvokeChannels = [
   "soporte-launch-rustdesk",
   "soporte-open-whatsapp",
   "soporte-copy-report",
+  // Monitoreo / heartbeat
+  "monitoring-start",
+  "monitoring-stop",
+  "monitoring-get-hours",
+  "monitoring-set-hours",
+  "get-session-token",
   "save-license",
   "open-external-url",
   "run-manual-sync",

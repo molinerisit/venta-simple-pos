@@ -242,6 +242,10 @@ document.getElementById('chat-input').addEventListener('input', function () {
 
 document.getElementById('btn-refresh').addEventListener('click', runDiagnostics);
 
+document.getElementById('btn-goto-chat').addEventListener('click', () => {
+  document.querySelector('.tab-btn[data-tab="chat"]').click();
+});
+
 document.getElementById('btn-wa').addEventListener('click', async () => {
   const report = buildReport(lastDiagnostics);
   const msg = `Hola, necesito soporte con VentaSimple.\n\n${report}`;
