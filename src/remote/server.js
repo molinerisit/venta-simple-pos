@@ -37,9 +37,18 @@ async function start(models, token, port = 4827) {
 
   app.use(express.json({ limit: '2mb' }));
 
-  // CORS — allow any origin (web panel can be hosted anywhere)
-  app.use((_req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin',  '*');
+  // CORS — restringido a orígenes conocidos + localhost
+  const ALLOWED_ORIGINS = [
+    'https://ventasimple.cloud',
+    'https://soporte.ventasimple.cloud',
+  ];
+  app.use((req, res, next) => {
+    const origin = req.headers.origin || '';
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    if (isLocalhost || ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     next();
