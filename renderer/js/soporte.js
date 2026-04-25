@@ -4,13 +4,14 @@ const api = window.electronAPI;
 let lastDiagnostics = null;
 
 const chat = {
-  conversationId: null,
-  lastTimestamp:  null,
-  pollTimer:      null,
-  initialized:    false,
-  sending:        false,
-  renderedIds:    new Set(),
-  hasRealReply:   false,
+  conversationId:   null,
+  lastTimestamp:    null,
+  pollTimer:        null,
+  initialized:      false,
+  sending:          false,
+  renderedIds:      new Set(),
+  hasRealReply:     false,
+  hasRentSentFirst: false,
 };
 
 // ── Diagnostics ───────────────────────────────────────────────────────────────
@@ -149,19 +150,6 @@ async function initChat() {
   chat.lastTimestamp  = new Date().toISOString();
   chat.initialized    = true;
 
-  appendBubble({ sender: 'system', text: 'Consulta enviada. En breve te responde un operador.' });
-
-  // Auto-respuesta de bienvenida a los 5 segundos si no llegó respuesta real
-  setTimeout(() => {
-    if (!chat.hasRealReply) {
-      appendBubble({
-        sender: 'support',
-        text:   'Hola 👋 Recibimos tu mensaje. Estamos revisando tu caso y en breve te respondemos.',
-        id:     '__autoresponse__',
-      });
-    }
-  }, 5000);
-
   startPolling();
 }
 
@@ -205,6 +193,8 @@ async function sendMessage() {
   input.style.height = 'auto';
   document.getElementById('btn-chat-send').disabled = true;
 
+  const isFirstMessage = !chat.hasRentSentFirst;
+  chat.hasRentSentFirst = true;
   appendBubble({ sender: 'user', text });
 
   try {
@@ -214,6 +204,20 @@ async function sendMessage() {
     });
     if (result.ok && result.created_at) {
       chat.lastTimestamp = result.created_at;
+    }
+
+    // Feedback + auto-respuesta solo en el primer mensaje enviado
+    if (isFirstMessage) {
+      appendBubble({ sender: 'system', text: 'Consulta enviada. En breve te responde un operador.' });
+      setTimeout(() => {
+        if (!chat.hasRealReply) {
+          appendBubble({
+            sender: 'support',
+            text:   'Hola 👋 Recibimos tu mensaje. Estamos revisando tu caso y en breve te respondemos.',
+            id:     '__autoresponse__',
+          });
+        }
+      }, 5000);
     }
   } catch (e) {
     showToast('Error al enviar mensaje');
