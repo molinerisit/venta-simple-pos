@@ -160,6 +160,13 @@ const validInvokeChannels = [
   "check-admin-exists",
   "open-setup-window",
 
+  // Mercado Pago OAuth
+  "mp:connect-oauth",
+  "mp:disconnect-oauth",
+  "mp:get-context",
+  "mp:search-payments",
+  "mp:get-payment",
+
   // Acceso remoto
   "remote-get-config",
   "remote-save-config",
@@ -182,6 +189,8 @@ const validSendChannels = [
 const validOnChannels = [
   "mp-payment-approved",
   "mp-payment-cancelled",
+  "mp-oauth-connected",
+  "mp-oauth-error",
   "venta-data",
   "show-toast",
   "block-message",

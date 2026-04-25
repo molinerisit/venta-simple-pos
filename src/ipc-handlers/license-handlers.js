@@ -6,8 +6,10 @@ const { ipcMain, app, shell, BrowserWindow } = require('electron');
 const path  = require('path');
 const fs    = require('fs');
 const https = require('https');
+const http  = require('http');
 
 const { CLOUD_API_URL: CLOUD_API } = require('../config');
+
 
 const LICENSE_PATH = path.join(app.getPath('userData'), 'vs-license.json');
 
@@ -33,6 +35,13 @@ function writeLicense(data) {
 async function handleDeepLink(url) {
   try {
     const parsed = new URL(url);
+
+    // ventasimple://mp_oauth?ok=1  (MP OAuth callback desde el desktop)
+    if (parsed.hostname === 'mp_oauth') {
+      await _handleMpOauthDeepLink(parsed);
+      return;
+    }
+
     // ventasimple://activate?token=...
     if (parsed.hostname !== 'activate') return;
 
@@ -96,6 +105,60 @@ function _get(url) {
       req.destroy(new Error('Timeout al conectar con el servidor'));
     });
   });
+}
+
+/** GET autenticado con Bearer token usando el módulo https/http nativo. */
+function _getAuthed(url, token) {
+  return new Promise((resolve, reject) => {
+    const mod  = url.startsWith('https') ? https : http;
+    const req  = mod.request(url, { headers: { Authorization: `Bearer ${token}` } }, (res) => {
+      let body = '';
+      res.on('data', c => (body += c));
+      res.on('end', () => {
+        if (res.statusCode >= 400) return reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+        try { resolve(JSON.parse(body)); }
+        catch { reject(new Error('Respuesta inválida del servidor')); }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => req.destroy(new Error('Timeout')));
+    req.end();
+  });
+}
+
+/** Maneja ventasimple://mp_oauth?ok=1 */
+async function _handleMpOauthDeepLink(parsed) {
+  const ok  = parsed.searchParams.get('ok');
+  const err = parsed.searchParams.get('error');
+
+  const broadcast = (channel, data) => {
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) win.webContents.send(channel, data);
+    });
+  };
+
+  if (!ok || ok !== '1') {
+    broadcast('mp-oauth-error', { error: err || 'cancelled' });
+    return;
+  }
+
+  const lic = readLicense();
+  if (!lic?.token) {
+    broadcast('mp-oauth-error', { error: 'no_license' });
+    return;
+  }
+
+  const apiUrl = (lic.api_url || CLOUD_API).replace(/\/$/, '');
+  try {
+    const data = await _getAuthed(`${apiUrl}/mercadopago/tokens`, lic.token);
+    broadcast('mp-oauth-connected', {
+      accessToken: data.access_token,
+      userId:      data.user_id,
+      posId:       data.pos_id || null,
+    });
+  } catch (e) {
+    broadcast('mp-oauth-error', { error: e.message });
+  }
 }
 
 function registerLicenseHandlers() {

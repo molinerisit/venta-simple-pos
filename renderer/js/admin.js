@@ -92,12 +92,88 @@
     const facturacionToggle = document.getElementById("facturacion-toggle");
     const btnTestPrint = document.getElementById("btn-test-print");
 
-    // Mercado Pago
-    const mpForm = document.getElementById("mp-config-form");
-    const accessTokenInput = document.getElementById("mp-access-token");
-    const mpUserIdInput = document.getElementById("mp-user-id");
-    const posIdInput = document.getElementById("mp-pos-id");
-    const btnVerifyMP = document.getElementById("btn-verify-mp");
+    // Mercado Pago OAuth
+    const btnMpConnect    = document.getElementById("btn-mp-connect");
+    const btnMpDisconnect = document.getElementById("btn-mp-disconnect");
+    const btnMpReconnect  = document.getElementById("btn-mp-reconnect");
+    const mpConnectedView    = document.getElementById("mp-connected-view");
+    const mpDisconnectedView = document.getElementById("mp-disconnected-view");
+    const mpOauthLoading     = document.getElementById("mp-oauth-loading");
+    const mpOauthBadge       = document.getElementById("mp-oauth-badge");
+    const mpConnectedDetail  = document.getElementById("mp-connected-detail");
+
+    function renderMpStatus(ctx) {
+      const connected = ctx?.ok && ctx?.ctx?.hasToken;
+      mpConnectedView.classList.toggle("hidden", !connected);
+      mpDisconnectedView.classList.toggle("hidden", connected);
+      mpOauthBadge.classList.toggle("hidden", !connected);
+      if (connected && mpConnectedDetail) {
+        const uid = ctx.ctx.userId || "";
+        const pos = ctx.ctx.posId  || "POS no configurado";
+        mpConnectedDetail.textContent = `ID: ${uid} · ${pos}`;
+      }
+    }
+
+    // Cargar estado inicial
+    ipcInvoke("mp:get-context").then(renderMpStatus).catch(() => {});
+
+    on(btnMpConnect, "click", async () => {
+      mpOauthLoading.classList.remove("hidden");
+      btnMpConnect.disabled = true;
+      const result = await ipcInvoke("mp:connect-oauth");
+      if (!result.ok) {
+        mpOauthLoading.classList.add("hidden");
+        btnMpConnect.disabled = false;
+        toast.show(result.error || "No se pudo iniciar la conexión.", "error");
+      }
+      // Si ok: el browser abrió MP. El resultado llega por mp-oauth-connected.
+    });
+
+    on(btnMpDisconnect, "click", async () => {
+      const result = await ipcInvoke("mp:disconnect-oauth");
+      if (result.ok) {
+        renderMpStatus({ ok: false });
+        toast.show("Mercado Pago desconectado.");
+      } else {
+        toast.show(result.error || "Error al desconectar.", "error");
+      }
+    });
+
+    on(btnMpReconnect, "click", async () => {
+      mpOauthLoading.classList.remove("hidden");
+      const result = await ipcInvoke("mp:connect-oauth");
+      if (!result.ok) {
+        mpOauthLoading.classList.add("hidden");
+        toast.show(result.error || "No se pudo reconectar.", "error");
+      }
+    });
+
+    // Deep link callback → guardar tokens y actualizar vista
+    api.on("mp-oauth-connected", async ({ accessToken, userId, posId }) => {
+      mpOauthLoading.classList.add("hidden");
+      btnMpConnect.disabled = false;
+      await ipcInvoke("save-mp-config", {
+        accessToken,
+        userId: String(userId),
+        posId: posId || null,
+      });
+      const ctx = await ipcInvoke("mp:get-context").catch(() => null);
+      renderMpStatus(ctx);
+      toast.show("Mercado Pago conectado exitosamente.");
+    });
+
+    api.on("mp-oauth-error", ({ error }) => {
+      mpOauthLoading.classList.add("hidden");
+      btnMpConnect.disabled = false;
+      toast.show(`Error MP: ${error || "desconocido"}`, "error");
+    });
+
+    // Mercado Pago (legacy — kept for backward compat, IDs no longer exist in HTML)
+    const mpForm = null;
+    const accessTokenInput = null;
+    const mpUserIdInput = null;
+    const posIdInput = null;
+    const btnVerifyMP = null;
 
     // Balanza (formato de código de barras existente)
     const balanzaForm = document.getElementById("balanza-config-form");

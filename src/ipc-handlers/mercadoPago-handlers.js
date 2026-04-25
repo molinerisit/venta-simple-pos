@@ -1,6 +1,8 @@
 // src/ipc-handlers/mercadoPago-handlers.js
 const fetch = require("node-fetch");
-const { ipcMain } = require("electron");
+const { ipcMain, shell } = require("electron");
+const { readLicense } = require("./license-handlers");
+const { CLOUD_API_URL: CLOUD_API } = require("../config");
 
 // B-6: global request timeout for all MP API calls
 const MP_FETCH_TIMEOUT_MS = 15_000;
@@ -451,6 +453,61 @@ function registerMercadoPagoHandlers(models) {
     } catch (e) {
       console.error("[check-mp-payment-status] Error:", e);
       return { ok: false, error: e.message };
+    }
+  });
+}
+
+  // ── OAuth (conectar cuenta MP del negocio) ────────────────────────────────
+
+  ipcMain.handle("mp:connect-oauth", async () => {
+    try {
+      const lic = readLicense();
+      const token = lic?.token;
+      if (!token) return { ok: false, error: "Activá tu licencia primero." };
+
+      const apiUrl = (lic.api_url || CLOUD_API).replace(/\/$/, "");
+      const res = await fetch(`${apiUrl}/mercadopago/oauth/start?platform=desktop`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        return { ok: false, error: body?.detail || `Error ${res.status}` };
+      }
+      const { auth_url } = await res.json();
+      if (!auth_url) return { ok: false, error: "No se recibió URL de autorización." };
+
+      await shell.openExternal(auth_url);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message || "Error al iniciar OAuth" };
+    }
+  });
+
+  ipcMain.handle("mp:disconnect-oauth", async () => {
+    try {
+      const lic = readLicense();
+      const token = lic?.token;
+      const apiUrl = (lic?.api_url || CLOUD_API).replace(/\/$/, "");
+
+      // Notificar al backend (best effort)
+      if (token) {
+        await fetch(`${apiUrl}/mercadopago/oauth/disconnect`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
+
+      // Borrar tokens locales
+      const admin = await Usuario.findOne({ where: { rol: "administrador" }, attributes: ["id"] });
+      if (admin) {
+        await Usuario.update(
+          { mp_access_token: null, mp_user_id: null, mp_pos_id: null },
+          { where: { id: admin.id } }
+        );
+      }
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message || "Error al desconectar" };
     }
   });
 }

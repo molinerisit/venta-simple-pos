@@ -536,53 +536,52 @@
           </form>
         </section>
 
-        <!-- Mercado Pago -->
-        <section class="content-section">
-          <details class="tutorial">
-            <summary><strong>GUÍA PASO A PASO:</strong> ¿Cómo obtener mis credenciales de MP?</summary>
-            <div class="tutorial-content">
-              <h4>Paso 1: Credenciales Básicas</h4>
-              <ol>
-                <li>Andá al <a href="https://www.mercadopago.com.ar/developers/panel/app/list" target="_blank">Panel de Desarrolladores de MP</a> e iniciá sesión.</li>
-                <li>Creá una aplicación y activá las <strong>Credenciales de Producción</strong>.</li>
-                <li>Copiá el <strong>Access Token</strong> (empieza con APP_USR-...) y el <strong>User ID</strong>.</li>
-              </ol>
-              <h4>Paso 2: Permisos de la API</h4>
-              <p>En la configuración de tu app, habilitá: <code>write_stores</code>, <code>pos_write</code>, <code>offline_access</code>, <code>payments</code>.</p>
-              <h4>Paso 3: Renovar Token y Cargar Cajas</h4>
-              <p>Renová tus credenciales en el portal, copiá el nuevo Access Token y hacé clic en <strong>Verificar y Cargar Cajas</strong>.</p>
-            </div>
-          </details>
+        <!-- Mercado Pago OAuth -->
+        <section class="content-section" id="mp-oauth-section">
           <div class="section-header">
             <div class="section-header-left">
               <div class="section-icon section-icon--blue">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               </div>
-              <h2>Credenciales de Mercado Pago</h2>
+              <h2>Mercado Pago</h2>
+            </div>
+            <span id="mp-oauth-badge" class="hidden" style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#f0fdf4;color:#16a34a;">Conectado</span>
+          </div>
+
+          <!-- Estado: conectado -->
+          <div id="mp-connected-view" class="hidden">
+            <div class="remote-status-bar" style="margin-bottom:1rem;">
+              <div class="remote-dot remote-dot--on"></div>
+              <div>
+                <div style="font-weight:600;font-size:.875rem;">Cuenta vinculada</div>
+                <div id="mp-connected-detail" style="font-size:.78rem;color:var(--text-muted);margin-top:2px;"></div>
+              </div>
+            </div>
+            <div class="action-row">
+              <button id="btn-mp-disconnect" class="btn btn-danger btn-sm">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Desconectar
+              </button>
+              <button id="btn-mp-reconnect" class="btn btn-secundario btn-sm">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.59"/></svg>
+                Reconectar
+              </button>
             </div>
           </div>
-          <form id="mp-config-form">
-            <div class="form-campo">
-              <label for="mp-access-token">Access Token</label>
-              <input type="password" id="mp-access-token" placeholder="Pégalo desde el Paso 1" />
-            </div>
-            <div class="form-campo">
-              <label for="mp-user-id">User ID</label>
-              <input type="text" id="mp-user-id" placeholder="Tu ID de vendedor" />
-            </div>
-            <div class="form-actions" style="justify-content:flex-start;margin-bottom:1rem;">
-              <button type="button" id="btn-verify-mp" class="btn btn-secundario">Verificar y Cargar Cajas</button>
-            </div>
-            <div class="form-campo">
-              <label for="mp-pos-id">Caja (Punto de Venta)</label>
-              <select id="mp-pos-id" required>
-                <option value="">-- Completá los pasos anteriores --</option>
-              </select>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primario">Guardar Credenciales MP</button>
-            </div>
-          </form>
+
+          <!-- Estado: no conectado -->
+          <div id="mp-disconnected-view">
+            <p class="section-description">Vinculá tu cuenta de Mercado Pago para cobrar con QR dinámico y ver tus transacciones directamente en VentaSimple. No necesitás entrar al panel de desarrolladores.</p>
+            <button id="btn-mp-connect" class="btn btn-primario">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Conectar Mercado Pago
+            </button>
+          </div>
+
+          <!-- Spinner durante el proceso -->
+          <div id="mp-oauth-loading" class="hidden" style="padding:.5rem 0;color:var(--text-muted);font-size:.875rem;">
+            Abriendo Mercado Pago en el navegador…
+          </div>
         </section>
 
         <!-- Arqueo de Caja -->
