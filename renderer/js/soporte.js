@@ -10,6 +10,7 @@ const chat = {
   initialized:    false,
   sending:        false,
   renderedIds:    new Set(),
+  hasRealReply:   false,
 };
 
 // ── Diagnostics ───────────────────────────────────────────────────────────────
@@ -120,11 +121,22 @@ function buildClientContext(diag) {
   };
 }
 
-async function initChat() {
-  if (chat.initialized) return;
+async function getBusinessName() {
+  try {
+    const cfg = await api.invoke('get-admin-config');
+    return cfg?.nombre_negocio || cfg?.nombre || 'Usuario VentaSimple';
+  } catch { return 'Usuario VentaSimple'; }
+}
 
+async function initChat() {
+  if (chat.initialized) {
+    startPolling(); // Reiniciar poll al volver al tab de chat
+    return;
+  }
+
+  const businessName = await getBusinessName();
   const result = await api.invoke('soporte-chat-init', {
-    business_name: 'Usuario VentaSimple',
+    business_name: businessName,
     context: buildClientContext(lastDiagnostics),
   });
 
@@ -137,7 +149,18 @@ async function initChat() {
   chat.lastTimestamp  = new Date().toISOString();
   chat.initialized    = true;
 
-  appendBubble({ sender: 'system', text: 'Conversación iniciada. Pronto vas a recibir una respuesta.' });
+  appendBubble({ sender: 'system', text: 'Consulta enviada. En breve te responde un operador.' });
+
+  // Auto-respuesta de bienvenida a los 5 segundos si no llegó respuesta real
+  setTimeout(() => {
+    if (!chat.hasRealReply) {
+      appendBubble({
+        sender: 'support',
+        text:   'Hola 👋 Recibimos tu mensaje. Estamos revisando tu caso y en breve te respondemos.',
+        id:     '__autoresponse__',
+      });
+    }
+  }, 5000);
 
   startPolling();
 }
@@ -153,6 +176,7 @@ async function pollMessages() {
 
     for (const msg of result.messages) {
       if (msg.sender === 'user' || msg.sender === 'system') continue;
+      chat.hasRealReply = true;
       appendBubble({ sender: msg.sender, text: msg.text, id: msg.id });
       chat.lastTimestamp = msg.created_at;
     }
