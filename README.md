@@ -20,11 +20,13 @@
 | **Clientes** | Ficha de cliente con historial y cuentas corrientes |
 | **Proveedores** | ABM completo con historial de compras |
 | **Facturación AFIP** | Emisión de facturas electrónicas A/B/C directamente desde la caja |
-| **Pagos QR** | Cobros con Mercado Pago QR integrado al flujo de venta |
+| **Pagos Mercado Pago** | QR dinámico, posnet via MP Point API, OAuth y configuración por medio de pago |
 | **Impresión térmica** | Compatible con impresoras de 58mm y 80mm |
 | **Balanza PLU** | Integración via puerto serial para productos por peso |
 | **Reportes** | Ventas, rentabilidad, cierres de caja y exportes |
 | **Dashboard** | KPIs en tiempo real con gráficos de performance |
+| **Acceso remoto** | Servidor HTTP + WebSocket embebido para gestión vía panel web |
+| **Soporte integrado** | Chat con soporte, diagnóstico del sistema, reporte técnico copiable |
 | **Offline-first** | Opera sin internet; sincroniza al reconectarse |
 
 ---
@@ -113,7 +115,7 @@ src/database/models/
 
 ---
 
-## Módulos IPC (18 handlers)
+## Módulos IPC (21 handlers)
 
 Cada módulo conecta el renderer (UI) con el proceso principal (Node.js/SQLite):
 
@@ -128,7 +130,7 @@ Cada módulo conecta el renderer (UI) con el proceso principal (Node.js/SQLite):
 | `proveedores-handlers` | ABM proveedores |
 | `ctascorrientes-handlers` | Movimientos y saldos de cuentas corrientes |
 | `facturacion-handlers` | Emisión de facturas electrónicas AFIP |
-| `mercadoPago-handlers` | Generación de QR y verificación de pagos |
+| `mercadoPago-handlers` | QR dinámico, OAuth, MP Point (posnet), verificación de pagos |
 | `dashboard-handlers` | Métricas y KPIs del período |
 | `registerReportesHandlers` | Generación de reportes y exportes |
 | `etiquetas-handlers` | Impresión de etiquetas de productos |
@@ -136,7 +138,10 @@ Cada módulo conecta el renderer (UI) con el proceso principal (Node.js/SQLite):
 | `session-handlers` | Login, logout, gestión de sesión activa |
 | `config-handlers` | Ajustes de hardware y preferencias |
 | `scale-handlers` | Comunicación con balanzas PLU |
-| `common-handlers` | Helpers compartidos entre módulos |
+| `remote-handlers` | Acceso remoto vía HTTP + WebSocket (panel web) |
+| `soporte-handlers` | Diagnóstico del sistema y chat de soporte |
+| `monitoring-handlers` | Heartbeat y monitoreo de horas de uso |
+| `license-handlers` | Activación y validación de licencias |
 
 ---
 
@@ -235,6 +240,33 @@ AFIP_ENVIRONMENT=production  # o: homologation
 
 ---
 
+## Acceso remoto
+
+La app incluye un servidor HTTP + WebSocket embebido que permite gestión remota vía panel web.
+
+- Se activa desde **Admin → Acceso remoto** (solo superadmin)
+- Se configura con un token Bearer y un puerto (default: `4827`)
+- Se auto-inicia al arrancar si estaba habilitado
+
+### API REST v1
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/v1/ping` | Health check (sin auth) |
+| `GET` | `/api/v1/status` | Métricas del sistema |
+| `GET` | `/api/v1/productos` | Catálogo de productos |
+| `PUT` | `/api/v1/productos/:id` | Actualizar precio/stock |
+| `POST` | `/api/v1/productos/sync` | Sincronización bulk por código de barras |
+| `GET` | `/api/v1/ventas` | Historial de ventas |
+| `GET` | `/api/v1/ventas/resumen` | Totales del día |
+| `GET` | `/api/v1/clientes` | Listado de clientes |
+| `GET` | `/api/v1/system/commands` | Comandos disponibles |
+| `POST` | `/api/v1/system/cmd` | Ejecutar comando whitelisted |
+
+Los comandos disponibles (`disk-info`, `processes`, `network-info`, `ping-gateway`, `uptime`, etc.) se ejecutan con `execFile` sin shell, sin parámetros del cliente.
+
+---
+
 ## Scripts disponibles
 
 | Script | Descripción |
@@ -242,6 +274,7 @@ AFIP_ENVIRONMENT=production  # o: homologation
 | `npm start` | Inicia la app en modo desarrollo |
 | `npm run dist` | Genera el instalador de producción (.exe) |
 | `npx electron-rebuild -f -w sqlite3` | Recompila módulos nativos |
+| `node tests/run-phase-2.js` … `run-phase-8.js` | Ejecutar suites de test |
 | `Caja.bat` | Launcher para Windows (inicia con doble clic) |
 
 ---
@@ -259,17 +292,25 @@ venta-simple-pos/
 │   ├── database/
 │   │   ├── models/            # 21 modelos Sequelize
 │   │   └── associations.js    # Relaciones entre modelos
-│   ├── ipc-handlers/          # 18 módulos de comunicación UI↔Main
-│   └── scale/                 # Integración de balanzas PLU
+│   ├── ipc-handlers/          # 21 módulos de comunicación UI↔Main
+│   ├── migrations/            # Migraciones incrementales de esquema
+│   └── remote/                # Servidor HTTP+WS para acceso remoto
+│       ├── server.js          # Express + WebSocket embebido
+│       ├── api-router.js      # Rutas REST v1 (productos, ventas, cmds)
+│       ├── cmd-executor.js    # Whitelist de comandos de sistema
+│       └── metrics.js         # CPU, RAM, disco en tiempo real
 ├── renderer/
 │   ├── windows/               # 24 vistas HTML
 │   ├── js/                    # Lógica de cada vista
 │   ├── css/                   # Estilos por módulo
 │   └── preload.js             # Puente seguro contextBridge
+├── tests/
+│   ├── run-phase-2.js … run-phase-8.js   # Suites de test (175 casos)
+│   ├── helpers/               # seed, db-setup, assertions, electron-mock
+│   └── reports/               # JSON de resultados por run
 ├── models/
 │   └── index.js               # Loader de modelos (legacy)
-├── seeders/                   # Datos iniciales
-└── Iconos/                    # Assets de íconos
+└── seeders/                   # Datos iniciales
 ```
 
 ---

@@ -3338,3 +3338,51 @@ Added `escapeHtml()` helper; all product name/code interpolations into HTML wrap
 | Fail   | 0 |
 
 ### All tests passed
+---
+
+## [2026-04-26] Sesión — MP Point, remote handlers, soporte PID
+
+### 1. Integración Mercado Pago Point (posnet)
+
+**Archivos:** `renderer/js/caja.js`, `renderer/windows/caja.html`, `renderer/css/caja.css`, `src/migrations/20260426000000-add-mp-payment-config.js`, `renderer/js/admin.js`
+
+Wiring completo de los 3 selectores de configuración de cobro (QR / Débito / Crédito) contra el flujo real de caja:
+
+- `qr_mode: "dinamico"` → flujo QR existente
+- `qr_mode: "posnet"` / `debit_mode: "posnet"` / `credit_mode: "posnet"` → MP Point API
+- `qr_mode: "none"` / resto → registrar venta sin interacción MP
+
+Nueva función `iniciarCobroPosnet()`: crea intent via `mp:point-create-intent`, abre modal de espera, polling cada 3s a `mp:point-intent-status`, cierra con éxito/error según estado `FINISHED|CANCELED|ERROR|ABANDONED`.
+
+Migración `mp_payment_config` (TEXT, nullable) con guard de idempotencia (`describeTable` antes de `addColumn`) para evitar conflicto con `sequelize.sync()` que ya crea la columna.
+
+### 2. Fix: `api.on` → `window.electronAPI.on` en admin.js
+
+**Archivo:** `renderer/js/admin.js` (líneas 224, 237)
+
+Los listeners de OAuth (`mp-oauth-connected`, `mp-oauth-error`) usaban variable `api` indefinida. Reemplazado por `window.electronAPI.on(...)`.
+
+### 3. Fix: `registerRemoteHandlers` no se registraba en main.js
+
+**Archivo:** `main.js`
+
+Todos los canales IPC del módulo remoto (`remote-exec-cmd`, `remote-save-config`, `remote-list-commands`, `remote-start`, `remote-stop`, `remote-get-config`, `remote-get-metrics`, `remote-regenerate-token`) nunca tenían handler registrado. Los comandos ejecutados desde el panel admin quedaban indefinidamente en estado "Ejecutando…". Fix: añadir `registerRemoteHandlers(models)` junto al resto de handlers al boot.
+
+### 4. PID y puerto remoto en diagnóstico de soporte
+
+**Archivos:** `src/ipc-handlers/soporte-handlers.js`, `renderer/js/soporte.js`, `renderer/windows/soporte.html`
+
+- `getSysInfo()` ahora incluye `process.pid` y el puerto del servidor remoto (si está corriendo)
+- El contexto enviado al chat de soporte incluye PID y puerto remoto
+- El reporte técnico copiable los expone
+- Nueva fila "Proceso" en la grilla de diagnóstico: `PID 1234 · Puerto 4827`
+
+### 5. Fix: test phase 5 — abrir-caja requiere sesión activa
+
+**Archivo:** `tests/run-phase-5.js`
+
+El audit wave-5 cambió `abrir-caja` para usar `getActiveUserId()` (sesión real) en lugar de `usuarioId` del payload (renderer). El test de regresión 5.4 no establecía sesión → `UsuarioId = null` → `ValidationError`. Fix: registrar `registerSessionHandlers` + llamar `login-attempt` antes de `abrir-caja` en el test.
+
+### Estado de tests post-sesión
+
+Fases 2–8 ejecutadas: **175 tests, 0 fallos**.
