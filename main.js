@@ -502,6 +502,16 @@ app.on("ready", async () => {
       console.warn("[MAIN] scale-handlers no disponibles:", e?.message || e);
     }
 
+    // 🔹 Acceso remoto
+
+    try {
+      const { registerRemoteHandlers } = require("./src/ipc-handlers/remote-handlers");
+      registerRemoteHandlers(models);
+      console.log("[MAIN] ✔ remote-handlers registrados.");
+    } catch (e) {
+      console.warn("[MAIN] remote-handlers no disponibles:", e?.message || e);
+    }
+
     // Protocolo "app://"
     // H-5a: Path traversal fix — resolve and contain within approved roots.
     // Fail-closed: any path outside the two approved roots returns ACCESS_DENIED.

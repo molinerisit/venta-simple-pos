@@ -62,12 +62,20 @@ async function checkDiskSpace() {
 }
 
 function getSysInfo() {
+  let remotePort = null;
+  try {
+    const remoteServer = require('../remote/server');
+    if (remoteServer.isRunning()) remotePort = remoteServer.getPort();
+  } catch (_) {}
+
   return {
-    version:  app.getVersion(),
-    os:       `${os.type()} ${os.release()}`,
-    hostname: os.hostname(),
-    memory:   `${Math.round(os.freemem() / 1024 / 1024)} MB libres de ${Math.round(os.totalmem() / 1024 / 1024)} MB`,
-    dbPath:   getDbPath(),
+    version:    app.getVersion(),
+    os:         `${os.type()} ${os.release()}`,
+    hostname:   os.hostname(),
+    memory:     `${Math.round(os.freemem() / 1024 / 1024)} MB libres de ${Math.round(os.totalmem() / 1024 / 1024)} MB`,
+    dbPath:     getDbPath(),
+    pid:        process.pid,
+    remotePort: remotePort,
   };
 }
 
@@ -157,7 +165,7 @@ function registerSoporteHandlers() {
       });
 
       const ctx = clientInfo?.context || {};
-      const ctxText = [
+      const ctxLines = [
         '📋 Contexto automático:',
         `• App: v${app.getVersion()}`,
         `• OS: ${ctx.os || 'N/D'}`,
@@ -165,7 +173,10 @@ function registerSoporteHandlers() {
         `• Internet: ${ctx.internet || 'N/D'}`,
         `• Base de datos: ${ctx.db || 'N/D'}`,
         `• Disco: ${ctx.disk || 'N/D'}`,
-      ].join('\n');
+        `• PID: ${ctx.pid || process.pid}`,
+      ];
+      if (ctx.remotePort) ctxLines.push(`• Puerto remoto: ${ctx.remotePort}`);
+      const ctxText = ctxLines.join('\n');
 
       await apiPost('/api/support/messages', {
         conversation_id: data.conversation_id,

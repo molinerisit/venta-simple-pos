@@ -29,13 +29,15 @@ function fillSysInfo(sys) {
   document.getElementById('inf-os').textContent      = sys.os       || '–';
   document.getElementById('inf-host').textContent    = sys.hostname || '–';
   document.getElementById('inf-mem').textContent     = sys.memory   || '–';
+  const pidEl = document.getElementById('inf-pid');
+  if (pidEl) pidEl.textContent = sys.pid ? `PID ${sys.pid}${sys.remotePort ? ` · Puerto ${sys.remotePort}` : ''}` : '–';
 }
 
 function buildReport(diag) {
   if (!diag) return 'Sin datos de diagnóstico.';
   const { internet, backend, db, disk, sys } = diag;
   const ts = new Date().toLocaleString('es-AR');
-  return [
+  const lines = [
     `=== Reporte Técnico VentaSimple ===`,
     `Fecha: ${ts}`,
     ``,
@@ -44,13 +46,18 @@ function buildReport(diag) {
     `OS: ${sys.os}`,
     `Equipo: ${sys.hostname}`,
     `Memoria: ${sys.memory}`,
+    `PID: ${sys.pid || 'N/D'}`,
+  ];
+  if (sys.remotePort) lines.push(`Puerto remoto: ${sys.remotePort}`);
+  lines.push(
     ``,
     `DIAGNÓSTICO`,
     `Internet: ${internet.ok ? 'OK' : 'ERROR'} · ${internet.msg}`,
     `Servidor: ${backend.ok ? 'OK' : 'ERROR'} · ${backend.msg}`,
     `Base de datos: ${db.ok ? 'OK' : 'ERROR'} · ${db.msg}`,
     `Disco: ${disk.ok ? 'OK' : 'ALERTA'} · ${disk.msg}`,
-  ].join('\n');
+  );
+  return lines.join('\n');
 }
 
 function showToast(msg, duration = 2000) {
@@ -114,11 +121,13 @@ function appendBubble({ sender, text, id }) {
 function buildClientContext(diag) {
   if (!diag) return {};
   return {
-    os:       diag.sys.os,
-    hostname: diag.sys.hostname,
-    internet: `${diag.internet.ok ? 'OK' : 'Error'} · ${diag.internet.msg}`,
-    db:       `${diag.db.ok ? 'OK' : 'Error'} · ${diag.db.msg}`,
-    disk:     `${diag.disk.ok ? 'OK' : 'Error'} · ${diag.disk.msg}`,
+    os:         diag.sys.os,
+    hostname:   diag.sys.hostname,
+    internet:   `${diag.internet.ok ? 'OK' : 'Error'} · ${diag.internet.msg}`,
+    db:         `${diag.db.ok ? 'OK' : 'Error'} · ${diag.db.msg}`,
+    disk:       `${diag.disk.ok ? 'OK' : 'Error'} · ${diag.disk.msg}`,
+    pid:        diag.sys.pid,
+    remotePort: diag.sys.remotePort,
   };
 }
 
