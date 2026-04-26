@@ -50,6 +50,7 @@ const validInvokeChannels = [
   "registrar-movimiento-caja",
   "get-movimientos-caja",
   // Productos y sus Clasificaciones
+  "buscar-productos-nombre",
   "get-productos",
   "get-producto-by-id",
   "guardar-producto",

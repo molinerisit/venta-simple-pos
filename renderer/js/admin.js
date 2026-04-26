@@ -221,7 +221,7 @@
     });
 
     // Deep link callback → guardar tokens y actualizar vista
-    api.on("mp-oauth-connected", async ({ accessToken, userId, posId }) => {
+    window.electronAPI.on("mp-oauth-connected", async ({ accessToken, userId, posId }) => {
       mpOauthLoading.classList.add("hidden");
       btnMpConnect.disabled = false;
       await ipcInvoke("save-mp-config", {
@@ -234,7 +234,7 @@
       toast.show("Mercado Pago conectado exitosamente.");
     });
 
-    api.on("mp-oauth-error", ({ error }) => {
+    window.electronAPI.on("mp-oauth-error", ({ error }) => {
       mpOauthLoading.classList.add("hidden");
       btnMpConnect.disabled = false;
       toast.show(`Error MP: ${error || "desconocido"}`, "error");
