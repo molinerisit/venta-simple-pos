@@ -187,7 +187,7 @@ async function executeCommand(cmd) {
 
   try {
     const data = await handler(cmd.params || {});
-    await reportResult(cmd.id, 'ok', null, data);
+    await reportResult(cmd.id, 'done', null, data);
   } catch (e) {
     await reportResult(cmd.id, 'error', e.message);
   }

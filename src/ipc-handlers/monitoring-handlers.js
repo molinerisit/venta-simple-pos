@@ -42,12 +42,16 @@ function registerMonitoringHandlers() {
   // Iniciar heartbeat al hacer login
   ipcMain.handle('monitoring-start', async (_e, token) => {
     await heartbeat.loadHoursAndStart(token);
+    const executor = require('../command-executor');
+    executor.startPolling(token);
     return { ok: true };
   });
 
   // Detener heartbeat al cerrar sesión
   ipcMain.handle('monitoring-stop', () => {
     heartbeat.stop();
+    const executor = require('../command-executor');
+    executor.stopPolling();
     return { ok: true };
   });
 }
