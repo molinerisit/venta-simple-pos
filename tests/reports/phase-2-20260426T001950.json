@@ -1,0 +1,98 @@
+{
+  "date": "2026-04-26T00:19:50.963Z",
+  "total": 15,
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {
+      "id": "1.1",
+      "name": "Manipulación de precio rechazada",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.2",
+      "name": "Stock insuficiente rechazado",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.3",
+      "name": "Cantidad negativa rechazada (stock negativo exploit)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.4",
+      "name": "metodoPago inválido rechazado",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "1.5",
+      "name": "Producto inexistente rechazado (sin side effects)",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.1",
+      "name": "Cierre de caja: totales coinciden exactamente con ventas registradas",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.2",
+      "name": "Todos los métodos de pago quedan reflejados en el arqueo",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "2.3",
+      "name": "Valores de metodoPago legacy normalizados y contabilizados",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.1",
+      "name": "CSV import no sobreescribe stock existente",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.2",
+      "name": "Update con ID inexistente retorna success:false",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "3.3",
+      "name": "Update con mismos datos no produce error",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.1",
+      "name": "[Regresión] Venta normal con Efectivo",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.2",
+      "name": "[Regresión] Caja abre y cierra sin error",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "4.3",
+      "name": "[Regresión] Stock baja correctamente en venta de múltiples ítems",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "id": "B.1",
+      "name": "[BONUS] 15 ventas concurrentes con stock=10 — stock no va negativo",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}

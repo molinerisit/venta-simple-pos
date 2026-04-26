@@ -2901,3 +2901,440 @@ Added `escapeHtml()` helper; all product name/code interpolations into HTML wrap
 | Fail   | 0 |
 
 ### All tests passed
+---
+
+## [2026-04-26] Phase 2 Testing Results
+
+**Runner:** `tests/run-phase-2.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** real production code — no mocks for business logic
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | Manipulación de precio rechazada | ✅ |
+| 1.2 | Stock insuficiente rechazado | ✅ |
+| 1.3 | Cantidad negativa rechazada (stock negativo exploit) | ✅ |
+| 1.4 | metodoPago inválido rechazado | ✅ |
+| 1.5 | Producto inexistente rechazado (sin side effects) | ✅ |
+| 2.1 | Cierre de caja: totales coinciden exactamente con ventas registradas | ✅ |
+| 2.2 | Todos los métodos de pago quedan reflejados en el arqueo | ✅ |
+| 2.3 | Valores de metodoPago legacy normalizados y contabilizados | ✅ |
+| 3.1 | CSV import no sobreescribe stock existente | ✅ |
+| 3.2 | Update con ID inexistente retorna success:false | ✅ |
+| 3.3 | Update con mismos datos no produce error | ✅ |
+| 4.1 | [Regresión] Venta normal con Efectivo | ✅ |
+| 4.2 | [Regresión] Caja abre y cierra sin error | ✅ |
+| 4.3 | [Regresión] Stock baja correctamente en venta de múltiples ítems | ✅ |
+| B.1 | [BONUS] 15 ventas concurrentes con stock=10 — stock no va negativo | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 15 |
+| Pass   | 15 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+**B.1 note:** Concurrent test passed. SQLite's write serialization prevented negative stock in this run, but the read-check-decrement pattern remains theoretically vulnerable under higher concurrency. Consider atomic UPDATE fix.
+
+---
+
+## [2026-04-26] Phase 2 Testing Results
+
+**Runner:** `tests/run-phase-2.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** real production code — no mocks for business logic
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | Manipulación de precio rechazada | ✅ |
+| 1.2 | Stock insuficiente rechazado | ✅ |
+| 1.3 | Cantidad negativa rechazada (stock negativo exploit) | ✅ |
+| 1.4 | metodoPago inválido rechazado | ✅ |
+| 1.5 | Producto inexistente rechazado (sin side effects) | ✅ |
+| 2.1 | Cierre de caja: totales coinciden exactamente con ventas registradas | ✅ |
+| 2.2 | Todos los métodos de pago quedan reflejados en el arqueo | ✅ |
+| 2.3 | Valores de metodoPago legacy normalizados y contabilizados | ✅ |
+| 3.1 | CSV import no sobreescribe stock existente | ✅ |
+| 3.2 | Update con ID inexistente retorna success:false | ✅ |
+| 3.3 | Update con mismos datos no produce error | ✅ |
+| 4.1 | [Regresión] Venta normal con Efectivo | ✅ |
+| 4.2 | [Regresión] Caja abre y cierra sin error | ✅ |
+| 4.3 | [Regresión] Stock baja correctamente en venta de múltiples ítems | ✅ |
+| B.1 | [BONUS] 15 ventas concurrentes con stock=10 — stock no va negativo | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 15 |
+| Pass   | 15 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+**B.1 note:** Concurrent test passed. SQLite's write serialization prevented negative stock in this run, but the read-check-decrement pattern remains theoretically vulnerable under higher concurrency. Consider atomic UPDATE fix.
+
+---
+
+## [2026-04-26] Phase 3 Testing Results
+
+**Runner:** `tests/run-phase-3.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** real production code — `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | H-5a: path traversal básico bloqueado | ✅ |
+| 1.2 | H-5a: prefix spoofing sin separador bloqueado | ✅ |
+| 1.3 | H-5a: URL malformada retorna ACCESS_DENIED (fail-closed) | ✅ |
+| 1.4 | H-5a: path legítimo en public/ es servido | ✅ |
+| 1.5 | H-5a: path legítimo en userData/ es servido | ✅ |
+| 1.6 | H-5a: archivo inexistente retorna ACCESS_DENIED (no exception) | ✅ |
+| 2.1 | H-5b: show-open-dialog no está registrado en IPC | ✅ |
+| 2.2 | H-5b: import-productos-csv ignora cualquier argumento del renderer | ✅ |
+| 2.3 | H-5b: cancelación del dialog no produce error visible | ✅ |
+| 2.4 | H-5b: flujo completo de import con dialog interno | ✅ |
+| 3.1 | M-7: campos de sistema (createdAt/updatedAt) son descartados | ✅ |
+| 3.2 | M-7: campos de otros modelos son descartados | ✅ |
+| 3.3 | M-7: prototype pollution attempt no causa error | ✅ |
+| 3.4 | M-7: payload null retorna error controlado (no crash) | ✅ |
+| 3.5 | M-7: todos los campos del allowlist funcionan en create | ✅ |
+| 4.1 | [Regresión] Venta normal sigue funcionando | ✅ |
+| 4.2 | [Regresión] metodoPago inválido sigue siendo rechazado | ✅ |
+| 4.3 | [Regresión] CSV import sigue sin pisar stock | ✅ |
+| 4.4 | [Regresión] guardar-producto update con ID inexistente retorna success:false | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 19 |
+| Pass   | 19 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-26] Phase 4 Testing Results
+
+**Runner:** `tests/run-phase-4.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | H-7: rollback reverts findOrCreate (depts/families) on bulkCreate failure | ✅ |
+| 1.2 | H-7: findOrCreate inside transaction — duplicate rows in same CSV handled correctly | ✅ |
+| 1.3 | H-7: empty CSV returns error without creating orphan records | ✅ |
+| 2.1 | M-6: inactive product NOT returned by barcode search | ✅ |
+| 2.2 | M-6: active product IS returned by barcode search | ✅ |
+| 2.3 | M-6: inactive product NOT returned by nombre search | ✅ |
+| 2.4 | M-6: inactive product NOT returned by codigo search | ✅ |
+| 2.5 | M-6: inactive PLU product NOT returned by scale barcode | ✅ |
+| 3.1 | M-5: busqueda-inteligente works with cached admin config | ✅ |
+| 3.2 | M-5: config-updated channel is registered | ✅ |
+| 3.3 | M-5: cache invalidation via config-updated does not break search | ✅ |
+| 4.1 | M-12: guardar-familia fails gracefully for non-existent DepartamentoId | ✅ |
+| 4.2 | M-12: guardar-familia succeeds with valid DepartamentoId | ✅ |
+| 4.3 | M-12: guardar-familia returns error for missing required fields | ✅ |
+| 5.1 | [Regresión] CSV import sin pisar stock existente | ✅ |
+| 5.2 | [Regresión] Venta normal con producto activo | ✅ |
+| 5.3 | [Regresión] busqueda-inteligente returns active product by barcode | ✅ |
+| 5.4 | [Regresión] guardar-producto create + update sin romper Phase 3 allowlist | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 18 |
+| Pass   | 18 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-26] Phase 5 Testing Results
+
+**Runner:** `tests/run-phase-5.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Models tested:** `Producto`, `DetalleVenta`, `Venta`, `ArqueoCaja`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 5.1: Producto rejects negative stock | ✅ |
+| 1.2 | 5.1: Producto rejects negative precioVenta | ✅ |
+| 1.3 | 5.1: Producto rejects negative precioCompra | ✅ |
+| 1.4 | 5.1: Producto rejects empty nombre | ✅ |
+| 1.5 | 5.1: Producto accepts valid values (zero stock, zero prices) | ✅ |
+| 2.1 | 5.2: DetalleVenta rejects cantidad = 0 | ✅ |
+| 2.2 | 5.2: DetalleVenta rejects negative cantidad | ✅ |
+| 2.3 | 5.2: DetalleVenta rejects negative precioUnitario | ✅ |
+| 2.4 | 5.2: DetalleVenta rejects negative subtotal | ✅ |
+| 2.5 | 5.2: DetalleVenta accepts valid minimums (cantidad=0.001, precio=0, subtotal=0) | ✅ |
+| 3.1 | 5.3: Venta rejects negative total | ✅ |
+| 3.2 | 5.3: Venta rejects null montoPagado | ✅ |
+| 3.3 | 5.3: Venta accepts total=0 and montoPagado=0 | ✅ |
+| 3.4 | 5.3: Venta rejects invalid metodoPago | ✅ |
+| 4.1 | 5.4: ArqueoCaja rejects negative montoInicial | ✅ |
+| 4.2 | 5.4: ArqueoCaja rejects negative montoFinalReal | ✅ |
+| 4.3 | 5.4: ArqueoCaja accepts null montoFinalReal (allowNull:true) | ✅ |
+| 4.4 | 5.4: ArqueoCaja accepts montoInicial=0 | ✅ |
+| 5.1 | [Regresión] seedBase creates Producto and ArqueoCaja without validation errors | ✅ |
+| 5.2 | [Regresión] registrar-venta end-to-end still works after model changes | ✅ |
+| 5.3 | [Regresión] guardar-producto still works with valid data | ✅ |
+| 5.4 | [Regresión] abrir-caja still works via IPC after model changes | ❌ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 22 |
+| Pass   | 21 |
+| Fail   | 1 |
+
+### Failures
+
+- **5.4 [Regresión] abrir-caja still works via IPC after model changes**: 5.4 abrir-caja must succeed with no open caja
+
+---
+
+## [2026-04-26] Phase 5 Testing Results
+
+**Runner:** `tests/run-phase-5.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Models tested:** `Producto`, `DetalleVenta`, `Venta`, `ArqueoCaja`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 5.1: Producto rejects negative stock | ✅ |
+| 1.2 | 5.1: Producto rejects negative precioVenta | ✅ |
+| 1.3 | 5.1: Producto rejects negative precioCompra | ✅ |
+| 1.4 | 5.1: Producto rejects empty nombre | ✅ |
+| 1.5 | 5.1: Producto accepts valid values (zero stock, zero prices) | ✅ |
+| 2.1 | 5.2: DetalleVenta rejects cantidad = 0 | ✅ |
+| 2.2 | 5.2: DetalleVenta rejects negative cantidad | ✅ |
+| 2.3 | 5.2: DetalleVenta rejects negative precioUnitario | ✅ |
+| 2.4 | 5.2: DetalleVenta rejects negative subtotal | ✅ |
+| 2.5 | 5.2: DetalleVenta accepts valid minimums (cantidad=0.001, precio=0, subtotal=0) | ✅ |
+| 3.1 | 5.3: Venta rejects negative total | ✅ |
+| 3.2 | 5.3: Venta rejects null montoPagado | ✅ |
+| 3.3 | 5.3: Venta accepts total=0 and montoPagado=0 | ✅ |
+| 3.4 | 5.3: Venta rejects invalid metodoPago | ✅ |
+| 4.1 | 5.4: ArqueoCaja rejects negative montoInicial | ✅ |
+| 4.2 | 5.4: ArqueoCaja rejects negative montoFinalReal | ✅ |
+| 4.3 | 5.4: ArqueoCaja accepts null montoFinalReal (allowNull:true) | ✅ |
+| 4.4 | 5.4: ArqueoCaja accepts montoInicial=0 | ✅ |
+| 5.1 | [Regresión] seedBase creates Producto and ArqueoCaja without validation errors | ✅ |
+| 5.2 | [Regresión] registrar-venta end-to-end still works after model changes | ✅ |
+| 5.3 | [Regresión] guardar-producto still works with valid data | ✅ |
+| 5.4 | [Regresión] abrir-caja still works via IPC after model changes | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 22 |
+| Pass   | 22 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-26] Phase 6 Testing Results
+
+**Runner:** `tests/run-phase-6.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** `registerProductosHandlers`, `registerVentasHandlers`, `registerCajaHandlers`
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 6.1: get-productos with no opts returns all products | ✅ |
+| 1.2 | 6.1: get-productos with limit=1 returns only 1 product | ✅ |
+| 1.3 | 6.1: get-productos with limit=2 offset=1 skips first product | ✅ |
+| 1.4 | 6.1: get-ventas with limit=1 returns only 1 venta | ✅ |
+| 1.5 | 6.1: get-all-cierres-caja with limit=1 returns only 1 cierre | ✅ |
+| 2.1 | 6.2: catch block in guardar-producto returns error:true on unexpected failure | ✅ |
+| 2.2 | 6.2: guardar-departamento duplicate returns error:true | ✅ |
+| 2.3 | 6.2: guardar-producto with bad id returns error:true | ✅ |
+| 3.1 | 6.3/6.5: export-productos-csv writes file asynchronously | ✅ |
+| 4.1 | 6.4: import-productos-csv rejects CSV with > 10,000 rows | ✅ |
+| 4.2 | 6.4: import-productos-csv accepts CSV with exactly 100 rows | ✅ |
+| 5.1 | 6.7: guardar-producto rejects precio_oferta >= precioVenta | ✅ |
+| 5.2 | 6.7: guardar-producto rejects precio_oferta > precioVenta | ✅ |
+| 5.3 | 6.7: guardar-producto accepts valid precio_oferta < precioVenta | ✅ |
+| 5.4 | 6.7: guardar-producto accepts null precio_oferta (no validation) | ✅ |
+| 6.1 | 6.8: toggle-producto-activo toggles activo from true to false | ✅ |
+| 6.2 | 6.8: toggle-producto-activo toggles back (false to true) | ✅ |
+| 6.3 | 6.8: toggle-producto-activo returns error for non-existent product | ✅ |
+| 7.1 | 6.10: guardar-producto rejects empty nombre | ✅ |
+| 7.2 | 6.10: guardar-producto rejects whitespace-only nombre | ✅ |
+| 7.3 | 6.10: guardar-producto accepts valid nombre | ✅ |
+| 8.1 | [Regresión] get-productos with no pagination returns all seeded products | ✅ |
+| 8.2 | [Regresión] registrar-venta still works end-to-end | ✅ |
+| 8.3 | [Regresión] busqueda-inteligente works without debug logs | ✅ |
+| 8.4 | [Regresión] import-productos-csv with valid CSV still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 25 |
+| Pass   | 25 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-26] Phase 7 Testing Results — Wave-2 Security Fixes
+
+**Runner:** `tests/run-phase-7.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** session, config, compras, admin
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | I-1: clearSession sets activeUserId to null | ✅ |
+| 1.2 | I-1: get-user-session returns null after clearSession | ✅ |
+| 1.3 | I-1: get-user-session returns user after login | ✅ |
+| 1.4 | I-1: re-login after logout returns new user | ✅ |
+| 2.1 | S-3: get-user-session does NOT expose mp_access_token | ✅ |
+| 2.2 | S-3: get-user-session does NOT expose password | ✅ |
+| 2.3 | S-3: get-user-session returns required fields (id, nombre, rol, permisos) | ✅ |
+| 2.4 | S-3: get-admin-config does NOT expose mp_access_token | ✅ |
+| 2.5 | S-3: get-admin-config returns UI-required fields | ✅ |
+| 3.1 | I-2: save-general-config rejects recargoCredito: -1 | ✅ |
+| 3.2 | I-2: save-general-config rejects recargoCredito: 101 | ✅ |
+| 3.3 | I-2: save-general-config rejects descuentoEfectivo: 150 | ✅ |
+| 3.4 | I-2: save-general-config accepts boundary recargoCredito: 100, descuentoEfectivo: 0 | ✅ |
+| 3.5 | I-2: save-general-config accepts boundary recargoCredito: 0, descuentoEfectivo: 100 | ✅ |
+| 3.6 | I-2: saved value is persisted correctly | ✅ |
+| 4.1 | I-3: purchase rejects nuevoPrecioVenta below costoUnitario | ✅ |
+| 4.2 | I-3: purchase rejects nuevoPrecioVenta = 0 | ✅ |
+| 4.3 | I-3: purchase rejects nuevoPrecioVenta > 100x costoUnitario | ✅ |
+| 4.4 | I-3: valid actualizarPrecioVenta updates precioVenta in DB | ✅ |
+| 4.5 | I-3: actualizarPrecioVenta: false leaves precioVenta unchanged | ✅ |
+| 5.1 | I-4: mp:refund-payment with amount: 0 returns ok:false immediately | ✅ |
+| 5.2 | I-4: mp:refund-payment with amount: null returns ok:false | ✅ |
+| 5.3 | I-4: mp:refund-payment with amount: -50 returns ok:false | ✅ |
+| 5.4 | I-4: mp:refund-payment with amount: undefined returns ok:false | ✅ |
+| 5.5 | I-4: mp:refund-payment with valid amount passes validation (may fail on no token) | ✅ |
+| 6.1 | S-1: save-user denied when no active session | ✅ |
+| 6.2 | S-1: save-user denied for non-admin session | ✅ |
+| 6.3 | S-1: save-user allowed for admin session | ✅ |
+| 6.4 | S-1: save-user rejects invalid rol (not in allowlist) | ✅ |
+| 6.5 | S-1: delete-user denied when no active session | ✅ |
+| 6.6 | S-1: delete-user denied for non-admin session | ✅ |
+| 7.1 | S-2: registrar-compra-producto uses session userId, ignores renderer UsuarioId | ✅ |
+| 7.2 | S-2: registrar-compra-producto fails with no active session | ✅ |
+| 8.1 | B-3: purchase rejects descuento > subtotal | ✅ |
+| 8.2 | B-3: purchase rejects negative recargo | ✅ |
+| 8.3 | B-3: purchase with descuento = subtotal succeeds | ✅ |
+| 9b.1 | B-4: 5 failed attempts trigger lockout on 6th attempt | ✅ |
+| 9b.2 | B-4: successful login after 4 failures clears counter | ✅ |
+| 9c.1 | B-7: save-business-info rejects oversized logoBase64 | ✅ |
+| 9c.2 | B-7: save-business-info without logo still works | ✅ |
+| 9d.1 | B-8a: save-user rejects password shorter than 6 chars | ✅ |
+| 9d.2 | B-8b: save-gasto-fijo rejects negative monto | ✅ |
+| 9d.3 | B-8b: save-gasto-fijo accepts monto: 0 | ✅ |
+| 9d.4 | B-8c: save-empleado rejects negative sueldo | ✅ |
+| 9d.5 | B-8c: save-empleado accepts sueldo: 0 | ✅ |
+| 9d.7 | B-8d: save-user rejects invalid permission IDs | ✅ |
+| 9d.8 | B-8d: save-user accepts known permission IDs | ✅ |
+| 9d.9 | B-8f: registrar-compra-producto rejects duplicate nroFactura for same proveedor | ✅ |
+| 9d.6 | B-8k: login-attempt ignores payload.username (must use payload.nombre) | ✅ |
+| 9.1 | [Regresión] login-attempt still authenticates correctly | ✅ |
+| 9.2 | [Regresión] save-general-config with valid values (10, 5) still works | ✅ |
+| 9.3 | [Regresión] save-user with valid admin rol still works | ✅ |
+| 9.4 | [Regresión] registrar-compra-producto end-to-end still works | ✅ |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 53 |
+| Pass   | 53 |
+| Fail   | 0 |
+
+### All tests passed ✅
+
+---
+
+## [2026-04-26] Phase 8 Testing Results
+
+**Runner:** `tests/run-phase-8.js` (plain Node.js, no external test framework)
+**Database:** In-memory SQLite (fresh for each run, reset between tests)
+**Handlers tested:** clientes, proveedores, ctascorrientes, insumos, caja, ventas, facturacion, dashboard, reportes
+
+### Results
+
+| Test | Name | Status |
+|------|------|--------|
+| 1.1 | 8.1: registrar-pago-cliente fails without active session | PASS |
+| 1.2 | 8.1: registrar-pago-cliente succeeds with active session | PASS |
+| 1.3 | 8.1: registrar-abono-proveedor fails without active session | PASS |
+| 1.4 | 8.1: abrir-caja uses session userId, ignores renderer-supplied usuarioId | PASS |
+| 2.1 | 8.2: guardar-insumo update on non-existent ID returns success:false | PASS |
+| 2.2 | 8.2: guardar-insumo create works with valid data | PASS |
+| 2.3 | 8.2: guardar-insumo update with allowed fields succeeds | PASS |
+| 2.4 | 8.2: guardar-insumo rejects empty nombre | PASS |
+| 3.1 | 8.3: get-clientes returns bounded result by default | PASS |
+| 3.2 | 8.3: get-clientes respects limit=1 | PASS |
+| 3.3 | 8.3: get-insumos returns bounded result by default | PASS |
+| 3.4 | 8.3: get-insumos respects limit=1 | PASS |
+| 3.5 | 8.3: get-ventas enforces default limit | PASS |
+| 4.1 | 8.4: guardar-cliente rejects descuento > 100 | PASS |
+| 4.2 | 8.4: guardar-cliente rejects descuento < 0 | PASS |
+| 4.3 | 8.4: guardar-cliente accepts descuento: 100 | PASS |
+| 4.4 | 8.4: guardar-cliente accepts descuento: 0 | PASS |
+| 5.1 | 8.5: guardar-proveedor create works with valid nombreEmpresa | PASS |
+| 5.2 | 8.5: guardar-proveedor cannot overwrite deuda via payload injection | PASS |
+| 5.3 | 8.5: guardar-proveedor rejects missing nombreEmpresa | PASS |
+| 6.1 | 8.6: get-dashboard-stats with garbage dateFrom returns success:false | PASS |
+| 6.2 | 8.6: get-dashboard-stats with garbage dateTo returns success:false | PASS |
+| 6.3 | 8.6: get-dashboard-stats with valid dates returns success:true | PASS |
+| 6.4 | 8.6: get-rentabilidad-report with invalid dates returns success:false | PASS |
+| 6.5 | 8.6: get-rentabilidad-report with valid dates returns success:true | PASS |
+| 7.1 | 8.7: abrir-caja rejects negative montoInicial | PASS |
+| 7.2 | 8.7: abrir-caja accepts montoInicial: 0 | PASS |
+| 8.1 | 8.8: guardar-insumo-familia with invalid InsumoDepartamentoId returns clear error | PASS |
+| 8.2 | 8.8: guardar-insumo-familia with valid InsumoDepartamentoId succeeds | PASS |
+| 9.1 | [Regression] guardar-cliente create still works | PASS |
+| 9.2 | [Regression] eliminar-cliente still works | PASS |
+| 9.3 | [Regression] get-clientes returns seeded clients | PASS |
+| 9.4 | [Regression] guardar-proveedor create end-to-end still works | PASS |
+| 9.5 | [Regression] registrar-venta still works end-to-end | PASS |
+| 9.6 | [Regression] get-insumos returns all insumos (no filter) | PASS |
+| 9.7 | [Regression] get-ctacte-resumen returns totals | PASS |
+
+### Summary
+
+| Metric | Count |
+|--------|-------|
+| Total  | 36 |
+| Pass   | 36 |
+| Fail   | 0 |
+
+### All tests passed

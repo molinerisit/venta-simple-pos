@@ -17,6 +17,7 @@ const {
 const { registerProductosHandlers } = require('../src/ipc-handlers/productos-handlers');
 const { registerVentasHandlers }    = require('../src/ipc-handlers/ventas-handlers');
 const { registerCajaHandlers }      = require('../src/ipc-handlers/caja-handlers');
+const { registerSessionHandlers, clearSession } = require('../src/ipc-handlers/session-handlers');
 
 // ─── GLOBALS ──────────────────────────────────────────────────────────────────
 let SEQ, MODELS;
@@ -406,10 +407,10 @@ test('5.4', '[Regresión] abrir-caja still works via IPC after model changes', a
     config_descuento_efectivo: 0,
   });
 
-  const abrirResult = await invoke('abrir-caja', {
-    montoInicial: 500,
-    usuarioId: admin.id,
-  });
+  const loginResult = await invoke('login-attempt', { nombre: 'Admin Test', password: 'test123' });
+  assertTrue(loginResult.success, '5.4 login must succeed before abrir-caja');
+
+  const abrirResult = await invoke('abrir-caja', { montoInicial: 500 });
   assertTrue(abrirResult.success, '5.4 abrir-caja must succeed with no open caja');
 
   const arqueo = await MODELS.ArqueoCaja.findOne({
@@ -434,6 +435,7 @@ async function main() {
   registerProductosHandlers(MODELS, SEQ);
   registerVentasHandlers(MODELS, SEQ);
   registerCajaHandlers(MODELS, SEQ);
+  registerSessionHandlers(MODELS, SEQ, () => {}, () => {});
 
   console.log('\n══════════════════════════════════════════════════════');
   console.log('  Phase 5 — Model Constraints Test Suite');
