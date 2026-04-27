@@ -509,11 +509,13 @@
         `;
       }
 
-      document.getElementById("btn-gestionar-plan")?.addEventListener("click", () => {
-        ipcInvoke("open-external-url", PLANES_URL);
+      document.getElementById("btn-gestionar-plan")?.addEventListener("click", async () => {
+        const url = await ipcInvoke("get-web-login-url", "/cuenta");
+        ipcInvoke("open-external-url", url);
       });
-      document.getElementById("btn-activar-plan")?.addEventListener("click", () => {
-        ipcInvoke("open-external-url", PLANES_URL);
+      document.getElementById("btn-activar-plan")?.addEventListener("click", async () => {
+        const url = await ipcInvoke("get-web-login-url", "/cuenta");
+        ipcInvoke("open-external-url", url);
       });
     };
 

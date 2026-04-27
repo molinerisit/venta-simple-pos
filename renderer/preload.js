@@ -103,6 +103,7 @@ const validInvokeChannels = [
   "get-data-for-seleccion",
   "generar-vista-impresion",
   "get-subscription-status",
+  "get-web-login-url",
   // Soporte
   "open-soporte",
   "soporte-chat-init",

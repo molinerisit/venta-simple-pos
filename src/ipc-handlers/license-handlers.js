@@ -166,6 +166,17 @@ async function _handleMpOauthDeepLink(parsed) {
 }
 
 function registerLicenseHandlers() {
+  // Devuelve URL autenticada para abrir la web con sesión activa
+  ipcMain.handle('get-web-login-url', (_event, path = '/cuenta') => {
+    const lic = readLicense();
+    const safePath = (typeof path === 'string' && path.startsWith('/')) ? path : '/cuenta';
+    if (!lic?.token) return `https://ventasimple.cloud${safePath}`;
+    const url = new URL('https://ventasimple.cloud/auto-login');
+    url.searchParams.set('token', lic.token);
+    url.searchParams.set('next', safePath);
+    return url.toString();
+  });
+
   // Devuelve el plan activo al renderer
   ipcMain.handle('get-subscription-status', () => {
     const lic = readLicense();
