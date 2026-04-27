@@ -5,11 +5,13 @@
 
 /* ── Variables del sidebar ── */
 :root {
-  --sidebar-width: 80px;
-  --sidebar-bg: #1E293B;
-  --sidebar-accent-bg: #334155;
-  --sidebar-primary-color: #2563EB;
-  --sidebar-fg: rgba(255, 255, 255, 0.65);
+  --sidebar-width: 76px;
+  --sidebar-bg: #0F172A;
+  --sidebar-accent-bg: #1E293B;
+  --sidebar-hover-bg: #1E293B;
+  --sidebar-primary-color: #3B82F6;
+  --sidebar-fg: rgba(255, 255, 255, 0.55);
+  --sidebar-fg-active: rgba(255, 255, 255, 0.98);
 }
 
 /* ── Layout contenedor ── */
@@ -35,11 +37,11 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  padding: 1.25rem 0 0.75rem !important;
+  padding: 1rem 0 0.75rem !important;
   overflow: hidden !important;
   border: 0 !important;
   margin: 0 !important;
-  box-shadow: none !important;
+  box-shadow: 2px 0 8px rgba(0,0,0,.18) !important;
 }
 
 /* ── Badge logo "VS" (o iniciales del negocio) ── */
@@ -47,18 +49,19 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background-color: var(--sidebar-primary-color);
+  background: linear-gradient(135deg, #2563EB 0%, #10B981 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 0.9rem;
   letter-spacing: 0.5px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   flex-shrink: 0;
   user-select: none;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(37,99,235,.4);
 }
 
 /* Variante circular cuando hay imagen de logo */
@@ -110,26 +113,40 @@
   color: var(--sidebar-fg) !important;
   transition: background-color 0.18s, color 0.18s !important;
   width: 100% !important;
+  position: relative !important;
 }
 .sidebar-nav a svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   stroke: currentColor;
+  transition: stroke .18s;
 }
 .sidebar-nav a span {
   font-size: 9px;
   font-weight: 500;
   line-height: 1;
   color: inherit;
+  letter-spacing: .02em;
 }
 .sidebar-nav a:hover {
-  background-color: var(--sidebar-accent-bg) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  background-color: var(--sidebar-hover-bg) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 .sidebar-nav a[aria-current="page"] {
-  background-color: var(--sidebar-accent-bg) !important;
-  color: var(--sidebar-primary-color) !important;
+  background-color: rgba(59,130,246,.15) !important;
+  color: var(--sidebar-fg-active) !important;
+}
+.sidebar-nav a[aria-current="page"]::before {
+  content: '';
+  position: absolute !important;
+  left: -8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 3px !important;
+  height: 60% !important;
+  background: var(--sidebar-primary-color) !important;
+  border-radius: 0 3px 3px 0 !important;
 }
 .sidebar-nav a[aria-current="page"] svg {
   color: var(--sidebar-primary-color) !important;
@@ -160,14 +177,15 @@
   color: var(--sidebar-fg) !important;
   transition: background-color 0.18s, color 0.18s !important;
   width: 100% !important;
+  position: relative !important;
 }
 .sidebar-bottom .nav-item:hover {
-  background-color: var(--sidebar-accent-bg) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  background-color: var(--sidebar-hover-bg) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 .sidebar-bottom .nav-item[aria-current="page"] {
-  background-color: var(--sidebar-accent-bg) !important;
-  color: var(--sidebar-primary-color) !important;
+  background-color: rgba(59,130,246,.15) !important;
+  color: var(--sidebar-fg-active) !important;
 }
 .sidebar-bottom .nav-item svg {
   width: 22px;
