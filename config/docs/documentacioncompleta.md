@@ -732,3 +732,101 @@ Probar:
 Vincular/desvincular dispositivo
 
 Checkout MP desde “Suscribirme” (devuelve init_point del backend)
+
+---
+
+## AUDITORÍA DE SEGURIDAD — Sistema de Licencias (2026-04-27)
+
+### Arquitectura del sistema
+
+| Componente | Descripción |
+|---|---|
+| `vs-license.json` | Archivo local en `userData/` con `{ plan, tenant_id, email, token, licencia, api_url }` |
+| `/api/auth/activate-license` | Primer arranque: valida clave + credenciales, vincula licencia al tenant |
+| `/api/auth/desktop-callback` | Canjea token de deep link, devuelve sesión completa |
+| `/api/auth/validate-session` | Valida JWT + plan contra DB al sincronizar |
+| `handleDeepLink()` | Procesa `ventasimple://activate?token=...` en el proceso main |
+
+### Vectores analizados y resultado
+
+#### 1. Edición manual de `vs-license.json` (plan spoofing)
+**Ataque**: editar `plan: “FREE”` → `plan: “ENTERPRISE”` directamente en disco.
+**Impacto real**: solo cosmético — oculta el banner de prueba y muestra badge “ENTERPRISE” en la UI. Las feature flags (`lotes`, `remoto`, `ofertas`) vienen del servidor y se validan con JWT, por lo que no se habilitan.
+**Mitigación existente**: `validate-session` consulta la DB en cada sincronización y revierte el plan mostrado si difiere.
+
+#### 2. `api_url` arbitraria en license file → redirección de deep link a servidor falso
+**Ataque**: editar `api_url: “https://attacker.com”` + triggear `ventasimple://activate?token=x`. El deep link llama al servidor falso que devuelve `{ plan: “ENTERPRISE”, token: “fake” }`.
+**Impacto potencial**: plan local “ENTERPRISE” + token inválido (el falso no lo firma el SECRET_KEY real, así que `validate-session` lo rechaza).
+**Fix aplicado** (`license-handlers.js`): el deep link ahora siempre usa la constante hardcodeada `CLOUD_API`, ignorando `api_url` del archivo.
+
+```js
+// ANTES (vulnerable):
+const apiUrl = (readLicense()?.api_url || CLOUD_API).replace(/\/$/, '');
+// DESPUÉS (seguro):
+const apiUrl = CLOUD_API.replace(/\/$/, '');
+```
+
+#### 3. IPC `save-license` sin validación de entrada
+**Ataque**: código renderer (ej. extensión de devtools) llama `window.electronAPI.invoke('save-license', { plan: 'ENTERPRISE', api_url: 'https://attacker.com' })`.
+**Mitigación existente**: CSP `default-src 'self' 'unsafe-inline'` bloquea scripts externos; el renderer es HTML local.
+**Fix aplicado** (`license-handlers.js`): se valida que `plan` sea uno de `['FREE','BASIC','PRO','ENTERPRISE']` y `api_url` se pina a `CLOUD_API` siempre.
+
+```js
+const VALID_PLANS = ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'];
+if (data.plan && !VALID_PLANS.includes(String(data.plan).toUpperCase()))
+  return { ok: false, error: 'Plan inválido' };
+const sanitized = { ...data, api_url: CLOUD_API };
+```
+
+#### 4. Fuerza bruta de claves de licencia
+**Ataque**: automatizar peticiones a `/api/auth/activate-license` con claves aleatorias.
+**Espacio de claves**: `VSTX-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}` = 36^12 ≈ 4.7 billones de combinaciones. Imposible por fuerza bruta exhaustiva, pero un atacante con muchas IPs podría intentar claves conocidas (leaks).
+**Fix aplicado** (`licencias.py`): añadido `@limiter.limit(“5/minute”)` en `activate_license` (igual que `/login`).
+
+#### 5. Degradación de plan con clave FREE
+**Ataque**: un usuario PRO usa una clave FREE para “reactivar” → plan se degrada a FREE en la DB.
+**Escenario**: reinstalación del desktop en otra máquina con una clave FREE sobrante.
+**Fix aplicado** (`licencias.py`): solo se actualiza el plan si la nueva licencia tiene igual o mayor rango.
+
+```python
+PLAN_RANK = {“FREE”: 0, “BASIC”: 1, “PRO”: 2, “ENTERPRISE”: 3}
+if PLAN_RANK[new_plan] >= PLAN_RANK[current_plan]:
+    # actualizar plan
+else:
+    # solo marcar email_verified = TRUE, no tocar el plan
+```
+
+#### 6. Token JWT en disco (robo de sesión)
+**Ataque**: acceso físico o malware extrae `vs-license.json` y usa el `token` para llamar a la API.
+**Mitigación existente**: el JWT expira según `access_token_expire_minutes` (configurado en Railway). El tenant puede ser suspendido desde el panel admin, lo que invalida la sesión en `validate-session`.
+**Recomendación pendiente**: reducir `access_token_expire_minutes` a ≤ 60 min para desktop, o implementar refresh tokens.
+
+#### 7. Licencia ACTIVA reutilizada en otra cuenta
+**Ataque**: usar la clave de otra persona para vincularla a tu cuenta.
+**Mitigación existente** (`licencias.py`):
+```python
+if lic[“estado”] == “ACTIVA” and lic[“tenant_id”]:
+    owner = db.execute(“SELECT email FROM tenants WHERE id = :id”, ...).fetchone()
+    if not owner or owner[0] != body.email:
+        raise HTTPException(409, “Esta licencia ya está en uso por otra cuenta.”)
+```
+
+#### 8. Deep link token replay
+**Ataque**: interceptar un deep link `ventasimple://activate?token=X` y reutilizarlo.
+**Mitigación existente**: el token es un JWT con `type: “desktop_activation”` y expiración. Una vez canjeado, `desktop_callback` genera un nuevo `session_token`; el `desktop_activation` original sigue siendo válido hasta expirar pero al re-canjearse solo regenera la misma sesión (idempotente).
+**Recomendación pendiente**: marcar el `desktop_activation` token como usado en DB (one-time token) para prevenir replay dentro de la ventana de expiración.
+
+### Resumen de cambios aplicados
+
+| Archivo | Cambio |
+|---|---|
+| `src/ipc-handlers/license-handlers.js` | `api_url` pinado a `CLOUD_API` en deep link; validación de `plan` y `api_url` en `save-license` |
+| `backend-py/app/routers/licencias.py` | Rate limiting 5/min en `activate-license`; protección contra degradación de plan |
+
+### Pruebas realizadas
+
+1. Editar `vs-license.json` → `plan: “ENTERPRISE”`, `api_url: “https://evil.com”` → triggear deep link → confirmar que el proceso main llama a `CLOUD_API` (no al servidor falso).
+2. Llamar `save-license` con `plan: “HACKED”` → devuelve `{ ok: false, error: “Plan inválido” }`.
+3. Llamar `save-license` con `api_url: “https://evil.com”` → archivo escrito con `api_url: “https://api.ventasimple.cloud”`.
+4. Intentar activar licencia ACTIVA de otro email → `409 Esta licencia ya está en uso por otra cuenta`.
+5. Activar licencia FREE sobre cuenta PRO → plan mantiene PRO en DB.

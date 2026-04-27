@@ -48,11 +48,15 @@ async function handleDeepLink(url) {
     const token = parsed.searchParams.get('token');
     if (!token) return;
 
-    const apiUrl = (readLicense()?.api_url || CLOUD_API).replace(/\/$/, '');
+    // Always use the hardcoded cloud URL — never follow api_url from disk
+    const apiUrl = CLOUD_API.replace(/\/$/, '');
     const data   = await _get(`${apiUrl}/api/auth/desktop-callback?token=${token}`);
 
+    const VALID_PLANS = ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'];
+    const plan = VALID_PLANS.includes(data.plan) ? data.plan : 'FREE';
+
     writeLicense({
-      plan:      data.plan      || 'FREE',
+      plan,
       tenant_id: data.tenant_id || null,
       email:     data.email     || null,
       nombre:    data.nombre    || null,
@@ -181,8 +185,15 @@ function registerLicenseHandlers() {
 
   // Guarda la licencia después de la activación manual (e.g. ingreso de clave)
   ipcMain.handle('save-license', (_event, data) => {
+    const VALID_PLANS = ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'];
+    if (!data || typeof data !== 'object') return { ok: false, error: 'Datos inválidos' };
+    if (data.plan && !VALID_PLANS.includes(String(data.plan).toUpperCase())) {
+      return { ok: false, error: 'Plan inválido' };
+    }
+    // api_url always pinned to production — never allow arbitrary server override
+    const sanitized = { ...data, api_url: CLOUD_API };
     try {
-      writeLicense(data);
+      writeLicense(sanitized);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e.message };
