@@ -180,7 +180,7 @@ document.addEventListener("app-ready", () => {
     if (!toastNotification) return;
     toastNotification.textContent = message;
     toastNotification.className = `toast ${type} visible`;
-    setTimeout(() => toastNotification.classList.remove("visible"), 3000);
+    setTimeout(() => toastNotification.classList.remove("visible"), 2000);
   };
 
   const toggleButtonLoading = (button, isLoading, originalText) => {

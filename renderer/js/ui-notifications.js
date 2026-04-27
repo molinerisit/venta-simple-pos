@@ -44,7 +44,7 @@
 
   /* ─── AppToast ──────────────────────────────────────── */
   window.AppToast = {
-    show(message, type = 'success', duration = 4000) {
+    show(message, type = 'success', duration = 2000) {
       const container = getContainer();
       const color = COLORS[type] || COLORS.info;
       const icon  = ICONS[type]  || ICONS.info;
