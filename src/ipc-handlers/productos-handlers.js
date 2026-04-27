@@ -8,12 +8,27 @@ const Papa = require("papaparse");
 function registerProductosHandlers(models, sequelize) {
   const { Producto, ProductoDepartamento, ProductoFamilia } = models;
 
+  // SKU automatico
+  ipcMain.handle('get-next-sku', async () => {
+    try {
+      const total = await Producto.count({ paranoid: false });
+      return 'SKU-' + String(total + 1).padStart(4, '0');
+    } catch (e) {
+      console.error('Error en get-next-sku:', e);
+      return 'SKU-' + Date.now();
+    }
+  });
+
   // Lista de productos
   ipcMain.handle("get-productos", async (_event, opts) => {
-    // M-1: supports optional limit/offset pagination
-    const { limit, offset } = opts || {};
+    // M-1: supports optional limit/offset pagination + filtroActivo
+    const { limit, offset, filtroActivo } = opts || {};
+    const where = {};
+    if (filtroActivo === 'activo')   where.activo = true;
+    if (filtroActivo === 'inactivo') where.activo = false;
     try {
       const productos = await Producto.findAll({
+        where,
         include: [
           {
             model: ProductoFamilia,
@@ -119,7 +134,7 @@ function registerProductosHandlers(models, sequelize) {
         'stock', 'precioCompra', 'precioVenta', 'precio_oferta',
         'unidad', 'pesable', 'activo', 'acceso_rapido',
         'imagen_base64', 'imagen_url', 'fecha_fin_oferta', 'fecha_vencimiento',
-        'DepartamentoId', 'FamiliaId',
+        'DepartamentoId', 'FamiliaId', 'maneja_lotes',
       ];
       const payload = Object.fromEntries(
         Object.entries(productoData || {}).filter(([k]) => ALLOWED_FIELDS.includes(k))
@@ -131,9 +146,6 @@ function registerProductosHandlers(models, sequelize) {
       }
       
       payload.codigo = String(payload.codigo || "").trim() || null;
-      if (!payload.codigo) {
-        throw new Error("El campo 'código' es obligatorio.");
-      }
       
       payload.codigo_barras = String(payload.codigo_barras || "").trim() || null;
       payload.plu = String(payload.plu || "").trim() || null;
@@ -149,6 +161,9 @@ function registerProductosHandlers(models, sequelize) {
       
       if (!payload.fecha_fin_oferta) payload.fecha_fin_oferta = null;
       if (!payload.fecha_vencimiento) payload.fecha_vencimiento = null;
+      // Auto-set activo based on price: products with no price are inactive
+      payload.activo = (payload.precioVenta > 0);
+
 
       // L-2: precio_oferta must be strictly less than precioVenta when both are positive.
       if (payload.precio_oferta != null && payload.precio_oferta > 0 && payload.precioVenta > 0 && payload.precio_oferta >= payload.precioVenta) {

@@ -6,6 +6,7 @@ document.addEventListener("app-ready", () => {
     clienteActual: null,
     metodoPagoSeleccionado: null,
     ultimoReciboTexto: null,
+    ultimoReciboHtml: null,
     sesion: null,
     arqueoActual: null,
     barcodeBuffer: [],
@@ -247,6 +248,7 @@ document.addEventListener("app-ready", () => {
     },
     nombreNegocio: CajaState.sesion?.config?.nombre_negocio || "Mi Negocio",
     sloganNegocio: CajaState.sesion?.config?.slogan_negocio || "",
+    direccionNegocio: CajaState.sesion?.config?.direccion_negocio || "",
     footerTicket:
       CajaState.sesion?.config?.footer_ticket || "¡Gracias por su compra!",
     impresora: CajaState.sesion?.config?.config_puerto_impresora || null,
@@ -655,6 +657,93 @@ document.addEventListener("app-ready", () => {
     return texto;
   };
 
+  const generarReciboHtml = (ventaId, datosRecibo) => {
+    const cfg = getCfg();
+    const cajero = CajaState.sesion?.user?.nombre || "N/A";
+    const fecha = new Date().toLocaleString("es-AR");
+
+    const esc = (s) => String(s || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const fmtMoney = (v) => `$${Math.round(Number(v) || 0).toLocaleString("es-AR")}`;
+
+    let subtotal = 0;
+    const itemsHtml = datosRecibo.items.map((it) => {
+      const lineSub = it.cantidad * it.precioUnitario;
+      subtotal += lineSub;
+      return `<div class="item">
+        <div class="item-name">${esc(it.nombreProducto || "Item")}</div>
+        ${it.ofertaLabel ? `<div class="offer">** ${esc(it.ofertaLabel)} **</div>` : ""}
+        <div class="item-row"><span>${it.cantidad} x ${fmtMoney(it.precioUnitario)}</span><span>${fmtMoney(lineSub)}</span></div>
+      </div>`;
+    }).join("");
+
+    const descHtml = datosRecibo.descuento > 0
+      ? `<div class="row"><span>Descuento:</span><span>-${fmtMoney(datosRecibo.descuento)}</span></div>` : "";
+    const recHtml = datosRecibo.recargo > 0
+      ? `<div class="row"><span>Recargo:</span><span>+${fmtMoney(datosRecibo.recargo)}</span></div>` : "";
+    const pagosHtml = datosRecibo.metodoPago === "Efectivo" ? `
+      <div class="row"><span>Efectivo:</span><span>${fmtMoney(datosRecibo.montoPagado)}</span></div>
+      <div class="row"><span>Cambio:</span><span>${fmtMoney(datosRecibo.vuelto)}</span></div>` : "";
+
+    const storeParts = [cfg.sloganNegocio, cfg.direccionNegocio].filter(Boolean);
+    const footerHtml = cfg.footerTicket
+      ? `<div class="footer">${esc(cfg.footerTicket)}</div>`
+      : `<div class="footer">¡Gracias por su compra!<br>Vuelva pronto</div>`;
+
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Courier New',monospace;font-size:10px;width:76mm;padding:3mm 2mm;color:#000;background:#fff}
+.store-name{font-size:26px;font-weight:900;text-align:center;letter-spacing:-0.5px;margin-bottom:3px}
+.store-sub{font-size:9px;text-align:center;line-height:1.5;margin-bottom:2px}
+.dash{border:none;border-top:1px dashed #000;margin:5px 0}
+.solid{border:none;border-top:1px solid #000;margin:4px 0}
+.dbl{border:none;border-top:3px double #000;margin:5px 0}
+.meta{font-size:9px;line-height:1.65}
+.item{margin:3px 0}
+.item-name{font-size:10px;font-weight:bold}
+.offer{font-size:8px;font-style:italic}
+.item-row{display:flex;justify-content:space-between;font-size:9px}
+.totals{font-size:9.5px;line-height:1.7}
+.row{display:flex;justify-content:space-between}
+.total-block{text-align:center;padding:4px 0}
+.total-label{font-size:13px;font-weight:bold;letter-spacing:2px}
+.total-amount{font-size:22px;font-weight:900}
+.pay{font-size:9.5px;line-height:1.7}
+.footer{text-align:center;font-size:9px;margin-top:10px}
+</style></head><body>
+<div class="store-name">${esc(cfg.nombreNegocio)}</div>
+${storeParts.length ? `<div class="store-sub">${storeParts.map(esc).join("<br>")}</div>` : ""}
+<hr class="dash">
+<div class="meta">
+  <div>Fecha: ${fecha}</div>
+  <div>Cajero: ${esc(cajero)}</div>
+  <div>Ticket: #${String(ventaId).padStart(6, "0")}</div>
+  ${datosRecibo.dniCliente ? `<div>Cliente DNI: ${esc(String(datosRecibo.dniCliente))}</div>` : ""}
+</div>
+<hr class="dash">
+${itemsHtml}
+<hr class="solid">
+<div class="totals">
+  <div class="row"><span>Subtotal:</span><span>${fmtMoney(subtotal)}</span></div>
+  ${descHtml}${recHtml}
+</div>
+<hr class="dbl">
+<div class="total-block">
+  <div class="total-label">TOTAL:</div>
+  <div class="total-amount">${fmtMoney(datosRecibo.total)}</div>
+</div>
+<hr class="dbl">
+<div class="pay">
+  <div class="row"><span>Método:</span><span>${esc(datosRecibo.metodoPago)}</span></div>
+  ${pagosHtml}
+</div>
+<hr class="dash">
+${footerHtml}
+</body></html>`;
+  };
+
   const resetearVenta = () => {
     CajaState.ventaActual = [];
     CajaState.itemSeleccionado = null;
@@ -741,15 +830,27 @@ document.addEventListener("app-ready", () => {
       // case "Ñ": // ❌ ELIMINADO
       //    if (!btnRegistrarVenta?.disabled) btnRegistrarVenta.click();
       //    break;
-      case "{":
+      case "/":
         if (!btnImprimirTicket?.disabled) btnImprimirTicket.click();
         break;
       case ".":
         btnCancelarVenta?.click();
         break;
       case "+": {
-        const _notInput = !document.activeElement || !['INPUT','TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.id === 'main-input';
-        if (_notInput) { mainInput?.focus(); mainInput?.select(); }
+        const _ae = document.activeElement;
+        const _inOtherInput = _ae && ['INPUT','TEXTAREA'].includes(_ae.tagName) && _ae.id !== 'main-input';
+        if (!_inOtherInput && !btnRegistrarVenta?.disabled && CajaState.ventaActual.length > 0) {
+          if (!CajaState.metodoPagoSeleccionado) {
+            CajaState.metodoPagoSeleccionado = "Efectivo";
+            paymentButtons.forEach((b) => b.classList.remove("active"));
+            document.querySelector('[data-metodo="Efectivo"]')?.classList.add("active");
+            efectivoArea?.classList.remove("oculto");
+          }
+          if (CajaState.metodoPagoSeleccionado === "Efectivo" && montoPagadoInput) {
+            montoPagadoInput.value = (CajaState.totalFinalRedondeado || 0).toFixed(2);
+          }
+          btnRegistrarVenta.click();
+        }
         break;
       }
       case "´":
@@ -903,12 +1004,20 @@ if (event.key === "Enter") {
   const shortcutsOverlay = document.getElementById('shortcuts-overlay');
   const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
 
+  const SHORTCUTS_VERSION = '2';
+
   function openShortcuts() {
     if (shortcutsOverlay) shortcutsOverlay.style.display = 'flex';
   }
   function closeShortcuts() {
     if (shortcutsOverlay) shortcutsOverlay.style.display = 'none';
-    localStorage.setItem('vs-shortcuts-seen', '1');
+    localStorage.setItem('vs-shortcuts-seen', SHORTCUTS_VERSION);
+  }
+
+  if (localStorage.getItem('vs-shortcuts-seen') !== SHORTCUTS_VERSION) {
+    openShortcuts();
+  } else if (shortcutsOverlay) {
+    shortcutsOverlay.style.display = 'none';
   }
 
   document.getElementById('shortcuts-close')?.addEventListener('click', closeShortcuts);
@@ -1136,10 +1245,8 @@ if (event.key === "Enter") {
 
       if (result?.success) {
         if (result.datosRecibo) {
-          CajaState.ultimoReciboTexto = generarReciboTexto(
-            result.ventaId,
-            result.datosRecibo
-          );
+          CajaState.ultimoReciboTexto = generarReciboTexto(result.ventaId, result.datosRecibo);
+          CajaState.ultimoReciboHtml = generarReciboHtml(result.ventaId, result.datosRecibo);
           btnImprimirTicket && (btnImprimirTicket.disabled = false);
         }
         if (result.datosPagoMP) {
@@ -1190,7 +1297,7 @@ if (event.key === "Enter") {
   });
 
   btnImprimirTicket?.addEventListener("click", async () => {
-    if (!CajaState.ultimoReciboTexto) {
+    if (!CajaState.ultimoReciboHtml && !CajaState.ultimoReciboTexto) {
       showErrorModal("No hay recibo para imprimir.");
       return;
     }
@@ -1203,6 +1310,7 @@ if (event.key === "Enter") {
     try {
       const result = await window.electronAPI.invoke("imprimir-ticket", {
         recibo: CajaState.ultimoReciboTexto,
+        reciboHtml: CajaState.ultimoReciboHtml,
         nombreImpresora: impresora,
       });
       if (result?.success)
@@ -1361,13 +1469,14 @@ if (event.key === "Enter") {
 
       const otrosMetodos = (r.totalDebito || 0) + (r.totalCredito || 0) + (r.totalQR || 0) + (r.totalTransfer || 0) + (r.totalCtaCte || 0);
 
+      const _esAdmin = ['administrador', 'superadmin'].includes(CajaState.sesion?.user?.rol);
       resumenCierreCaja.innerHTML = `
         <table class="resumen-cierre-table">
           <tr><td>Fondo inicial</td><td>${formatCurrency(r.montoInicial)}</td></tr>
           <tr><td>+ Ventas efectivo</td><td>${formatCurrency(r.totalEfectivo)}</td></tr>
           <tr><td>+ Ingresos extra (${ingresos.length})</td><td>${formatCurrency(r.totalIngresosExtra || 0)}</td></tr>
           <tr><td>− Egresos / Pagos (${egresos.length})</td><td style="color:#ef4444;">−${formatCurrency(r.totalEgresosExtra || 0)}</td></tr>
-          <tr class="resumen-total-row"><td><strong>= Efectivo esperado</strong></td><td><strong>${formatCurrency(r.montoEstimado)}</strong></td></tr>
+          ${_esAdmin ? `<tr class="resumen-total-row"><td><strong>= Efectivo esperado</strong></td><td><strong>${formatCurrency(r.montoEstimado)}</strong></td></tr>` : ''}
         </table>
         ${mov.length > 0 ? `
         <div class="resumen-movimientos">
@@ -1385,7 +1494,7 @@ if (event.key === "Enter") {
           ${r.totalCtaCte ? ` &nbsp;·&nbsp; CtaCte ${formatCurrency(r.totalCtaCte)}` : ''}
         </p>
       `;
-      if (montoFinalRealInput)
+      if (montoFinalRealInput && _esAdmin)
         montoFinalRealInput.value = (r.montoEstimado || 0).toFixed(2);
     } else {
       resumenCierreCaja.innerHTML = `<p style="color:red;">Error al calcular: ${

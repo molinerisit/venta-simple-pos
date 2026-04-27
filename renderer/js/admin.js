@@ -717,12 +717,10 @@
           facturacionToggle.checked = !!config.facturacion_activa;
 
         if (afipForm) {
-          afipCuitInput.value = config.afip_cuit || "";
-          afipPtoVtaInput.value = config.afip_pto_vta || "";
-          certFilePathDisplay.textContent =
-            config.afip_cert_path || "No seleccionado";
-          keyFilePathDisplay.textContent =
-            config.afip_key_path || "No seleccionado";
+          if (afipCuitInput)          afipCuitInput.value     = config.afip_cuit    || "";
+          if (afipPtoVtaInput)        afipPtoVtaInput.value   = config.afip_pto_vta || "";
+          if (certFilePathDisplay)    certFilePathDisplay.textContent = config.afip_cert_path || "No seleccionado";
+          if (keyFilePathDisplay)     keyFilePathDisplay.textContent  = config.afip_key_path  || "No seleccionado";
         }
 
         // Gmail: load only the user address (never the password)

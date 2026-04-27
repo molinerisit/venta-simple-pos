@@ -180,7 +180,6 @@
                 <line x1="1" y1="10" x2="23" y2="10"></line>
               </svg>
               <span>Efectivo</span>
-              <kbd class="hotkey-badge">/</kbd>
             </button>
             <button class="btn payment-btn" data-metodo="Débito">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
@@ -199,7 +198,6 @@
                 <line x1="15" y1="15" x2="19" y2="15"></line>
               </svg>
               <span>Crédito</span>
-              <kbd class="hotkey-badge">-</kbd>
             </button>
             <button class="btn payment-btn" data-metodo="QR">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
@@ -209,7 +207,6 @@
                 <rect x="14" y="14" width="3" height="3"></rect>
               </svg>
               <span>QR</span>
-              <kbd class="hotkey-badge">+</kbd>
             </button>
           </div>
 
@@ -503,24 +500,28 @@
       </div>
       <div style="display:grid;gap:7px;margin-bottom:18px;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">*</kbd>
-          <span style="font-size:13px;color:#334155;">Ciclar medio de pago <span style="color:#94a3b8;">(Efectivo → Débito → Crédito → QR)</span></span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
           <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">↵</kbd>
           <span style="font-size:13px;color:#334155;">Buscar / agregar producto</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">+</kbd>
+          <span style="font-size:13px;color:#334155;">Guardar venta <span style="color:#94a3b8;">(sin confirmación)</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">*</kbd>
+          <span style="font-size:13px;color:#334155;">Ciclar método de pago <span style="color:#94a3b8;">(Efectivo → Débito → Crédito → QR)</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">-</kbd>
+          <span style="font-size:13px;color:#334155;">Eliminar producto seleccionado</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">/</kbd>
+          <span style="font-size:13px;color:#334155;">Imprimir ticket</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
           <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">.</kbd>
           <span style="font-size:13px;color:#334155;">Cancelar venta</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">{</kbd>
-          <span style="font-size:13px;color:#334155;">Reimprimir último ticket</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">+</kbd>
-          <span style="font-size:13px;color:#334155;">Ir al campo cliente / DNI</span>
         </div>
       </div>
       <button id="shortcuts-ok" style="width:100%;height:42px;background:#1e3a8a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:-.01em;">

@@ -204,6 +204,28 @@
 .pill--amber   { background: #fef3c7; color: #92400e; }
 .pill--info    { background: #dbeafe; color: #1e40af; }
 
+/* ── Filter pills (activo/inactivo) ───────────────── */
+.filter-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.filter-pills .pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  background: #f8fafc;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.filter-pills .pill:hover { background: #e8f0fe; border-color: #93c5fd; color: #1d4ed8; }
+.filter-pills .pill.pill--active { background: var(--primary-color, #2563eb); border-color: var(--primary-color, #2563eb); color: #fff; }
+
 /* =====================================================
    TABLE
    ===================================================== */
@@ -246,6 +268,7 @@
 #productos-table tbody tr.row--vencido    { border-left: 3px solid #dc2626; }
 #productos-table tbody tr.row--por-vencer { border-left: 3px solid #f59e0b; }
 #productos-table tbody tr.row--stock-bajo { border-left: 3px solid #d97706; }
+#productos-table tbody tr.row--inactivo   { opacity: 0.55; }
 
 #productos-table tbody td {
   padding: 11px 14px;

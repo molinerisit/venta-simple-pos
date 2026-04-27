@@ -37,6 +37,11 @@ document.addEventListener("app-ready", () => {
 
   // --- 2) ESTADO ---
   let listaDeProductos = [];
+  let filtroActivo = 'todos';
+
+  // Filter pills
+  const pillsContainer = document.getElementById('filter-activo-pills');
+  const pills = pillsContainer ? pillsContainer.querySelectorAll('.pill') : [];
 
   // --- 3) HELPERS ---
   const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
@@ -295,6 +300,7 @@ const aplicarOrdenamiento = (productos, criterio) => {
       }
       if (!rowAccent && p.activo && stock <= LIMITE_STOCK_BAJO) rowAccent = "row--stock-bajo";
       if (rowAccent) tr.classList.add(rowAccent);
+      if (!p.activo) tr.classList.add("row--inactivo");
 
       // Margin badge class
       let margenBadgeClass = "margen-badge--sin";
@@ -353,17 +359,22 @@ const aplicarOrdenamiento = (productos, criterio) => {
     const q = (searchInput.value || "").toLowerCase().trim();
     const criterioOrden = filterSort ? filterSort.value : "nombre";
 
-    // 1. Filtro por texto
-    let dataFiltrada = q
-      ? listaDeProductos.filter(
-          (p) =>
-            (p.nombre || "").toLowerCase().includes(q) ||
-            ((p.codigo_barras || p.codigoBarras || "") + "").toLowerCase().includes(q) ||
-            ((p.codigo || "") + "").toLowerCase().includes(q)
-        )
-      : listaDeProductos;
+    // 1. Filtro por estado activo/inactivo
+    let dataFiltrada = listaDeProductos;
+    if (filtroActivo === 'activo')   dataFiltrada = dataFiltrada.filter(p => p.activo);
+    if (filtroActivo === 'inactivo') dataFiltrada = dataFiltrada.filter(p => !p.activo);
 
-    // 2. Aplicar Ordenamiento
+    // 2. Filtro por texto
+    if (q) {
+      dataFiltrada = dataFiltrada.filter(
+        (p) =>
+          (p.nombre || "").toLowerCase().includes(q) ||
+          ((p.codigo_barras || p.codigoBarras || "") + "").toLowerCase().includes(q) ||
+          ((p.codigo || "") + "").toLowerCase().includes(q)
+      );
+    }
+
+    // 3. Aplicar Ordenamiento
     dataFiltrada = aplicarOrdenamiento(dataFiltrada, criterioOrden);
 
     await renderizarTabla(dataFiltrada);
@@ -371,6 +382,15 @@ const aplicarOrdenamiento = (productos, criterio) => {
 
   filterSort?.addEventListener("change", () => {
       filtrarYRenderizar();
+  });
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('pill--active'));
+      pill.classList.add('pill--active');
+      filtroActivo = pill.dataset.filtro || 'todos';
+      filtrarYRenderizar();
+    });
   });
   
   // (Mantener el evento de searchInput existente)

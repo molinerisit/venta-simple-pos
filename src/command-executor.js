@@ -148,6 +148,22 @@ const HANDLERS = {
     }).show();
     return { shown: true };
   },
+
+  async FREE_RAM() {
+    if (global.gc) {
+      global.gc();
+    }
+    // Fuerza liberación de memoria V8 vía EmptyWorkingSet en Windows
+    const pid = process.pid;
+    const out = await run(`powershell -NoProfile -Command "(Get-Process -Id ${pid}).MinWorkingSet = 1; (Get-Process -Id ${pid}).MinWorkingSet = [System.IntPtr]::new([System.Int64]::MaxValue)"`).catch(() => '');
+    const mem = process.memoryUsage();
+    return {
+      freed: true,
+      rss_mb: Math.round(mem.rss / 1024 / 1024),
+      heap_used_mb: Math.round(mem.heapUsed / 1024 / 1024),
+      message: `RAM liberada. RSS actual: ${Math.round(mem.rss / 1024 / 1024)} MB`,
+    };
+  },
 };
 
 // ── Polling y ejecución ───────────────────────────────────────────────────────

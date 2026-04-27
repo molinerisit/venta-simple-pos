@@ -54,6 +54,10 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Finanzas
       </button>
+      <button class="mod-tab" data-panel="facturacion">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Facturación
+      </button>
       <button class="mod-tab" data-panel="avanzado">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M5.34 5.34l-1.41-1.41M12 2v2M12 20v2"/></svg>
         Avanzado
@@ -244,25 +248,6 @@
               <button type="submit" class="btn btn-primario" id="btn-save-hours">Guardar Horarios</button>
             </div>
           </form>
-        </section>
-
-        <!-- Módulos Adicionales -->
-        <section class="content-section">
-          <div class="section-header">
-            <div class="section-header-left">
-              <div class="section-icon section-icon--amber">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              </div>
-              <h2>Módulos Adicionales</h2>
-            </div>
-          </div>
-          <div class="module-toggle">
-            <label for="facturacion-toggle">Módulo de Facturación AFIP</label>
-            <div class="checkbox-control">
-              <input type="checkbox" id="facturacion-toggle">
-              <label for="facturacion-toggle"></label>
-            </div>
-          </div>
         </section>
 
         <!-- Importación Masiva -->
@@ -696,6 +681,84 @@
 
 
       <!-- ════════════════════════════════════════════════════
+           PANEL: FACTURACIÓN
+           ════════════════════════════════════════════════════ -->
+      <div class="admin-panel" id="panel-facturacion">
+
+        <!-- Activar módulo -->
+        <section class="content-section">
+          <div class="section-header">
+            <div class="section-header-left">
+              <div class="section-icon section-icon--amber">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </div>
+              <h2>Módulo de Facturación AFIP</h2>
+            </div>
+          </div>
+          <p class="section-description">Activá este módulo para habilitar la emisión de comprobantes electrónicos (Facturas A/B/C) a través de la API de AFIP.</p>
+          <div class="module-toggle">
+            <label for="facturacion-toggle">Activar Facturación Electrónica</label>
+            <div class="checkbox-control">
+              <input type="checkbox" id="facturacion-toggle">
+              <label for="facturacion-toggle"></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Credenciales AFIP -->
+        <section id="afip-section" class="content-section">
+          <details class="tutorial">
+            <summary>¿Cómo obtengo los archivos de Certificado y Clave AFIP?</summary>
+            <div class="tutorial-content">
+              <ol>
+                <li><strong>Generá Clave Privada y CSR</strong> con OpenSSL: <code>private.key</code> + <code>request.csr</code></li>
+                <li><strong>Enviá el CSR a AFIP</strong> desde el portal con Clave Fiscal.</li>
+                <li><strong>Descargá el Certificado</strong> (.crt) que devuelve AFIP.</li>
+              </ol>
+              <p>Luego seleccioná ambos archivos en los campos de abajo.</p>
+            </div>
+          </details>
+          <div class="section-header">
+            <div class="section-header-left">
+              <div class="section-icon section-icon--red">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <h2>Credenciales AFIP</h2>
+            </div>
+          </div>
+          <form id="afip-config-form">
+            <div class="form-grid-2">
+              <div class="form-campo">
+                <label for="afip-cuit">CUIT del Emisor</label>
+                <input type="number" id="afip-cuit" placeholder="Ej: 20123456789" />
+                <small>Sin guiones.</small>
+              </div>
+              <div class="form-campo">
+                <label for="afip-pto-vta">Punto de Venta</label>
+                <input type="number" id="afip-pto-vta" placeholder="Ej: 1" />
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-campo">
+                <label for="afip-cert-file">Certificado (.crt)</label>
+                <input type="file" id="afip-cert-file" accept=".crt">
+                <span id="cert-file-path" class="file-path-display">No seleccionado</span>
+              </div>
+              <div class="form-campo">
+                <label for="afip-key-file">Clave Privada (.key)</label>
+                <input type="file" id="afip-key-file" accept=".key">
+                <span id="key-file-path" class="file-path-display">No seleccionado</span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primario">Guardar Configuración AFIP</button>
+            </div>
+          </form>
+        </section>
+
+      </div><!-- /panel-facturacion -->
+
+      <!-- ════════════════════════════════════════════════════
            PANEL: AVANZADO
            ════════════════════════════════════════════════════ -->
       <div class="admin-panel" id="panel-avanzado">
@@ -751,57 +814,6 @@
                 Probar conexión
               </button>
               <button type="submit" class="btn btn-primario">Guardar configuración Gmail</button>
-            </div>
-          </form>
-        </section>
-
-        <!-- AFIP -->
-        <section id="afip-section" class="content-section">
-          <details class="tutorial">
-            <summary>¿Cómo obtengo los archivos de Certificado y Clave AFIP?</summary>
-            <div class="tutorial-content">
-              <ol>
-                <li><strong>Generá Clave Privada y CSR</strong> con OpenSSL: <code>private.key</code> + <code>request.csr</code></li>
-                <li><strong>Enviá el CSR a AFIP</strong> desde el portal con Clave Fiscal.</li>
-                <li><strong>Descargá el Certificado</strong> (.crt) que devuelve AFIP.</li>
-              </ol>
-              <p>Luego seleccioná ambos archivos en los campos de abajo.</p>
-            </div>
-          </details>
-          <div class="section-header">
-            <div class="section-header-left">
-              <div class="section-icon section-icon--red">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              </div>
-              <h2>Configuración de Facturación AFIP</h2>
-            </div>
-          </div>
-          <form id="afip-config-form">
-            <div class="form-grid-2">
-              <div class="form-campo">
-                <label for="afip-cuit">CUIT del Emisor</label>
-                <input type="number" id="afip-cuit" placeholder="Ej: 20123456789" />
-                <small>Sin guiones.</small>
-              </div>
-              <div class="form-campo">
-                <label for="afip-pto-vta">Punto de Venta</label>
-                <input type="number" id="afip-pto-vta" placeholder="Ej: 1" />
-              </div>
-            </div>
-            <div class="form-grid-2">
-              <div class="form-campo">
-                <label for="afip-cert-file">Certificado (.crt)</label>
-                <input type="file" id="afip-cert-file" accept=".crt">
-                <span id="cert-file-path" class="file-path-display">No seleccionado</span>
-              </div>
-              <div class="form-campo">
-                <label for="afip-key-file">Clave Privada (.key)</label>
-                <input type="file" id="afip-key-file" accept=".key">
-                <span id="key-file-path" class="file-path-display">No seleccionado</span>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primario">Guardar Configuración AFIP</button>
             </div>
           </form>
         </section>
@@ -930,22 +942,26 @@
             </div>
 
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
-              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">{</kbd>
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">+</kbd>
               <div>
-                <div style="font-weight:600;color:#0f172a;font-size:13px;">Reimprimir último ticket</div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Guardar venta</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Registra la venta directamente (selecciona Efectivo si no hay medio activo)</div>
+              </div>
+            </div>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">/</kbd>
+              <div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Imprimir / reimprimir ticket</div>
                 <div style="color:#64748b;font-size:12px;margin-top:2px;">Solo disponible después de registrar una venta</div>
               </div>
             </div>
 
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
-              <div style="display:flex;gap:6px;flex-shrink:0;">
-                <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;text-align:center;">+</kbd>
-                <span style="color:#94a3b8;font-size:12px;align-self:center;">o</span>
-                <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;text-align:center;">´</kbd>
-              </div>
+              <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:5px 12px;font-size:15px;font-family:monospace;font-weight:700;min-width:36px;text-align:center;flex-shrink:0;">-</kbd>
               <div>
-                <div style="font-weight:600;color:#0f172a;font-size:13px;">Ir al campo cliente / DNI</div>
-                <div style="color:#64748b;font-size:12px;margin-top:2px;">Enfoca el buscador de clientes</div>
+                <div style="font-weight:600;color:#0f172a;font-size:13px;">Eliminar último producto</div>
+                <div style="color:#64748b;font-size:12px;margin-top:2px;">Quita el producto más reciente del carrito</div>
               </div>
             </div>
 

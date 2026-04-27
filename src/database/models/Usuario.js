@@ -60,12 +60,12 @@ module.exports = (sequelize) => {
     // Comportamiento por medio de pago: { qr_mode, debit_mode, credit_mode, point_device_id }
     mp_payment_config:       { type: DataTypes.JSON, allowNull: true, defaultValue: null },
 
-    // --- AFIP (ELIMINADO) ---
-    // facturacion_activa:  ELIMINADO
-    // afip_cuit:           ELIMINADO
-    // afip_pto_vta:        ELIMINADO
-    // afip_cert_path:      ELIMINADO
-    // afip_key_path:       ELIMINADO
+    // --- AFIP / Facturación ---
+    facturacion_activa: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: false },
+    afip_cuit:          { type: DataTypes.STRING,  allowNull: true },
+    afip_pto_vta:       { type: DataTypes.INTEGER, allowNull: true },
+    afip_cert_path:     { type: DataTypes.STRING,  allowNull: true },
+    afip_key_path:      { type: DataTypes.STRING,  allowNull: true },
 
   }, {
     tableName: 'Usuario',

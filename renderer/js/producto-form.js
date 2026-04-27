@@ -58,12 +58,6 @@ document.addEventListener("app-ready", () => {
   let familiasData = [];
   let imagenBase64 = null;
   
-  // Valor de referencia del precio de compra de la DB (CLAVE)
-  let precioCompraOriginal = 0; 
-  
-  // FLAG DE ESTADO DEL PRECIO: Indica si ya se ha tomado una decisión sobre la subida de precio
-  let precioBloqueado = false; 
-
   // Duplicate validation state
   let _dupNombre = false;
   let _dupCodigo = false;
@@ -163,10 +157,6 @@ document.addEventListener("app-ready", () => {
     inputPrecioVenta.value = producto.precioVenta ?? 0;
     inputFechaVencimiento.value = producto.fecha_vencimiento || "";
 
-    // Inicializar precioCompraOriginal y precioBloqueado
-    precioCompraOriginal = parseFloatOrZero(inputPrecioCompra.value); 
-    precioBloqueado = false; 
-
     if (producto.imagen_url) {
       imagenPreview.src = `app://${String(producto.imagen_url).replace(/\\/g, "/")}`;
       imagenPreview.classList.remove("imagen-preview-oculta");
@@ -213,8 +203,16 @@ document.addEventListener("app-ready", () => {
           formTitulo.textContent = "Nuevo Producto";
           actualizarFamiliasSelect();
           refreshPluUI();
-          // Si es nuevo producto, inicializamos la referencia a 0.
-          precioCompraOriginal = parseFloatOrZero(inputPrecioCompra.value); 
+          // Auto-generate SKU for new products
+          try {
+            const sku = await window.electronAPI.invoke("get-next-sku");
+            if (sku && inputCodigo && !inputCodigo.value.trim()) {
+              inputCodigo.value = sku;
+              refreshPluUI();
+            }
+          } catch (e) {
+            console.warn("[sku]", e.message);
+          }
       }
     };
 
@@ -357,7 +355,6 @@ document.addEventListener("app-ready", () => {
 
   // --- 3. EVENTOS ---
 
-  // ELIMINADO: No hay listener 'change' en inputPrecioCompra para evitar actualización de precioCompraOriginal antes del submit.
 
   inputPrecioCompra.addEventListener("input", calcularRentabilidad);
   inputPrecioVenta.addEventListener("input", calcularRentabilidad);
@@ -442,64 +439,9 @@ document.addEventListener("app-ready", () => {
   inputCodigo.addEventListener("input", refreshPluUI);
 
 
-  // --- GUARDAR PRODUCTO (LÓGICA BLOQUEANTE) ---
+  // --- GUARDAR PRODUCTO ---
   productoForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
-    const nuevoPrecioCompra = parseFloatOrZero(inputPrecioCompra.value);
-    
-    // 1. CHEQUEO BLOQUEANTE: Si el precio de compra subió Y no se ha tomado una decisión
-    if (nuevoPrecioCompra > precioCompraOriginal && !precioBloqueado) {
-        
-        // Evitamos que se guarde el producto y mostramos el modal
-        toggleSubmitButtonState(false);
-        
-        const ventaActual = parseFloatOrZero(inputPrecioVenta.value);
-        const precio40 = nuevoPrecioCompra * 1.40;
-        const precio50 = nuevoPrecioCompra * 1.50;
-        const precio60 = nuevoPrecioCompra * 1.60;
-        const gananciaActual = ventaActual - nuevoPrecioCompra;
-        const markupActual = nuevoPrecioCompra > 0 ? (gananciaActual / nuevoPrecioCompra) * 100 : 0;
-        precioCompraActualizadoDisplay.textContent = `$${nuevoPrecioCompra.toFixed(2)}`;
-        // Llenar el modal con datos
-        celda40.textContent = `$${precio40.toFixed(2)}`;
-        celda50.textContent = `$${precio50.toFixed(2)}`;
-        celda60.textContent = `$${precio60.toFixed(2)}`;
-        btnActual.textContent = `Mantener precio actual (Markup: ${markupActual.toFixed(0)}%)`;
-        
-        modalAjustePrecio.classList.add("visible");
-        
-        // 2. Definir Handlers y establecer el FLAG después de la decisión
-        const handleDecision = (newPrice) => {
-            // Limpiamos los eventos click para evitar múltiples disparos
-            btnActual.onclick = null;
-            btn40.onclick = null;
-            btn50.onclick = null;
-            btn60.onclick = null;
-
-            if (newPrice !== null) {
-                inputPrecioVenta.value = newPrice.toFixed(2);
-            }
-            
-            // CLAVE: Establecemos el flag y actualizamos el precio original.
-            precioBloqueado = true;
-            precioCompraOriginal = nuevoPrecioCompra;
-            modalAjustePrecio.classList.remove("visible");
-            calcularRentabilidad();
-            
-            // CLAVE: Disparamos el submit de nuevo (simulando Enter)
-            productoForm.dispatchEvent(new Event('submit'));
-        };
-
-        btnActual.onclick = () => handleDecision(null); // No cambia inputPrecioVenta
-        btn40.onclick = () => handleDecision(precio40);
-        btn50.onclick = () => handleDecision(precio50);
-        btn60.onclick = () => handleDecision(precio60);
-
-        return; // Detenemos el submit aquí
-    }
-
-    // 3. Si llegamos aquí, guardamos (precio no subió o usuario ya decidió)
 
     // Block save if duplicates are detected
     await checkDuplicates({ nombre: inputNombre?.value.trim(), codigoBarras: inputCodigoBarras?.value.trim() });
@@ -509,7 +451,6 @@ document.addEventListener("app-ready", () => {
     }
 
     toggleSubmitButtonState(true);
-    precioBloqueado = false; // Resetear el flag después de guardar
 
     try {
       const isPesable = !!pesableChk.checked;
@@ -541,8 +482,9 @@ document.addEventListener("app-ready", () => {
         FamiliaId: familiaSelect.value || null,
         DepartamentoId: deptoSelect.value || null,
         imagen_base64: imagenBase64,
-        activo: true,
+        activo: venta > 0,
         pesable: isPesable,
+        maneja_lotes: !!(manejaLotesChk?.checked),
         plu: pluToSend,
       };
 

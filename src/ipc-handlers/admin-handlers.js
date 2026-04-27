@@ -383,7 +383,7 @@ ipcMain.handle("test-print", async (_event, printerName) => {
   // ==========================================================
 ipcMain.handle(
     "imprimir-ticket",
-    async (_event, { recibo, nombreImpresora }) => {
+    async (_event, { recibo, reciboHtml, nombreImpresora }) => {
       try {
         const focusedWindow = BrowserWindow.getFocusedWindow();
         if (!focusedWindow) {
@@ -394,55 +394,19 @@ ipcMain.handle(
         }
 
         const options = {
-          silent: false, // Mantenemos el diálogo
+          silent: false,
           printBackground: true,
           deviceName: nombreImpresora || undefined,
           copies: 1,
-          // Quitamos pageSize y margins
         };
 
         const ticketWin = new BrowserWindow({ show: false });
 
-        // Convertir el texto plano del recibo a HTML para imprimir
-        const htmlRecibo = `
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body { 
-              font-family: 'Courier New', Courier, monospace; 
-              
-              /* ⬇️ 1. ACHICAMOS LA FUENTE ⬇️ */
-              font-size: 9px; 
-              
-              line-height: 1.4;
-              width: 100%;
-              margin: 0;
-              padding: 5px;
-              
-              /* ⬇️ 2. MANTENEMOS OSCURO ⬇️ */
-              font-weight: bold;
-              color: #000;
-            }
-            pre { 
-              font-family: 'Courier New', Courier, monospace; 
-              
-              /* ⬇️ 1. ACHICAMOS LA FUENTE ⬇️ */
-              font-size: 9px; 
-              
-              margin: 0;
-              white-space: pre-wrap;
-              
-              /* ⬇️ 2. MANTENEMOS OSCURO ⬇️ */
-              font-weight: bold;
-            }
-          </style>
-        </head>
-        <body>
-          <pre>${escapeHtml(recibo)}</pre>
-        </body>
-        </html>
-      `;
+        const htmlRecibo = reciboHtml || `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+body{font-family:'Courier New',monospace;font-size:9px;line-height:1.4;width:100%;margin:0;padding:5px;font-weight:bold;color:#000}
+pre{font-family:'Courier New',monospace;font-size:9px;margin:0;white-space:pre-wrap;font-weight:bold}
+</style></head><body><pre>${escapeHtml(recibo || "")}</pre></body></html>`;
 
         await ticketWin.loadURL(
           `data:text/html;charset=utf-8,${encodeURIComponent(htmlRecibo)}`

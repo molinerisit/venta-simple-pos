@@ -84,6 +84,7 @@ function registerConfigHandlers(models, sequelize) {
           "config_redondeo_automatico", "config_recargo_credito", "config_descuento_efectivo",
           "nombre_negocio", "slogan_negocio", "footer_ticket", "logo_url", "direccion_negocio",
           "mp_access_token", "mp_payment_config",
+          "facturacion_activa", "afip_cuit", "afip_pto_vta", "afip_cert_path", "afip_key_path",
         ],
         raw: true,
       });
@@ -449,6 +450,44 @@ function registerConfigHandlers(models, sequelize) {
     } catch (e) {
       console.error("[recovery] reset-password-with-token:", e);
       return { success: false, message: e.message };
+    }
+  });
+
+  // --- FACTURACIÓN / AFIP ---
+
+  ipcMain.handle("save-facturacion-status", async (_event, isEnabled) => {
+    try {
+      await Usuario.update(
+        { facturacion_activa: !!isEnabled },
+        { where: { rol: "administrador" } }
+      );
+      return { success: true };
+    } catch (error) {
+      console.error("[CONFIG][FACTURACION] Error:", error);
+      return { success: false, message: "Error al guardar estado de facturación." };
+    }
+  });
+
+  ipcMain.handle("save-afip-config", async (_event, data) => {
+    try {
+      const cuit  = String(data?.cuit  || "").trim();
+      const ptoVta = parseInt(data?.ptoVta) || null;
+      const certPath = String(data?.certPath || "").trim();
+      const keyPath  = String(data?.keyPath  || "").trim();
+
+      await Usuario.update(
+        {
+          afip_cuit:      cuit     || null,
+          afip_pto_vta:   ptoVta   || null,
+          afip_cert_path: certPath || null,
+          afip_key_path:  keyPath  || null,
+        },
+        { where: { rol: "administrador" } }
+      );
+      return { success: true };
+    } catch (error) {
+      console.error("[CONFIG][AFIP] Error:", error);
+      return { success: false, message: "Error al guardar configuración de AFIP." };
     }
   });
 
