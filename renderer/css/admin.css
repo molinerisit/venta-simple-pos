@@ -371,6 +371,105 @@
 .status-display.warning { background: #fefce8; border-color: #fde68a; color: #92400e; }
 .status-display.error   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 
+/* ─── Suscripción card ───────────────────────────────────────────────────── */
+.susc-card {
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.susc-card--active {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+.susc-card--free {
+  background: #f8fafc;
+}
+.susc-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.susc-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.susc-badge--pro  { background: #dcfce7; color: #15803d; }
+.susc-badge--free { background: #e2e8f0; color: #64748b; }
+.susc-card__status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+.susc-card__nombre {
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+.susc-card__email {
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+.susc-card__desc {
+  font-size: .83rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.susc-features {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.susc-features span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  color: #16a34a;
+}
+.susc-features--muted span {
+  color: #94a3b8;
+}
+.susc-features--muted span::before {
+  content: '';
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+.susc-card__cta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.susc-card__hint {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.susc-btn-activar,
+.susc-btn-manage {
+  align-self: flex-start;
+}
+
 /* ─── Balanza visualizer ─────────────────────────────────────────────────── */
 .visualizador-container {
   background: #f8fafc;

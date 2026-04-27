@@ -240,6 +240,13 @@
       toast.show(`Error MP: ${error || "desconocido"}`, "error");
     });
 
+    // Cuando el deep link activa la licencia, refrescar la card de suscripción
+    window.electronAPI.on("license-activated", async () => {
+      if (!suscripcionCard) return;
+      const lic = await ipcInvoke("get-subscription-status").catch(() => null);
+      renderSuscripcionCard(lic);
+    });
+
     // Mercado Pago (legacy — kept for backward compat, IDs no longer exist in HTML)
     const mpForm = null;
     const accessTokenInput = null;
@@ -293,14 +300,8 @@
     const barcodeAutoChk = document.getElementById("barcode-auto");
     const barcodePreview = document.getElementById("barcode-preview");
 
-    // Sync / Suscripción
-    const syncConfigForm = document.getElementById("sync-config-form");
-    const syncApiUrlInput = document.getElementById("sync-api-url");
-    const syncEnabledToggle = document.getElementById("sync-enabled-toggle");
-    const licenseKeyInput = document.getElementById("license-key");
-    const subscriptionStatusDisplay = document.getElementById(
-      "subscription-status-display"
-    );
+    // Suscripción
+    const suscripcionCard = document.getElementById("suscripcion-card");
 
     // Generales
     const generalConfigForm = document.getElementById("general-config-form");
@@ -455,18 +456,65 @@
         : "none";
     };
 
-    const displaySubscriptionStatus = (status) => {
-      const el = subscriptionStatusDisplay;
-      if (!el) return;
-      el.className = "status-display";
-      if (!status) {
-        el.textContent = "Sincronización desactivada o sin información.";
-        return;
+    const PLANES_URL = "https://ventasimple.cloud/planes";
+
+    const renderSuscripcionCard = (lic) => {
+      if (!suscripcionCard) return;
+      const plan    = lic?.plan || "FREE";
+      const email   = lic?.email || null;
+      const nombre  = lic?.nombre || null;
+      const activo  = lic?.activated || (plan !== "FREE");
+
+      if (activo) {
+        suscripcionCard.innerHTML = `
+          <div class="susc-card susc-card--active">
+            <div class="susc-card__header">
+              <span class="susc-badge susc-badge--pro">${plan}</span>
+              <span class="susc-card__status">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"/></svg>
+                Activo
+              </span>
+            </div>
+            ${nombre ? `<p class="susc-card__nombre">${nombre}</p>` : ""}
+            ${email  ? `<p class="susc-card__email">${email}</p>` : ""}
+            <div class="susc-features">
+              <span><svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/></svg>Respaldo automático en la nube</span>
+              <span><svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/></svg>Sincronización entre equipos</span>
+              <span><svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/></svg>Acceso a todas las funciones</span>
+            </div>
+            <button class="btn btn-outline susc-btn-manage" id="btn-gestionar-plan">
+              Gestionar suscripción
+            </button>
+          </div>
+        `;
+      } else {
+        suscripcionCard.innerHTML = `
+          <div class="susc-card susc-card--free">
+            <div class="susc-card__header">
+              <span class="susc-badge susc-badge--free">FREE</span>
+            </div>
+            <p class="susc-card__desc">Activá un plan para acceder a sincronización en la nube, respaldo automático y más funciones.</p>
+            <div class="susc-features susc-features--muted">
+              <span>Respaldo automático en la nube</span>
+              <span>Sincronización entre equipos</span>
+              <span>Acceso a todas las funciones</span>
+            </div>
+            <div class="susc-card__cta">
+              <button class="btn btn-primario susc-btn-activar" id="btn-activar-plan">
+                Ver planes y activar
+              </button>
+              <p class="susc-card__hint">Al comprar el plan desde la web con tu misma cuenta, la activación se aplica automáticamente en esta app.</p>
+            </div>
+          </div>
+        `;
       }
-      el.textContent = status.message || "Estado desconocido.";
-      if (status.status === "active") el.classList.add("active");
-      else if (status.status === "warning") el.classList.add("warning");
-      else el.classList.add("error");
+
+      document.getElementById("btn-gestionar-plan")?.addEventListener("click", () => {
+        ipcInvoke("open-external-url", PLANES_URL);
+      });
+      document.getElementById("btn-activar-plan")?.addEventListener("click", () => {
+        ipcInvoke("open-external-url", PLANES_URL);
+      });
     };
 
     const updateTicketPreview = () => {
@@ -835,13 +883,13 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
           toggleArqueoFields();
         }
 
-        if (syncConfigForm) {
-          syncEnabledToggle.checked = !!config.sync_enabled;
-          syncApiUrlInput.value =
-            config.sync_api_url ||
-            "https://servidor-api-ventasimple-production.up.railway.app";
-          if (licenseKeyInput) licenseKeyInput.value = config.license_key || "";
-          displaySubscriptionStatus(config.subscription_status);
+        if (suscripcionCard) {
+          try {
+            const lic = await ipcInvoke("get-subscription-status");
+            renderSuscripcionCard(lic);
+          } catch {
+            renderSuscripcionCard(null);
+          }
         }
 
         updateTicketPreview();
@@ -1682,65 +1730,6 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
       }
     });
 
-    // SINCRONIZACIÓN / SUSCRIPCIÓN
-    on(syncConfigForm, "submit", async (e) => {
-      e.preventDefault();
-      try {
-        const data = {
-          sync_enabled: !!syncEnabledToggle?.checked,
-          sync_api_url: syncApiUrlInput?.value?.trim() || "",
-          license_key: (licenseKeyInput?.value || "").trim(),
-        };
-
-        if (data.sync_enabled && !data.sync_api_url) {
-          return toast.show(
-            "Ingresá la URL de la API para sincronizar.",
-            "error"
-          );
-        }
-
-        const saved = await ipcInvoke("save-sync-config", data);
-        if (!saved?.success) {
-          toast.show(
-            saved?.message || "No se pudo guardar la sincronización.",
-            "error"
-          );
-          return;
-        }
-
-        // Ejecutar validación/heartbeat inmediata (requiere handler en main)
-        let result;
-        try {
-          result = await ipcInvoke("run-manual-sync");
-        } catch (err) {
-          console.error(err);
-          toast.show(
-            "No se pudo ejecutar la validación inmediata. Verificá que el handler 'run-manual-sync' esté registrado en el proceso principal.",
-            "error"
-          );
-          return;
-        }
-
-        if (result?.success) {
-          displaySubscriptionStatus(result.status);
-          toast.show(result.message || "Licencia válida. Sincronización ok.");
-        } else {
-          displaySubscriptionStatus(
-            result?.status || {
-              status: "error",
-              message: result?.message || "No válido.",
-            }
-          );
-          toast.show(
-            result?.message || "Token inválido o error de conexión.",
-            "error"
-          );
-        }
-      } catch (e1) {
-        console.error(e1);
-        toast.show("Error al guardar/validar sincronización.", "error");
-      }
-    });
 
     // ── Importación masiva de productos (CSV) ──────────────────────────────
     const btnExportarCSV = document.getElementById("btn-exportar-csv");
