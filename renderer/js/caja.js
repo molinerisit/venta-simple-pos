@@ -540,7 +540,7 @@ document.addEventListener("app-ready", () => {
       if (esCodigoBarras(valor)) {
         const encontrado = await window.electronAPI.invoke("busqueda-inteligente", valor);
         if (encontrado) {
-          agregarProductoALaVenta(encontrado, encontrado.cantidad || 1, encontrado.precioVenta);
+          agregarProductoALaVenta(encontrado, encontrado.cantidad || 1, null);
         } else if (esNumeroValido && numero > 0 && numero <= 999999) {
           agregarIngresoManual(numero);
         } else {
@@ -839,17 +839,13 @@ ${footerHtml}
       case "+": {
         const _ae = document.activeElement;
         const _inOtherInput = _ae && ['INPUT','TEXTAREA'].includes(_ae.tagName) && _ae.id !== 'main-input';
-        if (!_inOtherInput && !btnRegistrarVenta?.disabled && CajaState.ventaActual.length > 0) {
-          if (!CajaState.metodoPagoSeleccionado) {
-            CajaState.metodoPagoSeleccionado = "Efectivo";
-            paymentButtons.forEach((b) => b.classList.remove("active"));
-            document.querySelector('[data-metodo="Efectivo"]')?.classList.add("active");
-            efectivoArea?.classList.remove("oculto");
-          }
-          if (CajaState.metodoPagoSeleccionado === "Efectivo" && montoPagadoInput) {
-            montoPagadoInput.value = (CajaState.totalFinalRedondeado || 0).toFixed(2);
-          }
-          btnRegistrarVenta.click();
+        if (_inOtherInput) { isHot = false; break; }
+        // Agregar monto manual: toma el número del input principal
+        const _manualVal = mainInput?.value?.trim();
+        const _manualNum = parseFloat(String(_manualVal || '').replace(',', '.'));
+        if (_manualVal && _manualNum > 0) {
+          agregarIngresoManual(_manualNum);
+          if (mainInput) mainInput.value = '';
         }
         break;
       }
@@ -1004,7 +1000,7 @@ if (event.key === "Enter") {
   const shortcutsOverlay = document.getElementById('shortcuts-overlay');
   const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
 
-  const SHORTCUTS_VERSION = '2';
+  const SHORTCUTS_VERSION = '3';
 
   function openShortcuts() {
     if (shortcutsOverlay) shortcutsOverlay.style.display = 'flex';
