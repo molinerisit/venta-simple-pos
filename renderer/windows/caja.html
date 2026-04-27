@@ -98,36 +98,72 @@
 
         <!-- Arqueo de caja -->
         <div class="arqueo-actions">
-          <button id="abrir-caja-btn" class="btn btn-success btn-grande oculto">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <button id="abrir-caja-btn" class="btn btn-success oculto abrir-caja-btn-styled">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
             </svg>
             Abrir Caja
           </button>
-          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            Cerrar Caja
-          </button>
-          <button id="movimiento-caja-btn" class="btn btn-secundario btn-grande oculto">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Movimiento
-          </button>
-          <!-- W5-F12: Informe X — snapshot sin cerrar caja -->
-          <button id="informe-x-btn" class="btn btn-secundario btn-grande oculto">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            Informe X
-          </button>
+          <!-- Botones de gestión: permanecen en el DOM para que los event listeners funcionen,
+               pero la UI los mueve al overlay de gestión -->
+          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto" style="display:none"></button>
+          <button id="movimiento-caja-btn" class="btn btn-secundario btn-grande oculto" style="display:none"></button>
+          <button id="informe-x-btn" class="btn btn-secundario btn-grande oculto" style="display:none"></button>
+        </div>
+
+        <!-- Overlay: Gestión de Caja -->
+        <div id="gestion-caja-overlay" class="gestion-caja-overlay oculto">
+          <div class="gestion-caja-backdrop" id="gestion-caja-backdrop"></div>
+          <div class="gestion-caja-panel">
+            <div class="gestion-caja-header">
+              <div class="gestion-caja-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/>
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                </svg>
+                <h2>Gestión de Caja</h2>
+              </div>
+              <button class="gestion-close-btn" id="cerrar-gestion-overlay">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="gestion-caja-grid">
+              <button class="gestion-action-card gestion-card--movimiento" id="proxy-movimiento-btn">
+                <div class="gestion-card-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </div>
+                <span class="gestion-card-label">Movimiento</span>
+                <span class="gestion-card-desc">Registrar ingreso o egreso</span>
+              </button>
+              <button class="gestion-action-card gestion-card--informe" id="proxy-informe-x-btn">
+                <div class="gestion-card-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                </div>
+                <span class="gestion-card-label">Informe X</span>
+                <span class="gestion-card-desc">Ver resumen sin cerrar</span>
+              </button>
+              <button class="gestion-action-card gestion-card--cerrar" id="proxy-cerrar-caja-btn">
+                <div class="gestion-card-icon">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <span class="gestion-card-label">Cerrar Caja</span>
+                <span class="gestion-card-desc">Finalizar turno y rendir</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Cliente -->

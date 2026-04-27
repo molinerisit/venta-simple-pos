@@ -255,6 +255,9 @@ document.addEventListener("app-ready", () => {
     mpConfigurado: !!(CajaState.sesion?.config?.mp_configurado),
   });
 
+  const sidebarGestionLi = document.getElementById("sidebar-gestion-caja-li");
+  const gestionOverlay   = document.getElementById("gestion-caja-overlay");
+
   const actualizarEstadoVisualCaja = () => {
     const cfg = getCfg();
     if (!cfg.arqueo.habilitado) {
@@ -262,6 +265,7 @@ document.addEventListener("app-ready", () => {
       cerrarCajaBtn?.classList.add("oculto");
       movimientoBtn?.classList.add("oculto");
       informeXBtn?.classList.add("oculto");
+      sidebarGestionLi?.classList.add("oculto");
       desbloquearUI();
       return;
     }
@@ -270,12 +274,14 @@ document.addEventListener("app-ready", () => {
       cerrarCajaBtn?.classList.remove("oculto");
       movimientoBtn?.classList.remove("oculto");
       informeXBtn?.classList.remove("oculto");
+      sidebarGestionLi?.classList.remove("oculto");
       desbloquearUI();
     } else {
       abrirCajaBtn?.classList.remove("oculto");
       cerrarCajaBtn?.classList.add("oculto");
       movimientoBtn?.classList.add("oculto");
       informeXBtn?.classList.add("oculto");
+      sidebarGestionLi?.classList.add("oculto");
       bloquearUI("Debes realizar la apertura de caja para comenzar a vender.");
     }
   };
@@ -1539,6 +1545,25 @@ if (event.key === "Enter") {
   movimientoBtn?.addEventListener("click", abrirMovimientoModal);
   cerrarMovimientoBtn?.addEventListener("click", cerrarMovimientoModal);
   cancelarMovimientoBtn?.addEventListener("click", cerrarMovimientoModal);
+
+  // Overlay de gestión de caja
+  const abrirGestionOverlay = () => gestionOverlay?.classList.remove("oculto");
+  const cerrarGestionOverlay = () => gestionOverlay?.classList.add("oculto");
+  document.getElementById("sidebar-gestion-caja-btn")?.addEventListener("click", abrirGestionOverlay);
+  document.getElementById("cerrar-gestion-overlay")?.addEventListener("click", cerrarGestionOverlay);
+  document.getElementById("gestion-caja-backdrop")?.addEventListener("click", cerrarGestionOverlay);
+  document.getElementById("proxy-movimiento-btn")?.addEventListener("click", () => {
+    cerrarGestionOverlay();
+    movimientoBtn?.click();
+  });
+  document.getElementById("proxy-informe-x-btn")?.addEventListener("click", () => {
+    cerrarGestionOverlay();
+    informeXBtn?.click();
+  });
+  document.getElementById("proxy-cerrar-caja-btn")?.addEventListener("click", () => {
+    cerrarGestionOverlay();
+    cerrarCajaBtn?.click();
+  });
 
   // W5-F12: Informe X — snapshot de totales sin cerrar la caja
   informeXBtn?.addEventListener("click", async () => {

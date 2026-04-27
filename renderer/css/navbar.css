@@ -101,6 +101,43 @@
 }
 .sidebar-nav li { display: block; }
 
+/* Botón contextual de gestión de caja (solo visible cuando la caja está abierta) */
+.sidebar-gestion-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 10px 4px !important;
+  border-radius: 10px !important;
+  width: 100% !important;
+  background: rgba(249, 115, 22, 0.15) !important;
+  border: none !important;
+  color: #FB923C !important;
+  cursor: pointer !important;
+  transition: background-color .18s, color .18s !important;
+}
+.sidebar-gestion-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  stroke: #FB923C;
+  transition: stroke .18s;
+}
+.sidebar-gestion-btn span {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  color: #FB923C;
+  letter-spacing: .02em;
+}
+.sidebar-gestion-btn:hover {
+  background: rgba(249, 115, 22, 0.25) !important;
+  color: #FDBA74 !important;
+}
+.sidebar-gestion-btn:hover svg { stroke: #FDBA74; }
+.sidebar-gestion-btn:hover span { color: #FDBA74; }
+
 .sidebar-nav a {
   display: flex !important;
   flex-direction: column !important;

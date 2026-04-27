@@ -409,6 +409,163 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
   font-size: .85em;
 }
 
+/* Abrir caja — botón prominente cuando el turno está cerrado */
+.abrir-caja-btn-styled {
+  width: 100%;
+  min-height: 52px !important;
+  border-radius: 14px !important;
+  font-size: .95em !important;
+  font-weight: 700 !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  letter-spacing: .02em !important;
+  box-shadow: 0 2px 12px rgba(16,185,129,.25) !important;
+}
+
+/* ── Overlay Gestión de Caja ── */
+.gestion-caja-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gestion-caja-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.gestion-caja-panel {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  padding: 28px 28px 24px;
+  width: 420px;
+  max-width: calc(100vw - 48px);
+}
+
+.gestion-caja-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.gestion-caja-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0F172A;
+}
+
+.gestion-caja-title svg {
+  color: #3B82F6;
+  stroke: #3B82F6;
+}
+
+.gestion-caja-title h2 {
+  font-size: 1.1em;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -.01em;
+}
+
+.gestion-close-btn {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: background .15s, color .15s;
+}
+.gestion-close-btn:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.gestion-caja-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gestion-action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: transform .12s, box-shadow .12s;
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+.gestion-action-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+}
+.gestion-action-card:active { transform: translateY(0); }
+
+.gestion-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gestion-card-label {
+  font-size: .95em;
+  font-weight: 700;
+  color: #0F172A;
+  display: block;
+  line-height: 1.2;
+}
+
+.gestion-card-desc {
+  font-size: .78em;
+  color: #64748B;
+  display: block;
+  margin-top: 2px;
+}
+
+.gestion-card--movimiento .gestion-card-icon {
+  background: #EFF6FF;
+  color: #3B82F6;
+}
+.gestion-card--movimiento .gestion-card-icon svg { stroke: #3B82F6; }
+.gestion-card--movimiento { border-color: #DBEAFE; }
+.gestion-card--movimiento:hover { background: #F0F7FF; }
+
+.gestion-card--informe .gestion-card-icon {
+  background: #F0FDF4;
+  color: #10B981;
+}
+.gestion-card--informe .gestion-card-icon svg { stroke: #10B981; }
+.gestion-card--informe { border-color: #BBF7D0; }
+.gestion-card--informe:hover { background: #F0FDF7; }
+
+.gestion-card--cerrar .gestion-card-icon {
+  background: #FFF1F2;
+  color: #EF4444;
+}
+.gestion-card--cerrar .gestion-card-icon svg { stroke: #EF4444; }
+.gestion-card--cerrar { border-color: #FECDD3; }
+.gestion-card--cerrar:hover { background: #FFF5F5; }
+
 /* ── Cliente ── */
 .cliente-area .input-group {
   display: flex;
