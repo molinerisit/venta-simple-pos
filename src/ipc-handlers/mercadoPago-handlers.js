@@ -646,11 +646,11 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
-      const r = await doFetch("https://api.mercadopago.com/terminals/v1/list", {
+      const r = await doFetch(`${POINT_BASE}/devices`, {
         headers: authHeaders(accessToken, { "Content-Type": undefined }),
       });
       if (!r.ok) return { ok: false, error: r.error };
-      return { ok: true, terminals: r.data?.terminals || [] };
+      return { ok: true, terminals: r.data?.devices || [] };
     } catch (e) {
       return { ok: false, error: e.message };
     }
@@ -665,12 +665,10 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
-      return await doFetch("https://api.mercadopago.com/terminals/v1/setup", {
+      return await doFetch(`${POINT_BASE}/devices/${encodeURIComponent(terminalId)}`, {
         method: "PATCH",
         headers: authHeaders(accessToken),
-        body: JSON.stringify({
-          terminals: [{ id: terminalId, operating_mode: "PDV" }],
-        }),
+        body: JSON.stringify({ operating_mode: "PDV" }),
       });
     } catch (e) {
       return { ok: false, error: e.message };

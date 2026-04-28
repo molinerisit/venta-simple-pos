@@ -113,6 +113,7 @@
     const mpNoPdvWrap             = document.getElementById("mp-no-pdv-wrap");
     const mpAllTerminals          = document.getElementById("mp-all-terminals");
     const btnActivatePdv          = document.getElementById("btn-activate-pdv");
+    const btnRefreshTerminals     = document.getElementById("btn-refresh-terminals");
     const mpActivateResult        = document.getElementById("mp-activate-result");
 
     function _mpNeedsDevice() {
@@ -208,6 +209,7 @@
     });
 
     on(btnRefreshDevices, "click", () => refreshPointDevices(mpPointDevice?.value));
+    on(btnRefreshTerminals, "click", () => loadAllTerminalsForActivation());
 
     on(btnSaveMpPaymentConfig, "click", async () => {
       setBtnLoading(btnSaveMpPaymentConfig, true, "Guardando…");
