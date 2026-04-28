@@ -146,6 +146,7 @@ body {
 .btn:active  { transform: scale(.98); }
 .btn:disabled { opacity: .5; cursor: default; }
 
+.btn-chat-tab { background: #1e3a8a; color: #fff; }
 .btn-whatsapp { background: #22c55e; color: #fff; }
 .btn-copy     { background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; }
 .btn-rustdesk { background: #1e3a8a; color: #fff; }

@@ -53,22 +53,29 @@ async function upsertCloudUser(Usuario, { email, nombre, rol, plainPassword }) {
   const hash = await bcrypt.hash(plainPassword, 10);
   const nombreLimpio = (nombre || email.split("@")[0]).trim();
 
-  let user = await Usuario.findOne({
-    where: { email },
-    attributes: ["id", "nombre_canon", "password"],
-  });
-
+  // 1. Coincidencia exacta por email (cuenta ya sincronizada antes)
+  let user = await Usuario.findOne({ where: { email } });
   if (user) {
-    await user.update({ password: hash });
-  } else {
-    user = await Usuario.create({
-      nombre:  nombreLimpio,
-      email,
-      password: hash,
-      rol:     "administrador",
-    });
+    await user.update({ nombre: nombreLimpio, password: hash });
+    return user;
   }
-  return user;
+
+  // 2. Existe un admin local con distinto email (cuenta anterior en esta PC).
+  //    Reasignamos sus credenciales para preservar todos los datos locales
+  //    (ventas, productos, etc.) y evitar conflictos de nombre_canon.
+  const existingAdmin = await Usuario.findOne({ where: { rol: "administrador" } });
+  if (existingAdmin) {
+    await existingAdmin.update({ email, nombre: nombreLimpio, password: hash });
+    return existingAdmin;
+  }
+
+  // 3. Base de datos vacía → crear desde cero
+  return await Usuario.create({
+    nombre:   nombreLimpio,
+    email,
+    password: hash,
+    rol:      "administrador",
+  });
 }
 
 function registerSessionHandlers(models, sequelize, createMainWindow, createLoginWindow) {

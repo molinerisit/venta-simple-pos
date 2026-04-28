@@ -591,9 +591,9 @@ function registerMercadoPagoHandlers(models) {
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,
+          ...(description ? { description } : {}),
         },
       };
-      if (description) body.description = description;
 
       return await doFetch(
         `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,
@@ -633,6 +633,45 @@ function registerMercadoPagoHandlers(models) {
         `${POINT_BASE}/payment-intents/${encodeURIComponent(intentId)}`,
         { headers: authHeaders(accessToken, { "Content-Type": undefined }) }
       );
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  // Lista TODOS los terminales de la cuenta (incluyendo los que no están en modo PDV)
+  ipcMain.handle("mp:point-list-all-terminals", async () => {
+    try {
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      const r = await doFetch("https://api.mercadopago.com/terminals/v1/list", {
+        headers: authHeaders(accessToken, { "Content-Type": undefined }),
+      });
+      if (!r.ok) return { ok: false, error: r.error };
+      return { ok: true, terminals: r.data?.terminals || [] };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  // Activa Modo PDV en un terminal para que acepte payment intents via API
+  ipcMain.handle("mp:point-activate-pdv", async (_evt, { terminalId }) => {
+    try {
+      if (!terminalId) return { ok: false, error: "terminalId requerido" };
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      return await doFetch("https://api.mercadopago.com/terminals/v1/setup", {
+        method: "PATCH",
+        headers: authHeaders(accessToken),
+        body: JSON.stringify({
+          terminals: [{ id: terminalId, operating_mode: "PDV" }],
+        }),
+      });
     } catch (e) {
       return { ok: false, error: e.message };
     }

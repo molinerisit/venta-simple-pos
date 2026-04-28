@@ -110,6 +110,10 @@
     const mpDeviceWrap            = document.getElementById("mp-device-wrap");
     const btnRefreshDevices       = document.getElementById("btn-refresh-devices");
     const btnSaveMpPaymentConfig  = document.getElementById("btn-save-mp-payment-config");
+    const mpNoPdvWrap             = document.getElementById("mp-no-pdv-wrap");
+    const mpAllTerminals          = document.getElementById("mp-all-terminals");
+    const btnActivatePdv          = document.getElementById("btn-activate-pdv");
+    const mpActivateResult        = document.getElementById("mp-activate-result");
 
     function _mpNeedsDevice() {
       return [mpQrMode?.value, mpDebitMode?.value, mpCreditMode?.value].includes("posnet");
@@ -119,11 +123,35 @@
       if (mpDeviceWrap) mpDeviceWrap.style.display = _mpNeedsDevice() ? "" : "none";
     }
 
+    async function loadAllTerminalsForActivation() {
+      if (!mpAllTerminals) return;
+      mpAllTerminals.innerHTML = '<option value="">Buscando terminales…</option>';
+      const res = await ipcInvoke("mp:point-list-all-terminals").catch(() => null);
+      if (!res?.ok || !res.terminals?.length) {
+        mpAllTerminals.innerHTML = '<option value="">No se encontraron terminales vinculados</option>';
+        return;
+      }
+      mpAllTerminals.innerHTML = '<option value="">-- Seleccioná el terminal --</option>';
+      res.terminals.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.device_name || t.id} (${t.operating_mode || "standalone"})`;
+        mpAllTerminals.appendChild(opt);
+      });
+    }
+
     async function refreshPointDevices(selectedId = null) {
       if (!mpPointDevice) return;
       mpPointDevice.innerHTML = '<option value="">Buscando dispositivos…</option>';
       const res = await ipcInvoke("mp:point-list-devices").catch(() => null);
-      if (!res?.ok || !res.devices?.length) {
+      const hasPdvDevices = res?.ok && res.devices?.length;
+
+      if (mpNoPdvWrap) {
+        mpNoPdvWrap.style.display = hasPdvDevices ? "none" : "";
+        if (!hasPdvDevices) loadAllTerminalsForActivation();
+      }
+
+      if (!hasPdvDevices) {
         mpPointDevice.innerHTML = '<option value="">Sin dispositivos en Modo PDV</option>';
         return;
       }
@@ -136,6 +164,28 @@
         mpPointDevice.appendChild(opt);
       });
     }
+
+    on(btnActivatePdv, "click", async () => {
+      const terminalId = mpAllTerminals?.value;
+      if (!terminalId) { toast.show("Seleccioná un terminal primero.", "error"); return; }
+      setBtnLoading(btnActivatePdv, true, "Activando…");
+      if (mpActivateResult) mpActivateResult.style.display = "none";
+      const res = await ipcInvoke("mp:point-activate-pdv", { terminalId }).catch(() => null);
+      setBtnLoading(btnActivatePdv, false, "Activar Modo PDV");
+      if (res?.ok) {
+        if (mpActivateResult) {
+          mpActivateResult.style.display = "";
+          mpActivateResult.style.color = "#16a34a";
+          mpActivateResult.textContent = "¡Modo PDV activado! Reiniciá el terminal y después hacé clic en ↻ para verlo listo.";
+        }
+      } else {
+        if (mpActivateResult) {
+          mpActivateResult.style.display = "";
+          mpActivateResult.style.color = "#dc2626";
+          mpActivateResult.textContent = `Error: ${res?.error || "No se pudo activar el Modo PDV."}`;
+        }
+      }
+    });
 
     async function loadMpPaymentConfig() {
       const cfg = await ipcInvoke("get-mp-payment-config").catch(() => null);
