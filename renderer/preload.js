@@ -175,6 +175,8 @@ const validInvokeChannels = [
   "get-mp-payment-config",
   "save-mp-payment-config",
   "mp:point-list-devices",
+  "mp:point-list-all-terminals",
+  "mp:point-activate-pdv",
   "mp:point-create-intent",
   "mp:point-cancel-intent",
   "mp:point-intent-status",
