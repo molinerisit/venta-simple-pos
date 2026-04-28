@@ -177,9 +177,28 @@ function registerLicenseHandlers() {
     return url.toString();
   });
 
-  // Devuelve el plan activo al renderer
+  // Devuelve el plan activo al renderer y sincroniza con la nube en background
   ipcMain.handle('get-subscription-status', () => {
     const lic = readLicense();
+
+    // Sync silencioso con la nube — no bloquea la respuesta
+    if (lic?.token) {
+      const apiUrl = (lic.api_url || CLOUD_API).replace(/\/$/, '');
+      _getAuthed(`${apiUrl}/api/cuenta/licencia`, lic.token)
+        .then(data => {
+          const VALID = ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'];
+          const remotePlan = data?.licencia?.plan;
+          if (remotePlan && VALID.includes(remotePlan) && remotePlan !== lic.plan) {
+            writeLicense({ ...lic, plan: remotePlan });
+            BrowserWindow.getAllWindows().forEach(win => {
+              if (!win.isDestroyed())
+                win.webContents.send('license-activated', { plan: remotePlan, nombre: lic.nombre });
+            });
+          }
+        })
+        .catch(() => {}); // sin internet está bien, falla silenciosamente
+    }
+
     return {
       plan:      lic?.plan      || 'FREE',
       tenant_id: lic?.tenant_id || null,

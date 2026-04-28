@@ -203,9 +203,10 @@ function _mostrarPopupPrueba(forzar = false) {
   const cerrar = () => overlay.remove();
   document.getElementById("vs-trial-close")?.addEventListener("click", cerrar);
   document.getElementById("vs-trial-close2")?.addEventListener("click", cerrar);
-  document.getElementById("vs-trial-buy")?.addEventListener("click", (e) => {
+  document.getElementById("vs-trial-buy")?.addEventListener("click", async (e) => {
     e.preventDefault();
-    window.electronAPI.invoke("open-external-url", "https://ventasimple.com/planes").catch(() => {});
+    const url = await window.electronAPI.invoke("get-web-login-url", "/cuenta").catch(() => "https://ventasimple.cloud/cuenta");
+    window.electronAPI.invoke("open-external-url", url).catch(() => {});
     cerrar();
   });
 }
