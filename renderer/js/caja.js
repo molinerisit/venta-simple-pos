@@ -1812,12 +1812,17 @@ if (event.key === "Enter") {
     toggleButtonLoading(button, true, metodo);
 
     const externalReference = `VS-${Date.now()}`;
+    // Mapear método al tipo que espera la API de MP Point para saltear la selección en el terminal
+    const paymentTypeMap = { "Débito": "debit_card", "Crédito": "credit_card" };
+    const paymentType = paymentTypeMap[metodo] || null;
+
     try {
       const intentResult = await window.electronAPI.invoke("mp:point-create-intent", {
         deviceId,
         amount: total,
         externalReference,
         description: `${metodo} - VentaSimple`,
+        paymentType,
       });
 
       if (!intentResult?.ok) {
@@ -1840,7 +1845,7 @@ if (event.key === "Enter") {
       if (posnetActionHint) {
         const hintText = metodo === "QR"
           ? "Pedile al cliente que toque QR en el posnet y que escanee el código que aparece."
-          : "Pedile al cliente que toque TARJETAS en el posnet y que pase o acerque la tarjeta.";
+          : `Pedile al cliente que pase, acerque o inserte la tarjeta de ${metodo === "Débito" ? "débito" : "crédito"}.`;
         posnetActionHint.textContent = hintText;
         posnetActionHint.style.display = "block";
       }

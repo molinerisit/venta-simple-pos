@@ -573,7 +573,7 @@ function registerMercadoPagoHandlers(models) {
     }
   });
 
-  ipcMain.handle("mp:point-create-intent", async (_evt, { deviceId, amount, externalReference, description }) => {
+  ipcMain.handle("mp:point-create-intent", async (_evt, { deviceId, amount, externalReference, description, paymentType }) => {
     try {
       if (!deviceId) return { ok: false, error: "deviceId requerido" };
       const numAmount = Number(amount);
@@ -595,6 +595,15 @@ function registerMercadoPagoHandlers(models) {
           print_on_terminal: true,
         },
       };
+
+      // Si se especifica el tipo de pago, lo mandamos para que el posnet no pregunte
+      // "credit_card" o "debit_card" → el terminal va directo a esperar la tarjeta
+      if (paymentType === "credit_card" || paymentType === "debit_card") {
+        body.payment = {
+          installments: 1,
+          type: paymentType,
+        };
+      }
 
       return await doFetch(
         `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,

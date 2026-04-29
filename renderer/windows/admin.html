@@ -676,6 +676,27 @@
                     <option value="none">No hacer nada</option>
                   </select>
                   <small id="mp-qr-mode-hint">El cliente escanea el QR con su celular desde la pantalla de la PC.</small>
+                  <details id="mp-qr-ayuda" style="margin-top:6px;font-size:.75rem;">
+                    <summary style="cursor:pointer;color:#3b82f6;font-weight:600;user-select:none;">¿Cómo funciona cada modo?</summary>
+                    <div style="margin-top:8px;display:flex;flex-direction:column;gap:10px;color:#374151;">
+                      <div>
+                        <p style="font-weight:700;margin:0 0 3px;">QR en pantalla (recomendado)</p>
+                        <p style="margin:0;">VentaSimple genera un QR único por venta en la pantalla de la PC. El cliente lo escanea con la app de Mercado Pago. <strong>No requiere posnet</strong>. Solo necesitás tener MP conectado.</p>
+                      </div>
+                      <div>
+                        <p style="font-weight:700;margin:0 0 3px;">QR en el posnet (Point Smart)</p>
+                        <p style="margin:0 0 4px;">El monto se envía al terminal Point y el cliente escanea el QR que aparece en la pantalla del posnet. Requiere un <strong>Point Smart o Point Pro 2</strong> (el Point Air no soporta QR).</p>
+                        <p style="font-weight:600;margin:0 0 3px;">Para habilitarlo:</p>
+                        <ol style="margin:0;padding-left:18px;line-height:1.7;">
+                          <li>Abrí la <strong>app de Mercado Pago</strong> en tu celular.</li>
+                          <li>Ir a <strong>Cobrar → Punto de venta → tu local</strong>.</li>
+                          <li>En la sección del terminal Point, activá <strong>"Cobros con QR"</strong>.</li>
+                          <li>Reiniciá el terminal.</li>
+                          <li>Volvé aquí y seleccioná <em>"Mostrar QR en el posnet"</em>.</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </details>
                 </div>
                 <div class="form-campo">
                   <label for="mp-debit-mode">Tarjeta débito</label>
@@ -683,7 +704,7 @@
                     <option value="posnet">Cobrar en posnet</option>
                     <option value="none">No hacer nada</option>
                   </select>
-                  <small>El monto se envía al posnet. El cliente toca TARJETAS y pasa la tarjeta.</small>
+                  <small>El monto se envía al posnet ya configurado como débito. El cliente solo pasa o acerca la tarjeta.</small>
                 </div>
                 <div class="form-campo">
                   <label for="mp-credit-mode">Tarjeta crédito</label>
@@ -691,7 +712,7 @@
                     <option value="posnet">Cobrar en posnet</option>
                     <option value="none">No hacer nada</option>
                   </select>
-                  <small>El monto se envía al posnet. El cliente toca TARJETAS y pasa la tarjeta.</small>
+                  <small>El monto se envía al posnet ya configurado como crédito. El cliente solo pasa o acerca la tarjeta.</small>
                 </div>
               </div>
 

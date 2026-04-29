@@ -190,9 +190,9 @@
 
     const mpQrModeHint = document.getElementById("mp-qr-mode-hint");
     const QR_HINTS = {
-      dinamico: "El cliente escanea el QR con su celular desde la pantalla de la PC. Recomendado.",
-      posnet:   "El QR aparece en la pantalla del posnet. Requiere que el dispositivo tenga QR habilitado en MP.",
-      none:     "El botón QR solo registra el método de pago sin interactuar con MP.",
+      dinamico: "El cliente escanea el QR con su celular desde la pantalla de la PC. Recomendado: no requiere posnet.",
+      posnet:   "El QR aparece en la pantalla del posnet (solo Point Smart / Pro 2). Necesitás activar 'Cobros con QR' desde la app de MP. Expandí '¿Cómo funciona cada modo?' para los pasos.",
+      none:     "El botón QR solo registra el método de pago sin interactuar con Mercado Pago.",
     };
 
     function updateQrHint() {
