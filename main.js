@@ -312,18 +312,31 @@ app.on("ready", async () => {
     // ── Seed superadmin (primera ejecución) ──────────────────────────
     {
       const bcryptSeed = require("bcryptjs");
+      const crypto     = require("crypto");
       const existingSuperAdmin = await models.Usuario.findOne({ where: { rol: "superadmin" } });
       if (!existingSuperAdmin) {
-        const defaultPass = "ventasimple";
-        const hashed = await bcryptSeed.hash(defaultPass, 8);
+        // ALTO-1: contraseña aleatoria única por instalación — nunca un valor hardcodeado
+        const tempPass = crypto.randomBytes(5).toString("hex").toUpperCase() + "Vs1!";
+        const hashed   = await bcryptSeed.hash(tempPass, 10);
         await models.Usuario.create({
-          nombre:       "superadmin",
-          password:     hashed,
-          email:        "superadmin@ventasimple.com",
-          rol:          "superadmin",
-          permisos:     ["all"],
+          nombre:   "superadmin",
+          password: hashed,
+          email:    "superadmin@ventasimple.com",
+          rol:      "superadmin",
+          permisos: ["all"],
         });
-        console.log("✅ Superadmin creado. Usuario: superadmin | Contraseña: ventasimple");
+        // Mostrar credenciales SOLO la primera vez — no quedan en logs ni código fuente
+        const { dialog } = require("electron");
+        dialog.showMessageBoxSync({
+          type: "info",
+          title: "Primera configuración — VentaSimple",
+          message: "Se creó el usuario administrador inicial.",
+          detail:
+            `Usuario:    superadmin\nContraseña: ${tempPass}\n\n` +
+            "Anotá esta contraseña antes de continuar.\n" +
+            "Podés cambiarla desde Ajustes → Seguridad una vez que ingreses.",
+          buttons: ["Entendido"],
+        });
       }
     }
 
