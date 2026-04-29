@@ -121,7 +121,7 @@ function registerVentasHandlers(models, sequelize) {
     let pagosSplitValidados = null;
     if (metodoPago === "Mixto") {
       const splits = Array.isArray(ventaData.pagos_split) ? ventaData.pagos_split : [];
-      if (splits.length < 2) throw new Error("Pago mixto requiere exactamente dos medios de pago.");
+      if (splits.length !== 2) throw new Error("Pago mixto requiere exactamente dos medios de pago.");
       for (const s of splits) {
         if (!METODOS_SIMPLES.includes(s.metodo))
           throw new Error(`Método de pago inválido en pago mixto: "${s.metodo}".`);

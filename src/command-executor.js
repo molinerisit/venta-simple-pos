@@ -53,22 +53,30 @@ function clearDir(dir, maxAgeDays = 7) {
 const HANDLERS = {
 
   async KILL_PORT({ port }) {
-    if (!port || isNaN(Number(port))) throw new Error('Parámetro port inválido');
-    const p = Number(port);
-    if (p < 1024 || p > 65535) throw new Error('Puerto fuera de rango permitido (1024-65535)');
+    const p = Number.isInteger(port) ? port : parseInt(String(port), 10);
+    if (!Number.isFinite(p) || p < 1024 || p > 65535)
+      throw new Error('Puerto debe ser un entero entre 1024 y 65535');
 
-    const out = await run(`netstat -ano | findstr :${p}`).catch(() => '');
+    const out = await new Promise(resolve => {
+      execFile('netstat', ['-ano'], { timeout: 10000, windowsHide: true }, (_, stdout) => {
+        resolve(stdout || '');
+      });
+    });
+
+    const portRe = new RegExp(`[:\\s]${p}[\\s\\r]`);
     const pids = [...new Set(
       out.split('\n')
+        .filter(l => portRe.test(l))
         .map(l => l.trim().split(/\s+/).pop())
-        .filter(pid => pid && /^\d+$/.test(pid) && pid !== '0')
+        .filter(pid => /^\d+$/.test(pid) && pid !== '0')
     )];
 
     if (!pids.length) return { freed: false, message: `No hay proceso usando el puerto ${p}` };
 
-    for (const pid of pids) {
-      await run(`taskkill /PID ${pid} /F`).catch(() => {});
-    }
+    await Promise.all(pids.map(pid => new Promise(resolve => {
+      execFile('taskkill', ['/PID', pid, '/F'], { timeout: 5000, windowsHide: true }, resolve);
+    })));
+
     return { freed: true, pids, message: `Puerto ${p} liberado (PID: ${pids.join(', ')})` };
   },
 
@@ -150,12 +158,17 @@ const HANDLERS = {
   },
 
   async FREE_RAM() {
-    if (global.gc) {
-      global.gc();
-    }
-    // Fuerza liberación de memoria V8 vía EmptyWorkingSet en Windows
-    const pid = process.pid;
-    const out = await run(`powershell -NoProfile -Command "(Get-Process -Id ${pid}).MinWorkingSet = 1; (Get-Process -Id ${pid}).MinWorkingSet = [System.IntPtr]::new([System.Int64]::MaxValue)"`).catch(() => '');
+    if (global.gc) global.gc();
+    const pid = String(process.pid);
+    await new Promise(resolve => {
+      execFile(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-Command',
+         `(Get-Process -Id ${pid}).MinWorkingSet = 1; (Get-Process -Id ${pid}).MinWorkingSet = [System.IntPtr]::new([System.Int64]::MaxValue)`],
+        { timeout: 10000, windowsHide: true },
+        resolve,
+      );
+    });
     const mem = process.memoryUsage();
     return {
       freed: true,

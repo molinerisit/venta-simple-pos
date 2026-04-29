@@ -5,6 +5,7 @@
 
 const { execFile } = require('child_process');
 const path = require('path');
+const os   = require('os');
 
 const WIN = process.platform === 'win32';
 const SYS = WIN ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32') : '/usr/bin';
@@ -42,10 +43,11 @@ const WHITELIST = {
     timeout: 60000,
   },
   'clear-temp': {
-    bin:  WIN ? path.join(SYS, 'cmd.exe') : 'rm',
+    bin:  WIN ? 'powershell' : 'rm',
     args: WIN
-      ? ['/C', `del /F /Q /S "${process.env.TEMP || 'C:\\Windows\\Temp'}\\*"`]
-      : ['-rf', '/tmp/*'],
+      ? ['-NoProfile', '-NonInteractive', '-Command',
+         `Remove-Item -Path "${os.tmpdir()}\\*" -Recurse -Force -ErrorAction SilentlyContinue`]
+      : ['-rf', os.tmpdir() + '/*'],
     desc: 'Limpiar archivos temporales',
     timeout: 30000,
   },
@@ -80,8 +82,11 @@ const WHITELIST = {
     timeout: 15000,
   },
   'uptime': {
-    bin:  WIN ? path.join(SYS, 'cmd.exe') : 'uptime',
-    args: WIN ? ['/C', 'net statistics workstation | find "since"'] : [],
+    bin:  WIN ? 'powershell' : 'uptime',
+    args: WIN
+      ? ['-NoProfile', '-NonInteractive', '-Command',
+         '((Get-Date) - (Get-CimInstance Win32_OperatingSystem).LastBootUpTime).ToString()']
+      : [],
     desc: 'Tiempo de actividad del sistema',
   },
 };
