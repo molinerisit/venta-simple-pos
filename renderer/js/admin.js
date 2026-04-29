@@ -1154,17 +1154,23 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
         }
       } catch (_) {}
 
+      // Run fast DB queries first so loadAdminConfig fires early.
+      // loadAvailablePorts (serial port/printer enumeration) and
+      // loadRemoteMetrics (WMI CPU-temp query) can take 5-10 s on Windows —
+      // they run in the background to avoid blocking form field population.
       await Promise.all([
         loadUsers(),
         loadModules(),
-        loadAvailablePorts(),
         loadEmpleados(),
         loadGastosFijos(),
         loadRemoteConfig(),
-        loadRemoteMetrics(),
         loadRemoteCommands(),
       ]);
       await loadAdminConfig();
+
+      // Non-critical, potentially slow operations run after config is loaded.
+      loadAvailablePorts();
+      loadRemoteMetrics();
     })();
 
     // --- 6. EVENTOS ---
@@ -1633,9 +1639,8 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
     e.preventDefault();
       try {
         const data = {
-          recargoCredito: recargoCreditoInput?.value ?? 0,
-          descuentoEfectivo: descuentoEfectivoInput?.value ?? 0,
-          // ⬇️ AÑADE ESTA LÍNEA ⬇️
+          recargoCredito: parseFloat(recargoCreditoInput?.value) || 0,
+          descuentoEfectivo: parseFloat(descuentoEfectivoInput?.value) || 0,
           redondeo: !!redondeoToggle?.checked,
         };
         const result = await ipcInvoke("save-general-config", data);

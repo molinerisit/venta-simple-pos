@@ -244,6 +244,7 @@ app.on("ready", async () => {
     await sequelize.query("PRAGMA temp_store = MEMORY;");
     await sequelize.query("PRAGMA cache_size = -20000;");
     await sequelize.query("PRAGMA foreign_keys = ON;");
+    await sequelize.query("PRAGMA busy_timeout = 5000;");
 
     // Modelos
 
