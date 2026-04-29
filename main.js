@@ -439,6 +439,7 @@ app.on("ready", async () => {
       { name: "catalog-handlers",  needsSequelize: true },
       { name: "ofertas-handlers",  needsSequelize: true },
       { name: "remote-handlers",   needsSequelize: false },
+      { name: "sync-handlers",     needsSequelize: false },
     ];
 
     const toRegisterFn = (name) =>

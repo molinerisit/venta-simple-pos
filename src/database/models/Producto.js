@@ -32,6 +32,8 @@ module.exports = (sequelize) => {
     DepartamentoId: { type: DataTypes.UUID, allowNull: true },
     FamiliaId:      { type: DataTypes.UUID, allowNull: true },
 
+    cloud_id: { type: DataTypes.STRING(36), allowNull: true },
+
   }, {
     tableName: 'productos',
     timestamps: true,

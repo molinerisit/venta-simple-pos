@@ -123,6 +123,8 @@ const validInvokeChannels = [
   "save-license",
   "open-external-url",
   "run-manual-sync",
+  "run-cloud-sync",
+  "get-sync-status",
 
   // Cuentas Corrientes
   "get-clientes-con-deuda",

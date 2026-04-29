@@ -17,10 +17,7 @@ module.exports = (sequelize) => {
 
     deuda: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
 
-    // ---- sync/multi-tenant (ELIMINADOS) ----
-    // cloud_tenant_id: ELIMINADO
-    // cloud_id:          ELIMINADO
-    // dirty:             ELIMINADO
+    cloud_id: { type: DataTypes.STRING(36), allowNull: true },
   }, {
     tableName: 'proveedores',
     timestamps: true,
