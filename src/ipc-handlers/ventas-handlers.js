@@ -16,7 +16,8 @@ function registerVentasHandlers(models, sequelize) {
   const { Producto, Venta, DetalleVenta, Cliente, Usuario, Factura, Oferta } = models;
 
   // Strict allowlist for metodoPago. Any value outside this set is rejected.
-  const METODOS_PAGO_VALIDOS = ['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte'];
+  const METODOS_PAGO_VALIDOS = ['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte', 'Mixto'];
+  const METODOS_SIMPLES      = ['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte'];
 
   // --- Utilidad: crear venta en transacción (para reuso) ---
   const createSaleTx = async (ventaData, t) => {
@@ -116,7 +117,31 @@ function registerVentasHandlers(models, sequelize) {
     const recargo = metodoPago === "Crédito" ? totalTrasDesc * (recargoPorcentaje / 100) : 0;
     const totalFinal = totalTrasDesc + recargo;
 
-    const montoPagadoFinal = metodoPago === "Efectivo" ? Number(montoPagado || 0) : totalFinal;
+    // ── Pago mixto: validar splits ────────────────────────────────────────────
+    let pagosSplitValidados = null;
+    if (metodoPago === "Mixto") {
+      const splits = Array.isArray(ventaData.pagos_split) ? ventaData.pagos_split : [];
+      if (splits.length < 2) throw new Error("Pago mixto requiere exactamente dos medios de pago.");
+      for (const s of splits) {
+        if (!METODOS_SIMPLES.includes(s.metodo))
+          throw new Error(`Método de pago inválido en pago mixto: "${s.metodo}".`);
+        if (!Number.isFinite(Number(s.monto)) || Number(s.monto) < 0)
+          throw new Error(`Monto inválido en pago mixto para ${s.metodo}.`);
+      }
+      const suma = splits.reduce((acc, s) => acc + Number(s.monto), 0);
+      if (Math.abs(suma - totalFinal) > 0.05)
+        throw new Error(`Los montos del pago mixto ($${suma.toFixed(2)}) no coinciden con el total ($${totalFinal.toFixed(2)}).`);
+      pagosSplitValidados = splits.map(s => ({ metodo: s.metodo, monto: Number(s.monto) }));
+    }
+
+    let montoPagadoFinal;
+    if (metodoPago === "Efectivo") {
+      montoPagadoFinal = Number(montoPagado || 0);
+    } else if (metodoPago === "Mixto") {
+      montoPagadoFinal = (pagosSplitValidados || []).reduce((a, s) => a + s.monto, 0);
+    } else {
+      montoPagadoFinal = totalFinal;
+    }
     const vuelto = metodoPago === "Efectivo" ? montoPagadoFinal - totalFinal : 0;
 
     if (metodoPago === "Efectivo" && montoPagadoFinal < totalFinal) {
@@ -135,6 +160,7 @@ function registerVentasHandlers(models, sequelize) {
         UsuarioId,
         ClienteId: cliente ? cliente.id : null,
         facturada: false,
+        pagos_split: pagosSplitValidados ? JSON.stringify(pagosSplitValidados) : null,
       },
       { transaction: t }
     );
@@ -165,7 +191,6 @@ function registerVentasHandlers(models, sequelize) {
     return {
       venta,
       datosRecibo: {
-        // Return authoritative prices so the receipt reflects what was actually charged.
         items: resolvedItems.map(({ item, cantidad, pUnit, lineSubtotal, ofertaActiva }) => {
           const { ofertaLabel } = calcularLineaConOferta(ofertaActiva || null, pUnit, cantidad);
           return {
@@ -182,6 +207,7 @@ function registerVentasHandlers(models, sequelize) {
         montoPagado: montoPagadoFinal,
         vuelto: vuelto > 0 ? vuelto : 0,
         dniCliente,
+        pagos_split: pagosSplitValidados,
       },
     };
   };

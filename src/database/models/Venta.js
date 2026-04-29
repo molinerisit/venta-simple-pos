@@ -9,9 +9,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isIn: [['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte']],
+        isIn: [['Efectivo', 'Débito', 'Crédito', 'QR', 'Transferencia', 'CtaCte', 'Mixto']],
       },
     },
+    pagos_split: { type: DataTypes.TEXT, allowNull: true },
     // Phase 5.3 — ORM-layer validators (defense-in-depth)
     total:        { type: DataTypes.FLOAT, allowNull: false, validate: { min: 0 } },
     montoPagado:  { type: DataTypes.FLOAT, allowNull: false },

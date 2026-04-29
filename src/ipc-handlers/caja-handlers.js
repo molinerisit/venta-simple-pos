@@ -33,27 +33,36 @@ function registerCajaHandlers(models, sequelize) {
     if (t.includes("qr") || t.includes("mercado") || t.includes("mp")) return "QR";
     if (t.includes("transfer")) return "Transferencia";
     if (t.replace(/[\s._\-\/]/g, "").includes("ctacte")) return "CtaCte";
+    if (t.includes("mixto")) return "Mixto";
     throw new Error(
       `Método de pago desconocido en registro existente: "${s}". ` +
-      'Solo se aceptan: Efectivo, Débito, Crédito, QR, Transferencia, CtaCte.'
+      'Solo se aceptan: Efectivo, Débito, Crédito, QR, Transferencia, CtaCte, Mixto.'
     );
   }
 
+  function _sumarEnBucket(b, metodo, monto) {
+    if      (metodo === "Efectivo")      b.totalEfectivo += monto;
+    else if (metodo === "Débito")        b.totalDebito   += monto;
+    else if (metodo === "Crédito")       b.totalCredito  += monto;
+    else if (metodo === "QR")            b.totalQR       += monto;
+    else if (metodo === "Transferencia") b.totalTransfer += monto;
+    else if (metodo === "CtaCte")        b.totalCtaCte   += monto;
+  }
+
   function agregarTotalesPorMetodo(ventas) {
-    let totalEfectivo = 0, totalDebito = 0, totalCredito = 0,
-        totalQR = 0, totalTransfer = 0, totalCtaCte = 0;
+    const b = { totalEfectivo: 0, totalDebito: 0, totalCredito: 0,
+                totalQR: 0, totalTransfer: 0, totalCtaCte: 0 };
 
     for (const v of ventas) {
       const m = normalizarMetodoPago(v.metodoPago);
-      const x = Number(v.total) || 0;
-      if      (m === "Efectivo")     totalEfectivo += x;
-      else if (m === "Débito")       totalDebito   += x;
-      else if (m === "Crédito")      totalCredito  += x;
-      else if (m === "QR")           totalQR       += x;
-      else if (m === "Transferencia") totalTransfer += x;
-      else if (m === "CtaCte")       totalCtaCte   += x;
+      if (m === "Mixto") {
+        const splits = v.pagos_split ? JSON.parse(v.pagos_split) : [];
+        for (const s of splits) _sumarEnBucket(b, s.metodo, Number(s.monto) || 0);
+      } else {
+        _sumarEnBucket(b, m, Number(v.total) || 0);
+      }
     }
-    return { totalEfectivo, totalDebito, totalCredito, totalQR, totalTransfer, totalCtaCte };
+    return b;
   }
 
   // Suma ingresos y egresos de movimientos administrativos
@@ -139,7 +148,7 @@ function registerCajaHandlers(models, sequelize) {
       const [ventas, movimientos] = await Promise.all([
         Venta.findAll({
           where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fin } },
-          attributes: ["metodoPago", "total"],
+          attributes: ["metodoPago", "total", "pagos_split"],
           raw: true,
         }),
         MovimientoCaja ? MovimientoCaja.findAll({
@@ -196,7 +205,7 @@ function registerCajaHandlers(models, sequelize) {
       const [ventas, movimientos] = await Promise.all([
         Venta.findAll({
           where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fin } },
-          attributes: ["metodoPago", "total"],
+          attributes: ["metodoPago", "total", "pagos_split"],
           raw: true,
         }),
         MovimientoCaja ? MovimientoCaja.findAll({
@@ -265,7 +274,7 @@ function registerCajaHandlers(models, sequelize) {
         const [ventas, movimientos] = await Promise.all([
           Venta.findAll({
             where: { createdAt: { [Op.gte]: inicio, [Op.lt]: fechaCierre } },
-            attributes: ["metodoPago", "total"],
+            attributes: ["metodoPago", "total", "pagos_split"],
             raw: true,
             transaction: t,
           }),
