@@ -222,6 +222,11 @@ function registerConfigHandlers(models, sequelize) {
         // B-7: async I/O — does not block the main process event loop
         await fsPromises.mkdir(logoDir, { recursive: true });
         logoPath = path.join(logoDir, `logo-${Date.now()}.png`);
+        const resolvedLogo = path.resolve(logoPath);
+        const resolvedBase = path.resolve(app.getPath("userData"));
+        if (!resolvedLogo.startsWith(resolvedBase + path.sep)) {
+          throw new Error("Destino de logo fuera del directorio permitido");
+        }
         await fsPromises.writeFile(logoPath, logoBuffer);
       }
 

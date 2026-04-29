@@ -361,8 +361,6 @@ ipcMain.handle("test-print", async (_event, printerName) => {
         </html>`
       );
 
-      await testWin.webContents.executeJavaScript("document.body.innerHTML");
-
       await new Promise((resolve, reject) => {
         testWin.webContents.print(options, (success, failureReason) => {
           if (!success) reject(new Error(failureReason));
@@ -410,10 +408,6 @@ pre{font-family:'Courier New',monospace;font-size:9px;margin:0;white-space:pre-w
 
         await ticketWin.loadURL(
           `data:text/html;charset=utf-8,${encodeURIComponent(htmlRecibo)}`
-        );
-
-        await ticketWin.webContents.executeJavaScript(
-          "document.body.innerHTML"
         );
 
         await new Promise((resolve, reject) => {

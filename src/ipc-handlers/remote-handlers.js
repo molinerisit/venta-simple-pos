@@ -128,6 +128,9 @@ function registerRemoteHandlers(models) {
 
   // ── execute whitelisted command ───────────────────────────
   ipcMain.handle('remote-exec-cmd', async (_e, { cmd }) => {
+    if (typeof cmd !== 'string' || !/^[a-z][a-z0-9-]*$/.test(cmd)) {
+      return { success: false, output: 'Parámetro cmd inválido' };
+    }
     try {
       const { execute } = require('../remote/cmd-executor');
       return await execute(cmd);
