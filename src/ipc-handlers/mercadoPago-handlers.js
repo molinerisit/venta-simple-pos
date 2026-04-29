@@ -592,7 +592,6 @@ function registerMercadoPagoHandlers(models) {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,
         },
-        ...(description ? { description } : {}),
       };
 
       return await doFetch(
