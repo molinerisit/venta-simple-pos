@@ -244,6 +244,16 @@ function registerConfigHandlers(models, sequelize) {
     }
   });
 
+  ipcMain.handle("scale-test-connection", async () => {
+    try {
+      const mgr = await getScaleManager(models);
+      const msg = await mgr.testConnection();
+      return { success: true, message: msg };
+    } catch (e) {
+      return { success: false, message: e.message || "Sin respuesta de la balanza." };
+    }
+  });
+
   ipcMain.handle("save-scale-config", async (_event, cfg) => {
     try {
       const clean = {

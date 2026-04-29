@@ -363,6 +363,7 @@ const aplicarOrdenamiento = (productos, criterio) => {
     let dataFiltrada = listaDeProductos;
     if (filtroActivo === 'activo')   dataFiltrada = dataFiltrada.filter(p => p.activo);
     if (filtroActivo === 'inactivo') dataFiltrada = dataFiltrada.filter(p => !p.activo);
+    if (filtroActivo === 'pesable')  dataFiltrada = dataFiltrada.filter(p => p.pesable);
 
     // 2. Filtro por texto
     if (q) {

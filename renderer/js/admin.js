@@ -328,6 +328,15 @@
     const visValor = document.getElementById("vis-valor");
     const visResultado = document.getElementById("visualizador-resultado");
 
+    // Balanza perfil B (segunda balanza)
+    const balanzaBPrefijo        = document.getElementById("balanza-b-prefijo");
+    const balanzaBTipoValor      = document.getElementById("balanza-b-tipo-valor");
+    const balanzaBValorDivisor   = document.getElementById("balanza-b-valor-divisor");
+    const balanzaBCodigoInicio   = document.getElementById("balanza-b-codigo-inicio");
+    const balanzaBCodigoLongitud = document.getElementById("balanza-b-codigo-longitud");
+    const balanzaBValorInicio    = document.getElementById("balanza-b-valor-inicio");
+    const balanzaBValorLongitud  = document.getElementById("balanza-b-valor-longitud");
+
     // Conexión y gestión Kretz (sección extra)
     const scaleConfigForm = document.getElementById("scale-config-form");
     const scaleTransport = document.getElementById("scale-transport");
@@ -586,15 +595,31 @@
       if (previewLogo && previewLogo.src) previewLogo.style.display = "block";
     };
 
-    const leerConfigBalanza = () => ({
-      prefijo: balanzaPrefijo?.value || "20",
-      tipo_valor: balanzaTipoValor?.value || "peso",
-      valor_divisor: parseInt(balanzaValorDivisor?.value) || 1000,
-      codigo_inicio: parseInt(balanzaCodigoInicio?.value) || 3,
-      codigo_longitud: parseInt(balanzaCodigoLongitud?.value) || 5,
-      valor_inicio: parseInt(balanzaValorInicio?.value) || 8,
-      valor_longitud: parseInt(balanzaValorLongitud?.value) || 5,
-    });
+    const leerConfigBalanza = () => {
+      const base = {
+        prefijo:          balanzaPrefijo?.value || "20",
+        tipo_valor:       balanzaTipoValor?.value || "peso",
+        valor_divisor:    parseInt(balanzaValorDivisor?.value) || 1000,
+        codigo_inicio:    parseInt(balanzaCodigoInicio?.value) || 3,
+        codigo_longitud:  parseInt(balanzaCodigoLongitud?.value) || 5,
+        valor_inicio:     parseInt(balanzaValorInicio?.value) || 8,
+        valor_longitud:   parseInt(balanzaValorLongitud?.value) || 5,
+      };
+      // Incluir perfil_b solo si tiene prefijo configurado
+      const prefijoB = balanzaBPrefijo?.value?.trim();
+      if (prefijoB) {
+        base.perfil_b = {
+          prefijo:         prefijoB,
+          tipo_valor:      balanzaBTipoValor?.value || "peso",
+          valor_divisor:   parseInt(balanzaBValorDivisor?.value) || 1000,
+          codigo_inicio:   parseInt(balanzaBCodigoInicio?.value) || 3,
+          codigo_longitud: parseInt(balanzaBCodigoLongitud?.value) || 5,
+          valor_inicio:    parseInt(balanzaBValorInicio?.value) || 8,
+          valor_longitud:  parseInt(balanzaBValorLongitud?.value) || 5,
+        };
+      }
+      return base;
+    };
 
     const actualizarVisualizador = () => {
       if (!balanzaForm) return;
@@ -884,6 +909,18 @@
             valor_inicio: parseInt(bc.valor_inicio ?? 8),
             valor_longitud: parseInt(bc.valor_longitud ?? 5),
           };
+
+          // Cargar perfil B si existe
+          const bb = bc.perfil_b;
+          if (bb && balanzaBPrefijo) {
+            balanzaBPrefijo.value       = bb.prefijo || "";
+            if (balanzaBTipoValor)      balanzaBTipoValor.value      = bb.tipo_valor || "peso";
+            if (balanzaBValorDivisor)   balanzaBValorDivisor.value   = bb.valor_divisor || 1000;
+            if (balanzaBCodigoInicio)   balanzaBCodigoInicio.value   = bb.codigo_inicio || 3;
+            if (balanzaBCodigoLongitud) balanzaBCodigoLongitud.value = bb.codigo_longitud || 5;
+            if (balanzaBValorInicio)    balanzaBValorInicio.value    = bb.valor_inicio || 8;
+            if (balanzaBValorLongitud)  balanzaBValorLongitud.value  = bb.valor_longitud || 5;
+          }
         }
 
         // Config de conexión de balanza (tcp/bt)
@@ -1444,11 +1481,14 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
       on(balanzaTipoValor, "change", () => {
         if (!balanzaValorDivisor) return;
         balanzaValorDivisor.readOnly = balanzaTipoValor.value === "precio";
-        balanzaValorDivisor.value =
-          balanzaTipoValor.value === "peso" ? 1000 : 100;
+        balanzaValorDivisor.value = balanzaTipoValor.value === "peso" ? 1000 : 100;
         actualizarVisualizador();
         _balanzaFormato = leerConfigBalanza();
         refreshBarcodePreview();
+      });
+      on(balanzaBTipoValor, "change", () => {
+        if (!balanzaBValorDivisor) return;
+        balanzaBValorDivisor.value = balanzaBTipoValor.value === "peso" ? 1000 : 100;
       });
 
       [

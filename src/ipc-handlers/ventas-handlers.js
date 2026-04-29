@@ -260,36 +260,24 @@ function registerVentasHandlers(models, sequelize) {
       // ==========================================================
 
 
-      // Si es código de balanza
-      // (Esta lógica ahora SÍ va a funcionar)
-      if (cfg?.prefijo && String(texto).startsWith(cfg.prefijo) && cfg.codigo_inicio) {
-        const ci = Number(cfg.codigo_inicio) - 1;
-        const vi = Number(cfg.valor_inicio) - 1;
-        const codigoProducto = String(texto).substring(ci, ci + Number(cfg.codigo_longitud));
-        const valorStr = String(texto).substring(vi, vi + Number(cfg.valor_longitud));
-        const valor = parseFloat(valorStr) / (Number(cfg.valor_divisor) || 1);
-
-        
-        // Buscamos por PLU y que sea pesable
+      // Soporte multi-perfil: perfil único o array / perfil_b para segunda balanza
+      const _perfiles = Array.isArray(cfg) ? cfg : [cfg, cfg?.perfil_b].filter(Boolean);
+      for (const perfil of _perfiles) {
+        if (!perfil?.prefijo || !String(texto).startsWith(perfil.prefijo) || !perfil.codigo_inicio) continue;
+        const ci = Number(perfil.codigo_inicio) - 1;
+        const vi = Number(perfil.valor_inicio) - 1;
+        const codigoProducto = String(texto).substring(ci, ci + Number(perfil.codigo_longitud));
+        const valorStr       = String(texto).substring(vi, vi + Number(perfil.valor_longitud));
+        const valor          = parseFloat(valorStr) / (Number(perfil.valor_divisor) || 1);
         const producto = await Producto.findOne({
-          where: {
-            plu: codigoProducto,
-            pesable: true,
-            activo: true,  // M-6: exclude inactive products from all searches
-          },
-        });
-
+          where: { plu: codigoProducto, pesable: true, activo: true },
+        });
         if (producto) {
           const pj = producto.toJSON();
-          if (cfg.tipo_valor === "peso") {
-            pj.cantidad = valor;
-          } else {
-            pj.cantidad = 1;
-            pj.precioVenta = valor; // Sobrescribe precio si es por monto
-          }
+          if (perfil.tipo_valor === "peso") { pj.cantidad = valor; }
+          else { pj.cantidad = 1; pj.precioVenta = valor; }
           if (Oferta) pj.ofertaActiva = await getOfertaActiva(Oferta, pj.id);
           return pj;
-        } else {
         }
       }
 

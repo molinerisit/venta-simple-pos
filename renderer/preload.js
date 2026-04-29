@@ -133,6 +133,9 @@ const validInvokeChannels = [
 
   // 🔹 Balanza / Kretz
   "scale-upsert-plu",
+  "scale-delete-plu",
+  "scale-sync-all-plu",
+  "scale-test-connection",
 
   // Lotes (gestión de vencimientos)
   "get-lotes",

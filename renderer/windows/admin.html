@@ -396,19 +396,72 @@
             <div class="form-actions">
               <button type="submit" class="btn btn-primario">Guardar Configuración de Balanza</button>
             </div>
+
+            <!-- Perfil B: segunda balanza con formato diferente -->
+            <details style="margin-top:1.25rem;">
+              <summary style="font-size:.8rem;font-weight:700;color:#6366f1;cursor:pointer;user-select:none;">+ Agregar perfil B (segunda balanza con formato diferente)</summary>
+              <div style="margin-top:.75rem;padding:1rem;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.2);border-radius:8px;">
+                <p style="font-size:.75rem;color:#6366f1;margin:0 0 .75rem;">Útil si tenés dos modelos distintos (ej: Kretz y Systel) que usan prefijos o posiciones diferentes. La caja prueba el perfil A primero y, si no coincide, prueba el B.</p>
+                <div class="form-grid-3">
+                  <div class="form-campo">
+                    <label for="balanza-b-prefijo">Prefijo B</label>
+                    <input type="text" id="balanza-b-prefijo" placeholder="Ej: 22" />
+                  </div>
+                  <div class="form-campo">
+                    <label for="balanza-b-tipo-valor">El valor representa</label>
+                    <select id="balanza-b-tipo-valor">
+                      <option value="peso">El Peso del producto</option>
+                      <option value="precio">El Precio final</option>
+                    </select>
+                  </div>
+                  <div class="form-campo">
+                    <label for="balanza-b-valor-divisor">Divisor del Valor</label>
+                    <input type="number" id="balanza-b-valor-divisor" readonly />
+                  </div>
+                </div>
+                <div class="form-grid-2">
+                  <fieldset>
+                    <legend>Código de Producto (PLU)</legend>
+                    <div class="form-campo"><label>Posición de Inicio</label><input type="number" id="balanza-b-codigo-inicio" placeholder="Ej: 3" /></div>
+                    <div class="form-campo"><label>Longitud</label><input type="number" id="balanza-b-codigo-longitud" placeholder="Ej: 5" /></div>
+                  </fieldset>
+                  <fieldset>
+                    <legend>Parte del Valor</legend>
+                    <div class="form-campo"><label>Posición de Inicio</label><input type="number" id="balanza-b-valor-inicio" placeholder="Ej: 8" /></div>
+                    <div class="form-campo"><label>Longitud</label><input type="number" id="balanza-b-valor-longitud" placeholder="Ej: 5" /></div>
+                  </fieldset>
+                </div>
+              </div>
+            </details>
           </form>
         </section>
 
-        <!-- Balanza Kretz -->
+        <!-- Balanza Kretz / Systel -->
         <section class="content-section">
           <details class="tutorial">
-            <summary>Cómo conectar una balanza Kretz</summary>
+            <summary>Cómo conectar una balanza Kretz (TCP/Wi-Fi)</summary>
             <div class="tutorial-content">
               <ul>
-                <li><strong>Wi-Fi (TCP):</strong> configurá IP y puerto (ej: 192.168.0.50:8000).</li>
-                <li><strong>Bluetooth:</strong> emparejá en Windows y copiá la dirección MAC.</li>
-                <li>Protocolo por defecto: <strong>Kretz Report</strong> (ASCII).</li>
+                <li><strong>Wi-Fi / Ethernet (TCP):</strong> conectá la balanza a tu red y configurá la IP y el puerto (por defecto: <strong>8000</strong>). Encontrás la IP en el menú de la balanza o en tu router.</li>
+                <li><strong>Bluetooth:</strong> emparejá la balanza desde Configuración de Windows y copiá la dirección MAC (formato 00:1A:7D:...).</li>
+                <li>Protocolo: <strong>Kretz Report NX (R30)</strong> — ASCII con frame STX/ETX.</li>
+                <li>El botón <em>Probar Conexión</em> envía un PING y confirma si la balanza responde.</li>
+                <li>Con <em>Sincronizar Catálogo</em> se envían todos los productos marcados como "pesable" a la balanza.</li>
               </ul>
+            </div>
+          </details>
+          <details class="tutorial" style="margin-top:.5rem;">
+            <summary>Balanzas Systel (Croma, Baja, etc.) — cómo configurar la lectura</summary>
+            <div class="tutorial-content">
+              <p style="margin:0 0 .5rem;font-size:.82rem;">Las balanzas Systel <strong>no usan el protocolo Kretz</strong> para sincronización de PLU (aún no implementado). Sin embargo, sí podés leerlas en caja si configurás el formato de código de barras correctamente.</p>
+              <p style="font-weight:700;margin:0 0 4px;font-size:.82rem;">Formato típico Systel (EAN-13):</p>
+              <ul>
+                <li>Prefijo: <strong>20</strong> o <strong>22</strong> según el modelo.</li>
+                <li>Posición PLU: dígitos 3–7 (inicio 3, longitud 5).</li>
+                <li>Posición peso: dígitos 8–12 (inicio 8, longitud 5) · divisor 1000 (gramos).</li>
+                <li>Verificá en tu balanza: imprimí un ticket de prueba y contá las posiciones del código.</li>
+              </ul>
+              <p style="font-size:.78rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:6px 8px;margin:.5rem 0 0;">La sincronización de PLU hacia balanzas Systel estará disponible en una próxima versión.</p>
             </div>
           </details>
           <div class="section-header">
@@ -416,7 +469,7 @@
               <div class="section-icon section-icon--purple">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12l7 2 7-2"/></svg>
               </div>
-              <h2>Balanzas Kretz (Wi-Fi / Bluetooth)</h2>
+              <h2>Conexión Balanza Kretz (Sincronización PLU)</h2>
             </div>
           </div>
           <form id="scale-config-form">

@@ -126,30 +126,25 @@ function registerScaleHandlers(models) {
 
       // Traemos muchos campos para ser elásticos
       const rows = await Producto.findAll({
-        attributes: ["id", "plu", "nombre", "precio", "unidad", "pesable", "esPesable", "tara", "barcode", "codigoBarras"],
+        attributes: ["id", "plu", "nombre", "precioVenta", "unidad", "pesable", "codigo_barras"],
+        where: { activo: true },
         raw: true,
       });
 
-      // Heurística: pesable==true OR esPesable==true OR unidad === 'kg'
-      const pesables = (rows || []).filter((p) => {
-        const flag = p.pesable === true || p.esPesable === true;
-        const byUnidad = String(p.unidad || "").toLowerCase() === "kg";
-        return flag || byUnidad;
-      });
+      const pesables = (rows || []).filter((p) => p.pesable === true || String(p.unidad || "").toLowerCase() === "kg");
 
       if (!pesables.length) {
         return { success: true, message: "No hay productos pesables que sincronizar." };
       }
 
       for (const p of pesables) {
-        const plu = parseInt(p.plu || p.id, 10);
+        const plu = parseInt(p.plu, 10);
         if (!plu) continue;
         const name = String(p.nombre || "").trim().slice(0, 24);
-        const priceCent = Math.round((+p.precio || 0) * 100);
-        const tare = parseInt(p.tara, 10) || 0;
+        const priceCent = Math.round((+p.precioVenta || 0) * 100);
+        const tare = 0;
 
-        // Soportamos ambas columnas: barcode / codigoBarras
-        let bc = (p.barcode || p.codigoBarras || "").trim() || null;
+        let bc = (p.codigo_barras || "").trim() || null;
         if (!bc) {
           bc = buildBarcodeFromConfig(cfg, {
             plu,
