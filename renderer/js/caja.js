@@ -23,6 +23,8 @@ document.addEventListener("app-ready", () => {
     _posnetPollingTimer: null,
     _posnetDeviceId: null,
     _posnetIntentId: null,
+    mixtoActivo: false,
+    mixtoMetodo2: null,
   };
 
   // DOM
@@ -45,15 +47,17 @@ document.addEventListener("app-ready", () => {
   const dniInput = document.getElementById("dni-cliente");
   const btnBuscarCliente = document.getElementById("btn-buscar-cliente");
   const clienteInfo = document.getElementById("cliente-info");
-  const paymentButtons = document.querySelectorAll(".payment-methods button");
-  const efectivoArea = document.getElementById("efectivo-area");
+  const paymentButtons  = document.querySelectorAll(".payment-methods button");
+  const efectivoArea    = document.getElementById("efectivo-area");
   const montoPagadoInput = document.getElementById("monto-pagado");
-  const splitArea    = document.getElementById("split-area");
-  const splitMetodo1 = document.getElementById("split-metodo1");
-  const splitMonto1  = document.getElementById("split-monto1");
-  const splitMetodo2 = document.getElementById("split-metodo2");
-  const splitMonto2  = document.getElementById("split-monto2");
-  const vueltoDisplay = document.getElementById("vuelto-display");
+  const vueltoDisplay   = document.getElementById("vuelto-display");
+  const labelVuelto     = document.getElementById("label-vuelto");
+  const labelPago1      = document.getElementById("label-pago1");
+  const mixtoToggleInput = document.getElementById("mixto-toggle-input");
+  const mixtoToggleRow  = document.getElementById("mixto-toggle-row");
+  const mixtoSegundoArea = document.getElementById("mixto-segundo-area");
+  const mixtoMetodos2Btns = document.querySelectorAll(".mixto-btn2");
+  const mixtoMonto2Display = document.getElementById("mixto-monto2-display");
   const btnRegistrarVenta = document.getElementById("registrar-venta-btn");
   const btnCancelarVenta = document.getElementById("cancelar-venta-btn");
   const btnImprimirTicket = document.getElementById("imprimir-ticket-btn");
@@ -299,14 +303,6 @@ document.addEventListener("app-ready", () => {
   };
 
   const actualizarCalculoVuelto = () => {
-    if (CajaState.metodoPagoSeleccionado !== "Efectivo") {
-      if (vueltoDisplay) {
-        vueltoDisplay.textContent = formatCurrency(0);
-        vueltoDisplay.style.color = ""; // color normal
-      }
-      return;
-    }
-
     const totalTexto = totalDisplay?.textContent || "$0";
     const clean = totalTexto
       .replace(/[^\d,-]/g, "")
@@ -315,7 +311,27 @@ document.addEventListener("app-ready", () => {
     const total = parseFloat(clean) || 0;
     const pagado = parseFloat(montoPagadoInput?.value) || 0;
 
-    const diferencia = pagado - total; // puede ser negativo o positivo
+    if (CajaState.mixtoActivo) {
+      // En modo mixto: el segundo monto es lo que resta
+      const restante = Math.max(0, Math.round((total - pagado) * 100) / 100);
+      if (mixtoMonto2Display) mixtoMonto2Display.textContent = formatCurrency(restante);
+      CajaState.vueltoActual = 0;
+      if (vueltoDisplay) {
+        vueltoDisplay.textContent = formatCurrency(restante);
+        vueltoDisplay.style.color = restante > 0 ? "#2563eb" : "#10b981";
+      }
+      return;
+    }
+
+    if (CajaState.metodoPagoSeleccionado !== "Efectivo") {
+      if (vueltoDisplay) {
+        vueltoDisplay.textContent = formatCurrency(0);
+        vueltoDisplay.style.color = "";
+      }
+      return;
+    }
+
+    const diferencia = pagado - total;
     CajaState.vueltoActual = diferencia;
 
     if (!vueltoDisplay) return;
@@ -774,15 +790,20 @@ ${footerHtml}
     CajaState.metodoPagoSeleccionado = null;
     CajaState.clienteActual = null;
     CajaState.ultimaExternalReference = null;
+    CajaState.mixtoActivo = false;
+    CajaState.mixtoMetodo2 = null;
     if (mainInput) mainInput.value = "";
     if (dniInput) dniInput.value = "";
     if (clienteInfo) clienteInfo.textContent = "";
     if (montoPagadoInput) montoPagadoInput.value = "";
     paymentButtons.forEach((btn) => btn.classList.remove("active"));
     efectivoArea?.classList.add("oculto");
-    splitArea?.classList.add("oculto");
-    if (splitMonto1) splitMonto1.value = "";
-    if (splitMonto2) splitMonto2.value = "";
+    mixtoSegundoArea?.classList.add("oculto");
+    mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
+    if (mixtoToggleInput) mixtoToggleInput.checked = false;
+    mixtoToggleRow?.classList.remove("mixto-activo");
+    if (labelVuelto) labelVuelto.textContent = "Vuelto:";
+    if (labelPago1) labelPago1.textContent = "Paga con:";
     btnRegistrarVenta && (btnRegistrarVenta.disabled = false);
     generarFacturaCheckbox && (generarFacturaCheckbox.checked = false);
     toggleButtonLoading(btnRegistrarVenta, false, "Registrar Venta");
@@ -1135,6 +1156,19 @@ if (event.key === "Enter") {
       const mpCfg  = CajaState.mpPaymentConfig || {};
       const mpOk   = getCfg().mpConfigurado;
 
+      // En modo mixto todos los botones seleccionan el primer método sin flujos QR/posnet
+      if (CajaState.mixtoActivo) {
+        CajaState.metodoPagoSeleccionado = metodo;
+        paymentButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+        if (labelPago1) labelPago1.textContent = `Pago 1 (${metodo}):`;
+        efectivoArea?.classList.remove("oculto");
+        montoPagadoInput?.focus();
+        actualizarCalculoVuelto();
+        renderizarVenta();
+        return;
+      }
+
       // ── QR ────────────────────────────────────────────────────────────
       if (metodo === "QR") {
         const qrMode = mpOk ? (mpCfg.qr_mode || "none") : "none";
@@ -1204,35 +1238,63 @@ if (event.key === "Enter") {
         }
       }
 
-      // ── Flujo estándar (Efectivo / Débito / Crédito sin posnet) ──────
+      // ── Flujo estándar (pago único) ──────────────────────────────────
       CajaState.metodoPagoSeleccionado = metodo;
       paymentButtons.forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
-      efectivoArea?.classList.add("oculto");
-      splitArea?.classList.add("oculto");
+
       if (metodo === "Efectivo") {
         efectivoArea?.classList.remove("oculto");
+        if (labelPago1) labelPago1.textContent = "Paga con:";
         montoPagadoInput?.focus();
-      } else if (metodo === "Mixto") {
-        splitArea?.classList.remove("oculto");
-        splitMonto1?.focus();
-        _actualizarSplitMonto2();
       } else {
+        efectivoArea?.classList.add("oculto");
         btnRegistrarVenta?.focus();
       }
+      actualizarCalculoVuelto();
       renderizarVenta();
     });
   });
 
   montoPagadoInput?.addEventListener("input", actualizarCalculoVuelto);
 
-  const _actualizarSplitMonto2 = () => {
-    const total = CajaState.totalFinalRedondeado || 0;
-    const m1 = parseFloat(splitMonto1?.value) || 0;
-    const m2 = Math.max(0, Math.round((total - m1) * 100) / 100);
-    if (splitMonto2) splitMonto2.value = m2 > 0 ? m2.toFixed(2) : "";
-  };
-  splitMonto1?.addEventListener("input", _actualizarSplitMonto2);
+  // ── Toggle Pago Mixto ───────────────────────────────────────────────────
+  mixtoToggleInput?.addEventListener("change", () => {
+    CajaState.mixtoActivo = mixtoToggleInput.checked;
+    CajaState.mixtoMetodo2 = null;
+
+    if (CajaState.mixtoActivo) {
+      mixtoToggleRow?.classList.add("mixto-activo");
+      if (labelVuelto) labelVuelto.textContent = "Monto Restante:";
+      mixtoSegundoArea?.classList.remove("oculto");
+      mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
+      // Si ya hay método seleccionado, actualizar label
+      if (CajaState.metodoPagoSeleccionado) {
+        if (labelPago1) labelPago1.textContent = `Pago 1 (${CajaState.metodoPagoSeleccionado}):`;
+        efectivoArea?.classList.remove("oculto");
+      }
+    } else {
+      mixtoToggleRow?.classList.remove("mixto-activo");
+      if (labelVuelto) labelVuelto.textContent = "Vuelto:";
+      if (labelPago1) labelPago1.textContent = "Paga con:";
+      mixtoSegundoArea?.classList.add("oculto");
+      mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
+      // Si el método seleccionado no es Efectivo, ocultar el área
+      if (CajaState.metodoPagoSeleccionado && CajaState.metodoPagoSeleccionado !== "Efectivo") {
+        efectivoArea?.classList.add("oculto");
+      }
+    }
+    actualizarCalculoVuelto();
+  });
+
+  // ── Botones segundo método (mixto) ──────────────────────────────────────
+  mixtoMetodos2Btns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      CajaState.mixtoMetodo2 = btn.dataset.metodo2;
+      mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
   // W5-F5: Confirmation guard — only prompt when the cart has items.
   btnCancelarVenta?.addEventListener("click", async () => {
     if (CajaState.ventaActual.length === 0) { resetearVenta(); return; }
@@ -1275,11 +1337,27 @@ if (event.key === "Enter") {
 
     toggleButtonLoading(btnRegistrarVenta, true, "Registrar Venta");
 
-    const esMixto = CajaState.metodoPagoSeleccionado === "Mixto";
-    const pagosSplit = esMixto ? [
-      { metodo: splitMetodo1?.value || "Efectivo", monto: parseFloat(splitMonto1?.value) || 0 },
-      { metodo: splitMetodo2?.value || "Débito",   monto: parseFloat(splitMonto2?.value) || 0 },
-    ] : null;
+    const esMixto = CajaState.mixtoActivo;
+    let pagosSplit = null;
+    if (esMixto) {
+      if (!CajaState.metodoPagoSeleccionado) {
+        showErrorModal("Seleccioná el primer medio de pago.");
+        toggleButtonLoading(btnRegistrarVenta, false, "Registrar Venta");
+        return;
+      }
+      if (!CajaState.mixtoMetodo2) {
+        showErrorModal("Seleccioná el segundo medio de pago.");
+        toggleButtonLoading(btnRegistrarVenta, false, "Registrar Venta");
+        return;
+      }
+      const total = CajaState.totalFinalRedondeado || 0;
+      const monto1 = parseFloat(montoPagadoInput?.value) || 0;
+      const monto2 = Math.max(0, Math.round((total - monto1) * 100) / 100);
+      pagosSplit = [
+        { metodo: CajaState.metodoPagoSeleccionado, monto: monto1 },
+        { metodo: CajaState.mixtoMetodo2,            monto: monto2 },
+      ];
+    }
 
     const ventaData = {
       detalles: CajaState.ventaActual.map((i) => ({
@@ -1288,7 +1366,7 @@ if (event.key === "Enter") {
         precioUnitario: i.precioUnitario,
         nombreProducto: i.nombreProducto,
       })),
-      metodoPago: CajaState.metodoPagoSeleccionado,
+      metodoPago: esMixto ? "Mixto" : CajaState.metodoPagoSeleccionado,
       ClienteId: CajaState.clienteActual?.id || null,
       dniCliente: CajaState.clienteActual?.dni || null,
       montoPagado: parseFloat(montoPagadoInput?.value) || 0,
