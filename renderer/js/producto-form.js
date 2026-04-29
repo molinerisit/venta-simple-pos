@@ -10,8 +10,7 @@ document.addEventListener("app-ready", () => {
   const inputCodigoBarras = document.getElementById("codigo_barras");
   const deptoSelect = document.getElementById("departamento-select");
   const familiaSelect = document.getElementById("familia-select");
-  const btnNuevoDepto = document.getElementById("btn-nuevo-depto");
-  const btnNuevaFamilia = document.getElementById("btn-nueva-familia");
+  const clasificacionSugerencia = document.getElementById("clasificacion-sugerencia");
   const inputStock = document.getElementById("stock");
   const inputUnidad = document.getElementById("unidad");
   const inputFechaVencimiento = document.getElementById("fecha_vencimiento");
@@ -30,18 +29,6 @@ document.addEventListener("app-ready", () => {
   const pluRow = document.getElementById("plu-row");
   const pluInput = document.getElementById("plu");
   const pluHelp = document.getElementById("plu-help");
-
-  // Elementos del formulario inline de Departamento
-  const nuevoDeptoContainer = document.getElementById("nuevo-depto-container");
-  const nuevoDeptoNombre = document.getElementById("nuevo-depto-nombre");
-  const btnGuardarDepto = document.getElementById("btn-guardar-depto");
-  const btnCancelarDepto = document.getElementById("btn-cancelar-depto");
-
-  // Elementos del formulario inline de Familia
-  const nuevaFamiliaContainer = document.getElementById("nueva-familia-container");
-  const nuevaFamiliaNombre = document.getElementById("nueva-familia-nombre");
-  const btnGuardarFamilia = document.getElementById("btn-guardar-familia");
-  const btnCancelarFamilia = document.getElementById("btn-cancelar-familia");
 
   // --- MODAL AJUSTE PRECIO ---
   const modalAjustePrecio = document.getElementById("modal-ajuste-precio");
@@ -119,11 +106,10 @@ document.addEventListener("app-ready", () => {
       if (idSeleccionar) deptoSelect.value = idSeleccionar;
     };
 
-  const actualizarFamiliasSelect = (familiaASeleccionarId = null) => { 
+  const actualizarFamiliasSelect = (familiaASeleccionarId = null) => {
       const deptoId = deptoSelect.value;
       familiaSelect.innerHTML = '<option value="">-- Familia --</option>';
       familiaSelect.disabled = !deptoId;
-      btnNuevaFamilia.disabled = !deptoId;
       if (deptoId) {
           const familiasFiltradas = familiasData.filter((f) => String(f.DepartamentoId) === String(deptoId));
           familiasFiltradas.forEach((fam) => {
@@ -353,70 +339,55 @@ document.addEventListener("app-ready", () => {
     }
   }
 
+  // ── Auto-clasificación por nombre ────────────────────────────────────────────
+  let _suggestTimer = null;
+
+  async function _sugerirClasificacion(nombre) {
+    if (!nombre || nombre.length < 3) {
+      if (clasificacionSugerencia) clasificacionSugerencia.style.display = "none";
+      return;
+    }
+    if (inputId?.value) return; // editing existing product — don't override
+    try {
+      const sug = await window.electronAPI.invoke("suggest-clasificacion", nombre);
+      if (!sug) {
+        if (clasificacionSugerencia) clasificacionSugerencia.style.display = "none";
+        return;
+      }
+      // Only auto-apply if user hasn't manually selected a departamento yet
+      if (!deptoSelect.value) {
+        deptoSelect.value = sug.departamentoId;
+        deptoSelect.dispatchEvent(new Event("change"));
+        if (sug.familiaId) {
+          setTimeout(() => { familiaSelect.value = sug.familiaId; }, 50);
+        }
+        if (clasificacionSugerencia) {
+          const famLabel = sug.familiaNombre ? ` › ${sug.familiaNombre}` : "";
+          clasificacionSugerencia.textContent = `Clasificado automáticamente: ${sug.departamentoNombre}${famLabel}`;
+          clasificacionSugerencia.style.display = "block";
+          setTimeout(() => { if (clasificacionSugerencia) clasificacionSugerencia.style.display = "none"; }, 4000);
+        }
+      }
+    } catch (e) {
+      console.warn("[suggest-clasificacion]", e.message);
+    }
+  }
+
+  function scheduleClasificacionSuggest() {
+    clearTimeout(_suggestTimer);
+    _suggestTimer = setTimeout(() => _sugerirClasificacion(inputNombre?.value.trim()), 400);
+  }
+
   // --- 3. EVENTOS ---
 
 
   inputPrecioCompra.addEventListener("input", calcularRentabilidad);
   inputPrecioVenta.addEventListener("input", calcularRentabilidad);
-  inputNombre?.addEventListener("input", () => scheduleDupCheck('nombre'));
+  inputNombre?.addEventListener("input", () => { scheduleDupCheck('nombre'); scheduleClasificacionSuggest(); });
   inputCodigoBarras?.addEventListener("input", () => scheduleDupCheck('codigo'));
   inputCodigoBarras?.addEventListener("change", () => scheduleDupCheck('codigo'));
   inputCodigoBarras?.addEventListener("blur",   () => _checkCatalog(inputCodigoBarras.value.trim()));
   deptoSelect.addEventListener("change", () => actualizarFamiliasSelect());
-
-  // --- Eventos de Clasificación ---
-  btnNuevoDepto.addEventListener("click", () => {
-    nuevaFamiliaContainer.style.display = "none";
-    nuevoDeptoContainer.style.display = "flex";
-    nuevoDeptoNombre.focus();
-  });
-  btnCancelarDepto.addEventListener("click", () => {
-    nuevoDeptoContainer.style.display = "none";
-  });
-  btnGuardarDepto.addEventListener("click", async () => { 
-    const nombre = (nuevoDeptoNombre.value || "").trim();
-    if (!nombre) return showNotification("El nombre no puede estar vacío.", "error");
-
-    const res = await window.electronAPI.invoke("guardar-departamento", { nombre });
-    if (res?.success) {
-      await cargarClasificaciones();
-      deptoSelect.value = res.data.id;
-      deptoSelect.dispatchEvent(new Event("change"));
-      nuevoDeptoNombre.value = "";
-      nuevoDeptoContainer.style.display = "none";
-      showNotification("Departamento creado.");
-    } else {
-      showNotification(`Error: ${res?.message || "No se pudo crear el departamento."}`, "error");
-    }
-  });
-
-  btnNuevaFamilia.addEventListener("click", () => { 
-    if (!deptoSelect.value) return showNotification("Seleccione un departamento primero.", "error");
-    nuevoDeptoContainer.style.display = "none";
-    nuevaFamiliaContainer.style.display = "flex";
-    nuevaFamiliaNombre.focus();
-  });
-  btnCancelarFamilia.addEventListener("click", () => { 
-    nuevaFamiliaContainer.style.display = "none";
-  });
-  btnGuardarFamilia.addEventListener("click", async () => { 
-    const nombre = (nuevaFamiliaNombre.value || "").trim();
-    const DepartamentoId = deptoSelect.value;
-    if (!nombre) return showNotification("El nombre no puede estar vacío.", "error");
-
-    const res = await window.electronAPI.invoke("guardar-familia", { nombre, DepartamentoId });
-    if (res?.success) {
-      await cargarClasificaciones();
-      deptoSelect.value = DepartamentoId;
-      actualizarFamiliasSelect(res.data.id);
-
-      nuevaFamiliaNombre.value = "";
-      nuevaFamiliaContainer.style.display = "none";
-      showNotification("Familia creada.");
-    } else {
-      showNotification(`Error: ${res?.message || "No se pudo crear la familia."}`, "error");
-    }
-  });
 
   // --- Eventos de Imagen y PLU ---
   inputImagenProducto.addEventListener("change", (e) => { 

@@ -188,6 +188,19 @@
       }
     });
 
+    const mpQrModeHint = document.getElementById("mp-qr-mode-hint");
+    const QR_HINTS = {
+      dinamico: "El cliente escanea el QR con su celular desde la pantalla de la PC. Recomendado.",
+      posnet:   "El QR aparece en la pantalla del posnet. Requiere que el dispositivo tenga QR habilitado en MP.",
+      none:     "El botón QR solo registra el método de pago sin interactuar con MP.",
+    };
+
+    function updateQrHint() {
+      if (mpQrModeHint && mpQrMode) {
+        mpQrModeHint.textContent = QR_HINTS[mpQrMode.value] || "";
+      }
+    }
+
     async function loadMpPaymentConfig() {
       const cfg = await ipcInvoke("get-mp-payment-config").catch(() => null);
       if (!cfg) return;
@@ -195,6 +208,7 @@
       if (mpDebitMode)  mpDebitMode.value  = cfg.debit_mode  || "posnet";
       if (mpCreditMode) mpCreditMode.value = cfg.credit_mode || "posnet";
       updateMpDeviceWrap();
+      updateQrHint();
       if (_mpNeedsDevice()) await refreshPointDevices(cfg.point_device_id);
     }
 
@@ -202,6 +216,7 @@
       if (!sel) return;
       sel.addEventListener("change", async () => {
         updateMpDeviceWrap();
+        updateQrHint();
         if (_mpNeedsDevice() && mpPointDevice && mpPointDevice.options.length <= 1) {
           await refreshPointDevices();
         }

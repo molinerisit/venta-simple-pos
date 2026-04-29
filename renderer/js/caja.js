@@ -48,6 +48,11 @@ document.addEventListener("app-ready", () => {
   const paymentButtons = document.querySelectorAll(".payment-methods button");
   const efectivoArea = document.getElementById("efectivo-area");
   const montoPagadoInput = document.getElementById("monto-pagado");
+  const splitArea    = document.getElementById("split-area");
+  const splitMetodo1 = document.getElementById("split-metodo1");
+  const splitMonto1  = document.getElementById("split-monto1");
+  const splitMetodo2 = document.getElementById("split-metodo2");
+  const splitMonto2  = document.getElementById("split-monto2");
   const vueltoDisplay = document.getElementById("vuelto-display");
   const btnRegistrarVenta = document.getElementById("registrar-venta-btn");
   const btnCancelarVenta = document.getElementById("cancelar-venta-btn");
@@ -78,6 +83,7 @@ document.addEventListener("app-ready", () => {
   const posnetModal      = document.getElementById("posnet-modal");
   const posnetAmountEl   = document.getElementById("posnet-amount");
   const posnetStatusMsg  = document.getElementById("posnet-status-msg");
+  const posnetActionHint = document.getElementById("posnet-action-hint");
   const posnetSpinnerEl  = document.getElementById("posnet-spinner");
   const posnetSuccessEl  = document.getElementById("posnet-success-icon");
   const posnetErrorEl    = document.getElementById("posnet-error-icon");
@@ -197,7 +203,13 @@ document.addEventListener("app-ready", () => {
   const mostrarModalVentaExitosa = (result) => {
     if (!ventaExitosaModal) return;
     exTotal.textContent = formatCurrency(result.datosRecibo.total);
-    exMetodoPago.textContent = result.datosRecibo.metodoPago || "-";
+    const mp = result.datosRecibo.metodoPago || "-";
+    if (mp === "Mixto" && Array.isArray(result.datosRecibo.pagos_split)) {
+      const partes = result.datosRecibo.pagos_split.map(s => `${s.metodo} $${s.monto.toFixed(2)}`).join(" + ");
+      exMetodoPago.textContent = `Mixto (${partes})`;
+    } else {
+      exMetodoPago.textContent = mp;
+    }
     if (result.datosPagoMP) {
       exMpId.textContent = result.datosPagoMP.id;
       resumenPagoMP.classList.remove("oculto");
@@ -647,11 +659,12 @@ document.addEventListener("app-ready", () => {
     texto += `METODO PAGO: ${datosRecibo.metodoPago}\n`;
 
     if (datosRecibo.metodoPago === "Efectivo") {
-      // ⬇️ CAMBIO AQUÍ: Usamos la nueva función ⬇️
-      texto += `PAGA CON: ${formatCurrencyForTicket(
-        datosRecibo.montoPagado
-      )}\n`;
+      texto += `PAGA CON: ${formatCurrencyForTicket(datosRecibo.montoPagado)}\n`;
       texto += `VUELTO: ${formatCurrencyForTicket(datosRecibo.vuelto)}\n`;
+    } else if (datosRecibo.metodoPago === "Mixto" && Array.isArray(datosRecibo.pagos_split)) {
+      for (const s of datosRecibo.pagos_split) {
+        texto += `  ${s.metodo}: ${formatCurrencyForTicket(s.monto)}\n`;
+      }
     }
 
     if (cfg.footerTicket) {
@@ -688,9 +701,14 @@ document.addEventListener("app-ready", () => {
       ? `<div class="row"><span>Descuento:</span><span>-${fmtMoney(datosRecibo.descuento)}</span></div>` : "";
     const recHtml = datosRecibo.recargo > 0
       ? `<div class="row"><span>Recargo:</span><span>+${fmtMoney(datosRecibo.recargo)}</span></div>` : "";
-    const pagosHtml = datosRecibo.metodoPago === "Efectivo" ? `
-      <div class="row"><span>Efectivo:</span><span>${fmtMoney(datosRecibo.montoPagado)}</span></div>
-      <div class="row"><span>Cambio:</span><span>${fmtMoney(datosRecibo.vuelto)}</span></div>` : "";
+    const pagosHtml = datosRecibo.metodoPago === "Efectivo"
+      ? `<div class="row"><span>Efectivo:</span><span>${fmtMoney(datosRecibo.montoPagado)}</span></div>
+         <div class="row"><span>Cambio:</span><span>${fmtMoney(datosRecibo.vuelto)}</span></div>`
+      : datosRecibo.metodoPago === "Mixto" && Array.isArray(datosRecibo.pagos_split)
+        ? datosRecibo.pagos_split.map(s =>
+            `<div class="row"><span>${esc(s.metodo)}:</span><span>${fmtMoney(s.monto)}</span></div>`
+          ).join("")
+        : "";
 
     const storeParts = [cfg.sloganNegocio, cfg.direccionNegocio].filter(Boolean);
     const footerHtml = cfg.footerTicket
@@ -762,6 +780,9 @@ ${footerHtml}
     if (montoPagadoInput) montoPagadoInput.value = "";
     paymentButtons.forEach((btn) => btn.classList.remove("active"));
     efectivoArea?.classList.add("oculto");
+    splitArea?.classList.add("oculto");
+    if (splitMonto1) splitMonto1.value = "";
+    if (splitMonto2) splitMonto2.value = "";
     btnRegistrarVenta && (btnRegistrarVenta.disabled = false);
     generarFacturaCheckbox && (generarFacturaCheckbox.checked = false);
     toggleButtonLoading(btnRegistrarVenta, false, "Registrar Venta");
@@ -1187,11 +1208,16 @@ if (event.key === "Enter") {
       CajaState.metodoPagoSeleccionado = metodo;
       paymentButtons.forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
+      efectivoArea?.classList.add("oculto");
+      splitArea?.classList.add("oculto");
       if (metodo === "Efectivo") {
         efectivoArea?.classList.remove("oculto");
         montoPagadoInput?.focus();
+      } else if (metodo === "Mixto") {
+        splitArea?.classList.remove("oculto");
+        splitMonto1?.focus();
+        _actualizarSplitMonto2();
       } else {
-        efectivoArea?.classList.add("oculto");
         btnRegistrarVenta?.focus();
       }
       renderizarVenta();
@@ -1199,6 +1225,14 @@ if (event.key === "Enter") {
   });
 
   montoPagadoInput?.addEventListener("input", actualizarCalculoVuelto);
+
+  const _actualizarSplitMonto2 = () => {
+    const total = CajaState.totalFinalRedondeado || 0;
+    const m1 = parseFloat(splitMonto1?.value) || 0;
+    const m2 = Math.max(0, Math.round((total - m1) * 100) / 100);
+    if (splitMonto2) splitMonto2.value = m2 > 0 ? m2.toFixed(2) : "";
+  };
+  splitMonto1?.addEventListener("input", _actualizarSplitMonto2);
   // W5-F5: Confirmation guard — only prompt when the cart has items.
   btnCancelarVenta?.addEventListener("click", async () => {
     if (CajaState.ventaActual.length === 0) { resetearVenta(); return; }
@@ -1241,6 +1275,12 @@ if (event.key === "Enter") {
 
     toggleButtonLoading(btnRegistrarVenta, true, "Registrar Venta");
 
+    const esMixto = CajaState.metodoPagoSeleccionado === "Mixto";
+    const pagosSplit = esMixto ? [
+      { metodo: splitMetodo1?.value || "Efectivo", monto: parseFloat(splitMonto1?.value) || 0 },
+      { metodo: splitMetodo2?.value || "Débito",   monto: parseFloat(splitMonto2?.value) || 0 },
+    ] : null;
+
     const ventaData = {
       detalles: CajaState.ventaActual.map((i) => ({
         ProductoId: i.producto ? i.producto.id : null,
@@ -1255,6 +1295,7 @@ if (event.key === "Enter") {
       vuelto: CajaState.vueltoActual || 0,
       UsuarioId: CajaState.sesion?.user?.id || null,
       externalReference: CajaState.ultimaExternalReference,
+      pagos_split: pagosSplit,
     };
 
     try {
@@ -1717,7 +1758,14 @@ if (event.key === "Enter") {
 
       // Mostrar modal posnet
       if (posnetAmountEl) posnetAmountEl.textContent = formatCurrency(total);
-      if (posnetStatusMsg) posnetStatusMsg.textContent = "Esperando cobro en el dispositivo...";
+      if (posnetStatusMsg) posnetStatusMsg.textContent = "Enviando monto al dispositivo...";
+      if (posnetActionHint) {
+        const hintText = metodo === "QR"
+          ? "Pedile al cliente que toque QR en el posnet y que escanee el código que aparece."
+          : "Pedile al cliente que toque TARJETAS en el posnet y que pase o acerque la tarjeta.";
+        posnetActionHint.textContent = hintText;
+        posnetActionHint.style.display = "block";
+      }
       posnetSpinnerEl?.classList.remove("oculto");
       posnetSuccessEl?.classList.add("oculto");
       posnetErrorEl?.classList.add("oculto");
@@ -1768,6 +1816,8 @@ if (event.key === "Enter") {
   function cerrarPosnetModal(success) {
     clearInterval(CajaState._posnetPollingTimer);
     CajaState._posnetPollingTimer = null;
+
+    if (posnetActionHint) posnetActionHint.style.display = "none";
 
     if (success) {
       posnetSpinnerEl?.classList.add("oculto");

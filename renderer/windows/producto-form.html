@@ -53,29 +53,17 @@
 
               <div class="pf-section-label">Clasificación</div>
 
+              <div id="clasificacion-sugerencia" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#166534;"></div>
+
               <div class="pf-row">
                 <div class="form-campo-vertical">
-                  <div class="form-campo-con-boton">
-                    <select id="departamento-select"></select>
-                    <button type="button" id="btn-nuevo-depto" class="btn btn-info btn-add" title="Crear departamento">+</button>
-                  </div>
-                  <div id="nuevo-depto-container" class="inline-form-container" style="display:none;">
-                    <input type="text" id="nuevo-depto-nombre" placeholder="Nombre del nuevo depto..." />
-                    <button type="button" id="btn-guardar-depto" class="btn btn-success btn-sm">✔</button>
-                    <button type="button" id="btn-cancelar-depto" class="btn btn-danger btn-sm">✖</button>
-                  </div>
+                  <label style="font-size:12px;color:#6b7280;margin-bottom:3px;">Departamento</label>
+                  <select id="departamento-select"></select>
                 </div>
 
                 <div class="form-campo-vertical">
-                  <div class="form-campo-con-boton">
-                    <select id="familia-select" disabled></select>
-                    <button type="button" id="btn-nueva-familia" class="btn btn-info btn-add" title="Crear familia">+</button>
-                  </div>
-                  <div id="nueva-familia-container" class="inline-form-container" style="display:none;">
-                    <input type="text" id="nueva-familia-nombre" placeholder="Nombre de la nueva familia..." />
-                    <button type="button" id="btn-guardar-familia" class="btn btn-success btn-sm">✔</button>
-                    <button type="button" id="btn-cancelar-familia" class="btn btn-danger btn-sm">✖</button>
-                  </div>
+                  <label style="font-size:12px;color:#6b7280;margin-bottom:3px;">Familia</label>
+                  <select id="familia-select" disabled></select>
                 </div>
               </div>
             </div>

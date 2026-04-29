@@ -671,11 +671,11 @@
                 <div class="form-campo">
                   <label for="mp-qr-mode">QR</label>
                   <select id="mp-qr-mode">
-                    <option value="dinamico">Generar QR dinámico</option>
-                    <option value="posnet">Enviar al posnet</option>
+                    <option value="dinamico">Generar QR en pantalla ✓ recomendado</option>
+                    <option value="posnet">Mostrar QR en el posnet</option>
                     <option value="none">No hacer nada</option>
                   </select>
-                  <small>QR para escanear con el celular.</small>
+                  <small id="mp-qr-mode-hint">El cliente escanea el QR con su celular desde la pantalla de la PC.</small>
                 </div>
                 <div class="form-campo">
                   <label for="mp-debit-mode">Tarjeta débito</label>
@@ -683,7 +683,7 @@
                     <option value="posnet">Cobrar en posnet</option>
                     <option value="none">No hacer nada</option>
                   </select>
-                  <small>El cliente pasa la tarjeta físicamente.</small>
+                  <small>El monto se envía al posnet. El cliente toca TARJETAS y pasa la tarjeta.</small>
                 </div>
                 <div class="form-campo">
                   <label for="mp-credit-mode">Tarjeta crédito</label>
@@ -691,7 +691,7 @@
                     <option value="posnet">Cobrar en posnet</option>
                     <option value="none">No hacer nada</option>
                   </select>
-                  <small>El cliente pasa la tarjeta físicamente.</small>
+                  <small>El monto se envía al posnet. El cliente toca TARJETAS y pasa la tarjeta.</small>
                 </div>
               </div>
 
