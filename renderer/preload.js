@@ -52,6 +52,7 @@ const validInvokeChannels = [
   // Productos y sus Clasificaciones
   "buscar-productos-nombre",
   "get-productos",
+  "get-quick-access-products",
   "get-next-sku",
   "check-producto-duplicado",
   "get-producto-by-id",
