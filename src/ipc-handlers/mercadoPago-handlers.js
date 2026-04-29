@@ -580,6 +580,8 @@ function registerMercadoPagoHandlers(models) {
       if (!Number.isFinite(numAmount) || numAmount <= 0) {
         return { ok: false, error: `Monto inválido: ${amount}` };
       }
+      // MP Point Integration API espera el monto en centavos (entero sin decimales)
+      const amountCents = Math.round(numAmount * 100);
 
       const res = await resolveActiveMpContext(models);
       if (!res.ok) return { ok: false, error: res.error };
@@ -587,7 +589,7 @@ function registerMercadoPagoHandlers(models) {
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
       const body = {
-        amount: numAmount,
+        amount: amountCents,
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,

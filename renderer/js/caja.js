@@ -829,7 +829,25 @@ ${footerHtml}
         const _cur   = CajaState.metodoPagoSeleccionado;
         const _idx   = _order.indexOf(_cur);
         const _next  = _order[(_idx + 1) % _order.length];
-        document.querySelector('[data-metodo="' + _next + '"]')?.click();
+
+        // Actualizar selección visual sin disparar el pago todavía
+        CajaState.metodoPagoSeleccionado = _next;
+        paymentButtons.forEach(b => b.classList.remove("active"));
+        document.querySelector('[data-metodo="' + _next + '"]')?.classList.add("active");
+        if (_next === "Efectivo") {
+          efectivoArea?.classList.remove("oculto");
+          montoPagadoInput?.focus();
+        } else {
+          efectivoArea?.classList.add("oculto");
+          btnRegistrarVenta?.focus();
+        }
+        renderizarVenta();
+
+        // Debounce 1200ms: si el usuario deja de ciclar, dispara el botón del método elegido
+        clearTimeout(CajaState._cycleTimer);
+        CajaState._cycleTimer = setTimeout(() => {
+          document.querySelector('[data-metodo="' + CajaState.metodoPagoSeleccionado + '"]')?.click();
+        }, 1200);
         break;
       }
       // case "ñ": // ❌ ELIMINADO: Ya no se usa para registrar venta
