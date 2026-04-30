@@ -472,6 +472,17 @@ function registerMercadoPagoHandlers(models) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          // Token expirado: limpiar datos de MP para forzar reconexión limpia
+          const admin = await Usuario.findOne({ where: { rol: "administrador" }, attributes: ["id"] });
+          if (admin) {
+            await Usuario.update(
+              { mp_access_token: null, mp_user_id: null, mp_pos_id: null },
+              { where: { id: admin.id } }
+            );
+          }
+          return { ok: false, error: "Sesión de nube expirada. Reconectá tu cuenta de MP.", tokenExpired: true };
+        }
         return { ok: false, error: body?.detail || `Error ${res.status}` };
       }
       const { auth_url } = await res.json();
@@ -487,7 +498,7 @@ function registerMercadoPagoHandlers(models) {
   ipcMain.handle("mp:disconnect-oauth", async () => {
     try {
       const lic = readLicense();
-      const token = lic?.token;
+      const token = getActiveToken() || lic?.token;
       const apiUrl = (lic?.api_url || CLOUD_API).replace(/\/$/, "");
 
       if (token) {
