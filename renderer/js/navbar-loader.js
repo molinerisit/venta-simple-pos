@@ -253,6 +253,20 @@ function _mostrarPopupPrueba(forzar = false) {
 
 // ─── Sonido de ingreso de pago por transferencia MP ──────────────────────────
 // Se registra en cada página que carga navbar-loader.js.
+// Show-toast push desde main.js (sync automático, licencias, etc.)
+(function () {
+  if (!window.electronAPI?.on) return;
+
+  window.electronAPI.on('show-toast', function (data) {
+    const msg  = (typeof data === 'string') ? data : (data?.msg || '');
+    const type = (typeof data === 'string') ? 'info' : (data?.type || 'info');
+    if (!msg) return;
+    if (window.AppToast?.show) {
+      window.AppToast.show(msg, type);
+    }
+  });
+})();
+
 // El canal mp-payment-approved se dispara desde main.js cuando el pago QR es aprobado.
 (function () {
   if (!window.electronAPI?.on) return;

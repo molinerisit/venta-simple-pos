@@ -57,7 +57,6 @@ document.addEventListener("app-ready", () => {
   const mixtoToggleRow  = document.getElementById("mixto-toggle-row");
   const mixtoSegundoArea = document.getElementById("mixto-segundo-area");
   const mixtoMetodos2Btns = document.querySelectorAll(".mixto-btn2");
-  const mixtoMonto2Display = document.getElementById("mixto-monto2-display");
   const btnRegistrarVenta = document.getElementById("registrar-venta-btn");
   const btnCancelarVenta = document.getElementById("cancelar-venta-btn");
   const btnImprimirTicket = document.getElementById("imprimir-ticket-btn");
@@ -314,7 +313,6 @@ document.addEventListener("app-ready", () => {
     if (CajaState.mixtoActivo) {
       // En modo mixto: el segundo monto es lo que resta
       const restante = Math.max(0, Math.round((total - pagado) * 100) / 100);
-      if (mixtoMonto2Display) mixtoMonto2Display.textContent = formatCurrency(restante);
       CajaState.vueltoActual = 0;
       if (vueltoDisplay) {
         vueltoDisplay.textContent = formatCurrency(restante);
@@ -1238,12 +1236,18 @@ if (event.key === "Enter") {
         }
       }
 
-      // ── Flujo estándar (pago único) ──────────────────────────────────
+      // ── Flujo estándar (pago único) / primer método mixto ──────────────────
       CajaState.metodoPagoSeleccionado = metodo;
       paymentButtons.forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
 
-      if (metodo === "Efectivo") {
+      if (CajaState.mixtoActivo) {
+        // Mixto: siempre abrir input para ingresar el monto parcial del 1er método
+        if (labelPago1) labelPago1.textContent = `Pago 1 — ${metodo}:`;
+        efectivoArea?.classList.remove("oculto");
+        mixtoSegundoArea?.classList.remove("oculto");
+        montoPagadoInput?.focus();
+      } else if (metodo === "Efectivo") {
         efectivoArea?.classList.remove("oculto");
         if (labelPago1) labelPago1.textContent = "Paga con:";
         montoPagadoInput?.focus();
@@ -1262,24 +1266,23 @@ if (event.key === "Enter") {
   mixtoToggleInput?.addEventListener("change", () => {
     CajaState.mixtoActivo = mixtoToggleInput.checked;
     CajaState.mixtoMetodo2 = null;
+    mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
 
     if (CajaState.mixtoActivo) {
       mixtoToggleRow?.classList.add("mixto-activo");
-      if (labelVuelto) labelVuelto.textContent = "Monto Restante:";
-      mixtoSegundoArea?.classList.remove("oculto");
-      mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
-      // Si ya hay método seleccionado, actualizar label
+      if (labelVuelto) labelVuelto.textContent = "Faltan:";
+      // Los botones del 2do método solo aparecen cuando el cajero elige el 1er método
       if (CajaState.metodoPagoSeleccionado) {
-        if (labelPago1) labelPago1.textContent = `Pago 1 (${CajaState.metodoPagoSeleccionado}):`;
+        if (labelPago1) labelPago1.textContent = `Pago 1 — ${CajaState.metodoPagoSeleccionado}:`;
         efectivoArea?.classList.remove("oculto");
+        mixtoSegundoArea?.classList.remove("oculto");
       }
     } else {
       mixtoToggleRow?.classList.remove("mixto-activo");
       if (labelVuelto) labelVuelto.textContent = "Vuelto:";
       if (labelPago1) labelPago1.textContent = "Paga con:";
       mixtoSegundoArea?.classList.add("oculto");
-      mixtoMetodos2Btns.forEach(b => b.classList.remove("active"));
-      // Si el método seleccionado no es Efectivo, ocultar el área
+      // Si el 1er método no era Efectivo, ocultar el área de monto
       if (CajaState.metodoPagoSeleccionado && CajaState.metodoPagoSeleccionado !== "Efectivo") {
         efectivoArea?.classList.add("oculto");
       }

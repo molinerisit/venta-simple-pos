@@ -433,6 +433,22 @@
     const certFilePathDisplay = document.getElementById("cert-file-path");
     const keyFilePathDisplay = document.getElementById("key-file-path");
 
+    // Sync nube
+    const btnSyncNow       = document.getElementById("btn-sync-now");
+    const btnToggleSync    = document.getElementById("btn-toggle-sync");
+    const syncLastAt       = document.getElementById("sync-last-at");
+    const syncResultMsg    = document.getElementById("sync-result-msg");
+    const syncStatusPill   = document.getElementById("sync-status-pill");
+    const syncStatusDot    = document.getElementById("sync-status-dot");
+    const syncStatusLabel  = document.getElementById("sync-status-label");
+    const syncIconBadge    = document.getElementById("sync-icon-badge");
+    // Modal contraseña
+    const syncPassModal    = document.getElementById("sync-password-modal");
+    const syncPassInput    = document.getElementById("sync-disable-password");
+    const syncPassError    = document.getElementById("sync-pass-error");
+    const syncModalCancelar  = document.getElementById("sync-modal-cancelar");
+    const syncModalConfirmar = document.getElementById("sync-modal-confirmar");
+
     // Gmail
     const gmailForm      = document.getElementById("gmail-config-form");
     const gmailUserInput = document.getElementById("gmail-user");
@@ -864,6 +880,11 @@
           if (certFilePathDisplay)    certFilePathDisplay.textContent = config.afip_cert_path || "No seleccionado";
           if (keyFilePathDisplay)     keyFilePathDisplay.textContent  = config.afip_key_path  || "No seleccionado";
         }
+
+        // Sync status
+        try {
+          await refreshSyncUI();
+        } catch (_) {}
 
         // Gmail: load only the user address (never the password)
         if (gmailForm) {
@@ -1879,6 +1900,145 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
         btnImportarCSV.disabled = false;
         btnImportarCSV.textContent = "Importar Productos (CSV)";
       }
+    });
+
+    // ── Sincronización nube ───────────────────────────────────────
+
+    function applySyncUI(enabled, last_sync_at) {
+      // Pill
+      if (syncStatusPill) {
+        syncStatusPill.style.background  = enabled ? "#dcfce7" : "#fee2e2";
+        syncStatusPill.style.color       = enabled ? "#15803d" : "#b91c1c";
+        syncStatusPill.style.border      = enabled ? "1px solid #bbf7d0" : "1px solid #fecaca";
+      }
+      if (syncStatusDot) {
+        syncStatusDot.style.background = enabled ? "#16a34a" : "#dc2626";
+      }
+      if (syncStatusLabel) syncStatusLabel.textContent = enabled ? "Activo" : "Inactivo";
+      // Ícono badge
+      if (syncIconBadge) {
+        syncIconBadge.style.background = enabled ? "#2563EB" : "#6b7280";
+      }
+      // Último sync
+      if (syncLastAt) {
+        syncLastAt.textContent = last_sync_at
+          ? new Date(last_sync_at).toLocaleString("es-AR")
+          : "Nunca";
+      }
+      // Botón toggle
+      if (btnToggleSync) {
+        btnToggleSync.textContent = enabled ? "Desactivar sync" : "Activar sync";
+        btnToggleSync.className   = enabled ? "btn btn-danger" : "btn btn-success";
+      }
+      // Botón sync now solo visible cuando activo
+      if (btnSyncNow) btnSyncNow.style.display = enabled ? "" : "none";
+    }
+
+    async function refreshSyncUI() {
+      const cfg = await ipcInvoke("get-sync-config");
+      applySyncUI(cfg?.enabled !== false, cfg?.last_sync_at || null);
+    }
+
+    // Botón "Sincronizar ahora"
+    on(btnSyncNow, "click", async () => {
+      if (!btnSyncNow) return;
+      const origHtml = btnSyncNow.innerHTML;
+      btnSyncNow.disabled = true;
+      btnSyncNow.textContent = "Sincronizando...";
+      if (syncResultMsg) { syncResultMsg.style.display = "none"; }
+      try {
+        const result = await ipcInvoke("force-sync-now");
+        await refreshSyncUI();
+        if (syncResultMsg) {
+          syncResultMsg.style.display = "block";
+          if (result?.ok) {
+            const total = (result.pushed || 0) + (result.pulled || 0);
+            syncResultMsg.textContent = total > 0
+              ? `Sincronización completa — ${result.pushed} enviados, ${result.pulled} recibidos.`
+              : "Ya estás al día con la nube.";
+            syncResultMsg.style.background = "#dcfce7";
+            syncResultMsg.style.color      = "#15803d";
+            syncResultMsg.style.border     = "1px solid #bbf7d0";
+          } else {
+            syncResultMsg.textContent = "Error: " + (result?.error || "No se pudo sincronizar. Verificá tu licencia y conexión.");
+            syncResultMsg.style.background = "#fee2e2";
+            syncResultMsg.style.color      = "#b91c1c";
+            syncResultMsg.style.border     = "1px solid #fecaca";
+          }
+        }
+      } catch (err) {
+        if (syncResultMsg) {
+          syncResultMsg.style.display = "block";
+          syncResultMsg.textContent = "Error inesperado: " + err.message;
+          syncResultMsg.style.background = "#fee2e2";
+          syncResultMsg.style.color      = "#b91c1c";
+          syncResultMsg.style.border     = "1px solid #fecaca";
+        }
+      } finally {
+        btnSyncNow.disabled = false;
+        btnSyncNow.innerHTML = origHtml;
+      }
+    });
+
+    // Botón "Activar / Desactivar sync"
+    on(btnToggleSync, "click", async () => {
+      const cfg = await ipcInvoke("get-sync-config").catch(() => ({ enabled: true }));
+      if (!cfg.enabled) {
+        // Activar: sin contraseña
+        const res = await ipcInvoke("set-sync-enabled", { enabled: true, password: "" });
+        if (res?.success) {
+          await refreshSyncUI();
+          toast.show("Sincronización activada.", "success");
+        }
+      } else {
+        // Desactivar: mostrar modal de contraseña
+        if (syncPassInput)  syncPassInput.value = "";
+        if (syncPassError)  { syncPassError.style.display = "none"; syncPassError.textContent = ""; }
+        if (syncPassModal)  syncPassModal.classList.add("visible");
+        syncPassInput?.focus();
+      }
+    });
+
+    // Modal contraseña — cancelar
+    on(syncModalCancelar, "click", () => {
+      if (syncPassModal) syncPassModal.classList.remove("visible");
+    });
+    on(syncPassModal, "keydown", (e) => {
+      if (e.key === "Escape") syncPassModal.classList.remove("visible");
+    });
+
+    // Modal contraseña — confirmar desactivar
+    on(syncModalConfirmar, "click", async () => {
+      const pass = syncPassInput?.value || "";
+      if (!pass) {
+        if (syncPassError) { syncPassError.textContent = "Ingresá tu contraseña."; syncPassError.style.display = "block"; }
+        return;
+      }
+      syncModalConfirmar.disabled = true;
+      syncModalConfirmar.textContent = "Verificando...";
+      try {
+        const res = await ipcInvoke("set-sync-enabled", { enabled: false, password: pass });
+        if (res?.success) {
+          syncPassModal.classList.remove("visible");
+          await refreshSyncUI();
+          toast.show("Sincronización desactivada.", "warning");
+        } else {
+          if (syncPassError) {
+            syncPassError.textContent = res?.message || "Contraseña incorrecta.";
+            syncPassError.style.display = "block";
+          }
+        }
+      } catch (err) {
+        if (syncPassError) { syncPassError.textContent = "Error: " + err.message; syncPassError.style.display = "block"; }
+      } finally {
+        syncModalConfirmar.disabled = false;
+        syncModalConfirmar.textContent = "Desactivar";
+      }
+    });
+
+    // Enter dentro del modal de sync
+    on(syncPassInput, "keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); syncModalConfirmar?.click(); }
     });
 
     // ── Gmail config ─────────────────────────────────────────────

@@ -561,9 +561,10 @@ app.on("ready", async () => {
       }
     });
 
-    // === ELIMINADO: Heartbeat recurrente (setInterval) ===
-
-    // === ELIMINADO: Primer chequeo en background (setImmediate) ===
+    // Auto-sync con la nube cada 5 minutos
+    const { runSync } = require('./src/ipc-handlers/sync-handlers');
+    setTimeout(() => runSync().catch(() => {}), 30_000);
+    setInterval(() => runSync().catch(() => {}), 5 * 60_000);
 
     // Ventanas iniciales
 

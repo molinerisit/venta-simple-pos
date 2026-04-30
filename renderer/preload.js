@@ -125,6 +125,8 @@ const validInvokeChannels = [
   "run-manual-sync",
   "run-cloud-sync",
   "get-sync-status",
+  "get-sync-config",
+  "set-sync-enabled",
 
   // Cuentas Corrientes
   "get-clientes-con-deuda",

@@ -1,26 +1,19 @@
 // renderer/js/cuentas-corrientes.js
 document.addEventListener("app-ready", () => {
-  // --- REFS ---
-  const tabs = document.querySelectorAll(".cc-tab");
-  const tabContents = document.querySelectorAll(".cc-tab-content");
   const clientesTbody = document.getElementById("clientes-deuda-tbody");
-  const proveedoresTbody = document.getElementById("proveedores-deuda-tbody");
 
-  // Modal
-  const pagoModal = document.getElementById("pago-modal");
-  const pagoModalTitulo = document.getElementById("pago-modal-titulo");
-  const pagoModalEntidad = document.getElementById("pago-modal-entidad");
+  const pagoModal          = document.getElementById("pago-modal");
+  const pagoModalTitulo    = document.getElementById("pago-modal-titulo");
+  const pagoModalEntidad   = document.getElementById("pago-modal-entidad");
   const pagoModalDeudaActual = document.getElementById("pago-modal-deuda-actual");
-  const pagoModalMonto = document.getElementById("pago-modal-monto");
-  const pagoModalHelp = document.getElementById("pago-modal-help");
-  const pagoModalCancelar = document.getElementById("pago-modal-cancelar");
+  const pagoModalMonto     = document.getElementById("pago-modal-monto");
+  const pagoModalHelp      = document.getElementById("pago-modal-help");
+  const pagoModalCancelar  = document.getElementById("pago-modal-cancelar");
   const pagoModalConfirmar = document.getElementById("pago-modal-confirmar");
 
-  // Toast
   const toast = document.getElementById("toast-notification");
   let toastTimer;
 
-  // --- UTILS ---
   const showToast = (msg, type = "success", ms = 3000) => {
     if (!toast) return;
     clearTimeout(toastTimer);
@@ -30,33 +23,27 @@ document.addEventListener("app-ready", () => {
     toastTimer = setTimeout(() => toast.classList.remove("visible"), ms);
   };
 
-  const money = (v) => (v || 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+  const money = (v) =>
+    (v || 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
 
-  const setLoadingTbody = (tbody, colspan = 4) => {
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">Cargando...</td></tr>`;
-  };
+  const fmtDate = (d) =>
+    d ? new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
 
-  // --- LOADERS ---
   const actualizarStatCards = (clientes) => {
-    const totalDeuda     = document.getElementById("stat-total-deuda");
-    const clientesDeuda  = document.getElementById("stat-clientes-deuda");
-    const pagosMes       = document.getElementById("stat-pagos-mes");
+    const totalDeuda    = document.getElementById("stat-total-deuda");
+    const clientesDeuda = document.getElementById("stat-clientes-deuda");
+    const pagosMes      = document.getElementById("stat-pagos-mes");
     if (totalDeuda) {
       const suma = clientes.reduce((acc, c) => acc + parseFloat(c.deuda || 0), 0);
       totalDeuda.textContent = money(suma);
     }
     if (clientesDeuda) clientesDeuda.textContent = clientes.length;
-    if (pagosMes) pagosMes.textContent = "—"; // requires backend support
+    if (pagosMes) pagosMes.textContent = "—";
   };
-
-  const fmtDate = (d) => d
-    ? new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
-    : "—";
 
   const cargarClientesConDeuda = async () => {
     if (!clientesTbody) return;
-    setLoadingTbody(clientesTbody, 5);
+    clientesTbody.innerHTML = `<tr><td colspan="5" class="text-center">Cargando...</td></tr>`;
     try {
       const { success, data } = await window.electronAPI.invoke("get-clientes-con-deuda");
       clientesTbody.innerHTML = "";
@@ -96,62 +83,16 @@ document.addEventListener("app-ready", () => {
     }
   };
 
-  const cargarProveedoresConDeuda = async () => {
-    if (!proveedoresTbody) return;
-    setLoadingTbody(proveedoresTbody);
-    try {
-      const { success, data } = await window.electronAPI.invoke("get-proveedores-con-deuda");
-      proveedoresTbody.innerHTML = "";
-      if (success && Array.isArray(data) && data.length > 0) {
-        proveedoresTbody.innerHTML = data
-          .map(
-            (p) => `
-          <tr>
-            <td>${p.nombreEmpresa || "-"}</td>
-            <td>${p.nombreRepartidor || "N/A"}</td>
-            <td>${money(p.deuda)}</td>
-            <td style="text-align:right;">
-              <button class="btn btn-success btn-sm btn-abonar-proveedor"
-                data-id="${p.id}" data-nombre="${p.nombreEmpresa || "-"}"
-                data-deuda="${p.deuda || 0}">Registrar Abono</button>
-            </td>
-          </tr>`
-          )
-          .join("");
-      } else {
-        proveedoresTbody.innerHTML =
-          '<tr class="empty-row"><td colspan="4">No hay deudas pendientes con proveedores.</td></tr>';
-      }
-    } catch (e) {
-      console.error("get-proveedores-con-deuda", e);
-      proveedoresTbody.innerHTML =
-        '<tr class="empty-row"><td colspan="4" style="color:red;">Error al cargar datos.</td></tr>';
-      showToast("Error al cargar deudas de proveedores.", "error");
-    }
-  };
-
-  // --- TABS ---
-  tabs.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      tabs.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      tabContents.forEach((c) => c.classList.remove("active"));
-      const target = document.getElementById(`tab-${btn.dataset.tab}`);
-      target?.classList.add("active");
-    });
-  });
-
   // --- MODAL ---
   let pagoEnCurso = null;
 
-  const abrirModal = (tipo, id, nombre, deuda) => {
-    pagoEnCurso = { tipo, id, deuda };
-    pagoModalTitulo.textContent =
-      tipo === "cliente" ? "Registrar Pago de Cliente" : "Registrar Abono a Proveedor";
-    pagoModalEntidad.textContent = nombre || "-";
-    pagoModalDeudaActual.textContent = money(deuda || 0);
-    pagoModalMonto.value = "";
-    pagoModalMonto.max = deuda || "";
+  const abrirModal = (id, nombre, deuda) => {
+    pagoEnCurso = { id, deuda };
+    if (pagoModalTitulo)    pagoModalTitulo.textContent    = "Registrar Pago de Cliente";
+    if (pagoModalEntidad)   pagoModalEntidad.textContent   = nombre || "—";
+    if (pagoModalDeudaActual) pagoModalDeudaActual.textContent = money(deuda || 0);
+    pagoModalMonto.value    = "";
+    pagoModalMonto.max      = deuda || "";
     pagoModalHelp.textContent = deuda ? `Máximo: ${money(deuda)}` : "";
     pagoModal.classList.add("visible");
     pagoModalMonto.focus();
@@ -164,12 +105,8 @@ document.addEventListener("app-ready", () => {
 
   pagoModalCancelar.addEventListener("click", cerrarModal);
 
-  // Enter dentro del modal confirma
   pagoModal.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      pagoModalConfirmar.click();
-    }
+    if (e.key === "Enter") { e.preventDefault(); pagoModalConfirmar.click(); }
     if (e.key === "Escape") cerrarModal();
   });
 
@@ -187,55 +124,32 @@ document.addEventListener("app-ready", () => {
     }
 
     pagoModalConfirmar.disabled = true;
-
     try {
-      let result;
-      if (pagoEnCurso.tipo === "cliente") {
-        result = await window.electronAPI.invoke("registrar-pago-cliente", {
-          clienteId: pagoEnCurso.id,
-          monto,
-        });
-      } else {
-        result = await window.electronAPI.invoke("registrar-abono-proveedor", {
-          proveedorId: pagoEnCurso.id,
-          monto,
-        });
-      }
-
+      const result = await window.electronAPI.invoke("registrar-pago-cliente", {
+        clienteId: pagoEnCurso.id,
+        monto,
+      });
       if (result?.success) {
-        showToast(result.message || "Operación registrada con éxito.");
+        showToast(result.message || "Pago registrado con éxito.");
         cerrarModal();
-        await Promise.all([cargarClientesConDeuda(), cargarProveedoresConDeuda()]);
+        await cargarClientesConDeuda();
       } else {
         showToast(result?.message || "No se pudo completar la operación.", "error");
       }
     } catch (e) {
-      console.error("registrar pago", e);
-      showToast("Ocurrió un error al registrar la operación.", "error");
+      console.error("registrar-pago-cliente", e);
+      showToast("Ocurrió un error al registrar el pago.", "error");
     } finally {
       pagoModalConfirmar.disabled = false;
     }
   });
 
-  // Delegación de botones
   document.body.addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
+    const btn = e.target.closest(".btn-pagar-cliente");
     if (!btn) return;
-
-    if (btn.classList.contains("btn-pagar-cliente")) {
-      const { id, nombre, deuda } = btn.dataset;
-      abrirModal("cliente", id, nombre, parseFloat(deuda || "0"));
-    }
-    if (btn.classList.contains("btn-abonar-proveedor")) {
-      const { id, nombre, deuda } = btn.dataset;
-      abrirModal("proveedor", id, nombre, parseFloat(deuda || "0"));
-    }
+    const { id, nombre, deuda } = btn.dataset;
+    abrirModal(id, nombre, parseFloat(deuda || "0"));
   });
 
-  // --- INIT ---
-  const init = () => {
-    cargarClientesConDeuda();
-    cargarProveedoresConDeuda();
-  };
-  init();
+  cargarClientesConDeuda();
 });

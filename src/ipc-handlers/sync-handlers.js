@@ -1,22 +1,29 @@
 'use strict';
 
-const { ipcMain, app } = require('electron');
+const { ipcMain, app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
 const { readLicense } = require('./license-handlers');
+const { getActiveUserId } = require('./session-handlers');
 const { CLOUD_API_URL } = require('../config');
+
+// Referencia al doSync una vez que registerSyncHandlers haya sido llamado
+let _doSync = null;
 
 const SYNC_STATE_PATH = path.join(app.getPath('userData'), 'vs-sync.json');
 
 function readSyncState() {
   try {
     if (fs.existsSync(SYNC_STATE_PATH)) {
-      return JSON.parse(fs.readFileSync(SYNC_STATE_PATH, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(SYNC_STATE_PATH, 'utf8'));
+      // enabled es true por defecto si no existe el campo
+      if (parsed.enabled === undefined) parsed.enabled = true;
+      return parsed;
     }
   } catch {}
-  return { last_sync_at: null };
+  return { last_sync_at: null, enabled: true };
 }
 
 function writeSyncState(state) {
@@ -111,10 +118,44 @@ function registerSyncHandlers(models) {
 
   ipcMain.handle('get-sync-status', () => {
     const state = readSyncState();
-    return { last_sync_at: state.last_sync_at || null };
+    return { last_sync_at: state.last_sync_at || null, enabled: state.enabled !== false };
+  });
+
+  // get-sync-config: estado completo para la UI
+  ipcMain.handle('get-sync-config', () => {
+    const state = readSyncState();
+    return { enabled: state.enabled !== false, last_sync_at: state.last_sync_at || null };
+  });
+
+  // set-sync-enabled: requiere contraseña del usuario logueado para deshabilitar
+  ipcMain.handle('set-sync-enabled', async (_e, { enabled, password }) => {
+    if (enabled) {
+      // Activar no requiere contraseña
+      const state = readSyncState();
+      writeSyncState({ ...state, enabled: true });
+      return { success: true };
+    }
+    // Para deshabilitar, verificar contraseña del usuario activo
+    try {
+      const bcrypt = require('bcryptjs');
+      const userId = getActiveUserId();
+      if (!userId) return { success: false, message: 'No hay sesión activa.' };
+      const user = await models.Usuario.findByPk(userId, { attributes: ['id', 'password'] });
+      if (!user?.password) return { success: false, message: 'No se pudo verificar el usuario.' };
+      const ok = await bcrypt.compare(String(password || '').trim(), user.password);
+      if (!ok) return { success: false, message: 'Contraseña incorrecta.' };
+      const state = readSyncState();
+      writeSyncState({ ...state, enabled: false });
+      return { success: true };
+    } catch (e) {
+      console.error('[Sync] set-sync-enabled:', e.message);
+      return { success: false, message: 'Error al verificar contraseña.' };
+    }
   });
 
   const doSync = async () => {
+    const state = readSyncState();
+    if (state.enabled === false) return { ok: false, error: 'sync-disabled' };
     const lic = readLicense();
     if (!lic?.token) {
       return { ok: false, error: 'No hay licencia activa. Activá tu cuenta desde Config.' };
@@ -123,7 +164,6 @@ function registerSyncHandlers(models) {
     const apiUrl = (lic.api_url || CLOUD_API_URL).replace(/\/$/, '');
     const token = lic.token;
     const plan = lic.plan || 'FREE';
-    const state = readSyncState();
     const sinceDate = state.last_sync_at ? new Date(state.last_sync_at) : new Date(0);
     const syncStart = new Date().toISOString();
 
@@ -258,8 +298,41 @@ function registerSyncHandlers(models) {
     }
   };
 
+  _doSync = doSync;
+
   ipcMain.handle('run-cloud-sync', doSync);
   ipcMain.handle('run-manual-sync', doSync);
+
+  // force-sync-now: invocado desde la UI, emite toast al terminar
+  ipcMain.handle('force-sync-now', async () => {
+    const result = await doSync();
+    const wins = BrowserWindow.getAllWindows();
+    if (result.ok) {
+      const msg = result.pushed + result.pulled > 0
+        ? `Sincronización completa — ${result.pushed} enviados, ${result.pulled} recibidos`
+        : 'Ya estás al día con la nube';
+      wins.forEach(w => w.webContents.send('show-toast', { msg, type: 'success' }));
+    } else {
+      wins.forEach(w => w.webContents.send('show-toast', { msg: result.error || 'Error al sincronizar', type: 'error' }));
+    }
+    return result;
+  });
 }
 
-module.exports = { registerSyncHandlers };
+// Llamable desde main.js para auto-sync periódico
+async function runSync() {
+  if (!_doSync) return { ok: false, error: 'Sync no inicializado' };
+  const result = await _doSync();
+  if (result.ok && result.pulled > 0) {
+    const wins = BrowserWindow.getAllWindows();
+    wins.forEach(w =>
+      w.webContents.send('show-toast', {
+        msg: `Sync automático: ${result.pulled} cambios recibidos de la nube`,
+        type: 'info',
+      })
+    );
+  }
+  return result;
+}
+
+module.exports = { registerSyncHandlers, runSync };
