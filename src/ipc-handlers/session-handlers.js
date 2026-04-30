@@ -222,4 +222,6 @@ function openMainWindow(event, createMainWindow) {
   return { success: true };
 }
 
-module.exports = { registerSessionHandlers, clearSession, getActiveUserId, _resetLoginAttempts };
+function getActiveToken() { return activeToken; }
+
+module.exports = { registerSessionHandlers, clearSession, getActiveUserId, getActiveToken, _resetLoginAttempts };

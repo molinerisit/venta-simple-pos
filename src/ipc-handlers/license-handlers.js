@@ -147,14 +147,16 @@ async function _handleMpOauthDeepLink(parsed) {
   }
 
   const lic = readLicense();
-  if (!lic?.token) {
+  const { getActiveToken } = require('./session-handlers');
+  const token = getActiveToken() || lic?.token;
+  if (!token) {
     broadcast('mp-oauth-error', { error: 'no_license' });
     return;
   }
 
-  const apiUrl = (lic.api_url || CLOUD_API).replace(/\/$/, '');
+  const apiUrl = (lic?.api_url || CLOUD_API).replace(/\/$/, '');
   try {
-    const data = await _getAuthed(`${apiUrl}/mercadopago/tokens`, lic.token);
+    const data = await _getAuthed(`${apiUrl}/mercadopago/tokens`, token);
     broadcast('mp-oauth-connected', {
       accessToken: data.access_token,
       userId:      data.user_id,

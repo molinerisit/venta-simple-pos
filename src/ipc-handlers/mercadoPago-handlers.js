@@ -2,6 +2,7 @@
 const fetch = require("node-fetch");
 const { ipcMain, shell } = require("electron");
 const { readLicense } = require("./license-handlers");
+const { getActiveToken } = require("./session-handlers");
 const { CLOUD_API_URL: CLOUD_API } = require("../config");
 
 // B-6: global request timeout for all MP API calls
@@ -461,10 +462,11 @@ function registerMercadoPagoHandlers(models) {
   ipcMain.handle("mp:connect-oauth", async () => {
     try {
       const lic = readLicense();
-      const token = lic?.token;
+      // Preferir el token activo de sesión (login reciente) sobre el de la licencia
+      const token = getActiveToken() || lic?.token;
       if (!token) return { ok: false, error: "Activá tu licencia primero." };
 
-      const apiUrl = (lic.api_url || CLOUD_API).replace(/\/$/, "");
+      const apiUrl = (lic?.api_url || CLOUD_API).replace(/\/$/, "");
       const res = await fetch(`${apiUrl}/mercadopago/oauth/start?platform=desktop`, {
         headers: { Authorization: `Bearer ${token}` },
       });
