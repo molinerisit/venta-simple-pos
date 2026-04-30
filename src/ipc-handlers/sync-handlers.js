@@ -6,7 +6,7 @@ const fs = require('fs');
 const https = require('https');
 const http = require('http');
 const { readLicense } = require('./license-handlers');
-const { getActiveUserId } = require('./session-handlers');
+const { getActiveUserId, getActiveToken } = require('./session-handlers');
 const { CLOUD_API_URL } = require('../config');
 
 // Referencia al doSync una vez que registerSyncHandlers haya sido llamado
@@ -162,7 +162,7 @@ function registerSyncHandlers(models) {
     }
 
     const apiUrl = (lic.api_url || CLOUD_API_URL).replace(/\/$/, '');
-    const token = lic.token;
+    const token = getActiveToken() || lic.token;
     const plan = lic.plan || 'FREE';
     const sinceDate = state.last_sync_at ? new Date(state.last_sync_at) : new Date(0);
     const syncStart = new Date().toISOString();
