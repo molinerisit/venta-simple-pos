@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Caja - Sistema de Gestión</title>
+  <title>VentaSimple — Caja</title>
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/navbar.css" />
   <link rel="stylesheet" href="../css/caja.css" />
@@ -43,7 +43,7 @@
             </svg>
             <input type="text" id="main-input"
               placeholder="Escanea o busca un producto..."
-              autocomplete="off" spellcheck="false" />
+              autocomplete="off" spellcheck="false" autofocus />
           </div>
         </div>
 
@@ -107,9 +107,9 @@
           </button>
           <!-- Botones de gestión: permanecen en el DOM para que los event listeners funcionen,
                pero la UI los mueve al overlay de gestión -->
-          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto" style="display:none"></button>
-          <button id="movimiento-caja-btn" class="btn btn-secundario btn-grande oculto" style="display:none"></button>
-          <button id="informe-x-btn" class="btn btn-secundario btn-grande oculto" style="display:none"></button>
+          <button id="cerrar-caja-btn" class="btn btn-danger btn-grande oculto"></button>
+          <button id="movimiento-caja-btn" class="btn btn-secundario btn-grande oculto"></button>
+          <button id="informe-x-btn" class="btn btn-secundario btn-grande oculto"></button>
         </div>
 
         <!-- Overlay: Gestión de Caja -->
@@ -216,6 +216,7 @@
                 <line x1="1" y1="10" x2="23" y2="10"></line>
               </svg>
               <span>Efectivo</span>
+              <kbd class="hotkey-badge">1</kbd>
             </button>
             <button class="btn payment-btn" data-metodo="Débito">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
@@ -224,7 +225,7 @@
                 <line x1="5" y1="15" x2="9" y2="15"></line>
               </svg>
               <span>Débito</span>
-              <kbd class="hotkey-badge">*</kbd>
+              <kbd class="hotkey-badge">2</kbd>
             </button>
             <button class="btn payment-btn" data-metodo="Crédito">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
@@ -234,6 +235,7 @@
                 <line x1="15" y1="15" x2="19" y2="15"></line>
               </svg>
               <span>Crédito</span>
+              <kbd class="hotkey-badge">3</kbd>
             </button>
             <button class="btn payment-btn" data-metodo="QR">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
@@ -243,6 +245,7 @@
                 <rect x="14" y="14" width="3" height="3"></rect>
               </svg>
               <span>QR</span>
+              <kbd class="hotkey-badge">4</kbd>
             </button>
           </div>
 
@@ -289,6 +292,7 @@
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             Registrar Venta
+            <kbd class="hotkey-badge" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff;margin-left:6px;">F4</kbd>
           </button>
           <button id="imprimir-ticket-btn" class="btn btn-info" disabled>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -448,8 +452,8 @@
 
   <!-- Modal: Pago por Posnet (MP Point) -->
   <div id="posnet-modal" class="modal-container oculto">
-    <div class="modal-content modal-sm" style="text-align:center;padding:28px 24px;">
-      <div class="modal-icon-header" style="justify-content:center;margin-bottom:12px;">
+    <div class="modal-content modal-sm posnet-modal-content">
+      <div class="modal-icon-header posnet-modal-header">
         <div class="modal-icon modal-icon--info">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
@@ -461,16 +465,20 @@
           <p class="modal-subtitle" id="posnet-status-msg">Esperando cobro en el dispositivo...</p>
         </div>
       </div>
-      <div id="posnet-amount" style="font-size:2rem;font-weight:800;color:#1e3a8a;margin:16px 0;"></div>
-      <div id="posnet-action-hint" style="
-        background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;
-        padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:600;color:#1e40af;
-        line-height:1.5;display:none;
-      "></div>
-      <div id="posnet-spinner" style="margin:16px auto;width:36px;height:36px;border:4px solid #e2e8f0;border-top-color:#1e3a8a;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-      <div id="posnet-success-icon" class="oculto" style="font-size:48px;margin:12px 0;">✅</div>
-      <div id="posnet-error-icon" class="oculto" style="font-size:48px;margin:12px 0;">❌</div>
-      <button id="btn-cancelar-posnet" class="btn btn-secundario" style="margin-top:12px;width:100%;">Cancelar cobro</button>
+      <div id="posnet-amount" class="posnet-amount"></div>
+      <div id="posnet-action-hint" class="posnet-action-hint"></div>
+      <div id="posnet-spinner" class="posnet-spinner"></div>
+      <div id="posnet-success-icon" class="oculto posnet-state-icon posnet-state-icon--success">
+        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div id="posnet-error-icon" class="oculto posnet-state-icon posnet-state-icon--error">
+        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <button id="btn-cancelar-posnet" class="btn btn-secundario posnet-cancel-btn">Cancelar cobro</button>
     </div>
   </div>
 
@@ -553,9 +561,9 @@
   <script defer src="../js/navbar-loader.js"></script>
   <script defer src="../js/caja.js"></script>
   <!-- Shortcuts overlay — shown on first launch via localStorage flag -->
-  <div id="shortcuts-overlay" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.65);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:18px;padding:28px 28px 24px;max-width:420px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;">
-      <button id="shortcuts-close" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;">
+  <div id="shortcuts-overlay" class="shortcuts-overlay">
+    <div class="shortcuts-panel">
+      <button id="shortcuts-close" class="shortcuts-close-btn">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
@@ -564,45 +572,81 @@
         </div>
         <div>
           <div style="font-size:15px;font-weight:800;color:#0f172a;letter-spacing:-.01em;">Atajos de teclado</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:1px;">Desde el teclado numérico</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:1px;">Cero clicks — todo desde el teclado</div>
         </div>
       </div>
-      <div style="display:grid;gap:7px;margin-bottom:18px;">
+      <div style="display:grid;gap:6px;margin-bottom:18px;">
+        <!-- Sección: Productos -->
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;">Productos</div>
         <div style="display:flex;align-items:center;gap:12px;">
           <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">↵</kbd>
           <span style="font-size:13px;color:#334155;">Buscar / agregar producto</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">+</kbd>
-          <span style="font-size:13px;color:#334155;">Agregar monto manual <span style="color:#94a3b8;">(tipear monto y presionar +)</span></span>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 8px;font-size:13px;font-family:monospace;font-weight:700;text-align:center;">↑</kbd>
+            <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 8px;font-size:13px;font-family:monospace;font-weight:700;text-align:center;">↓</kbd>
+          </div>
+          <span style="font-size:13px;color:#334155;">Navegar carrito o sugerencias</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">*</kbd>
-          <span style="font-size:13px;color:#334155;">Ciclar método de pago <span style="color:#94a3b8;">(Efectivo → Débito → Crédito → QR)</span></span>
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">-</kbd>
+          <span style="font-size:13px;color:#334155;">Quitar producto seleccionado</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">-</kbd>
-          <span style="font-size:13px;color:#334155;">Eliminar producto seleccionado</span>
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">+</kbd>
+          <span style="font-size:13px;color:#334155;">Monto manual <span style="color:#94a3b8;">(tipear y presionar +)</span></span>
+        </div>
+        <!-- Sección: Pago -->
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 2px;">Método de pago</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;font-family:monospace;font-weight:700;">1</kbd>
+            <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;font-family:monospace;font-weight:700;">2</kbd>
+            <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;font-family:monospace;font-weight:700;">3</kbd>
+            <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;font-family:monospace;font-weight:700;">4</kbd>
+          </div>
+          <span style="font-size:13px;color:#334155;">Efectivo / Débito / Crédito / QR</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">/</kbd>
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">*</kbd>
+          <span style="font-size:13px;color:#334155;">Ciclar método <span style="color:#94a3b8;">(Efectivo → Débito → Crédito → QR)</span></span>
+        </div>
+        <!-- Sección: Venta -->
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 2px;">Venta</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#15803d;color:#fff;border-radius:6px;padding:4px 11px;font-size:13px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">F4</kbd>
+          <span style="font-size:13px;color:#334155;">Registrar venta <span style="color:#94a3b8;">(inmediato)</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 11px;font-size:13px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">↵↵</kbd>
+          <span style="font-size:13px;color:#334155;">Venta rápida en efectivo <span style="color:#94a3b8;">(Enter dos veces)</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">.</kbd>
+          <span style="font-size:13px;color:#334155;">Cancelar venta</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">/</kbd>
           <span style="font-size:13px;color:#334155;">Imprimir ticket</span>
         </div>
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 2px;">Cliente</div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <kbd style="background:#1e3a8a;color:#fff;border-radius:6px;padding:4px 11px;font-size:14px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">.</kbd>
-          <span style="font-size:13px;color:#334155;">Cancelar venta</span>
+          <kbd style="background:#475569;color:#fff;border-radius:6px;padding:4px 9px;font-size:13px;font-family:monospace;font-weight:700;min-width:34px;text-align:center;flex-shrink:0;">´</kbd>
+          <span style="font-size:13px;color:#334155;">Ir al campo DNI</span>
         </div>
       </div>
       <button id="shortcuts-ok" style="width:100%;height:42px;background:#1e3a8a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:-.01em;">
         Entendido
       </button>
       <p style="text-align:center;font-size:11px;color:#cbd5e1;margin:10px 0 0;">
-        Podés ver esto de nuevo en Configuración → Atajos
+        Presioná <strong style="color:#94a3b8;">?</strong> desde cualquier lugar para ver esto de nuevo
       </p>
     </div>
   </div>
 
-  <!-- Floating ? button to reopen shortcuts -->
+  <!-- Botón flotante para reabrir atajos -->
+  <button id="btn-shortcuts-help" class="btn-shortcuts-help" title="Atajos de teclado (?)">?</button>
 
 </body>
 </html>

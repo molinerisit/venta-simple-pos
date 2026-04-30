@@ -812,7 +812,7 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
   box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
 
-.toggle-switch input:checked + .toggle-slider { background: #2563eb; }
+.toggle-switch input:checked + .toggle-slider { background: var(--primary-color, #2563eb); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
 /* Highlight toggle row when active */
@@ -820,7 +820,7 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
   background: #eff6ff;
   border-color: #93c5fd;
 }
-.mixto-toggle-row.mixto-activo .mixto-toggle-label { color: #1e3a8a; }
+.mixto-toggle-row.mixto-activo .mixto-toggle-label { color: var(--primary-dark, #1e3a8a); }
 
 /* ── Segundo pago (mixto) ── */
 .mixto-segundo-area {
@@ -863,12 +863,12 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
 .mixto-btn2:hover {
   border-color: #93c5fd;
   background: #eff6ff;
-  color: #2563eb;
+  color: var(--primary-color, #2563eb);
 }
 
 .mixto-btn2.active {
-  border-color: #2563eb;
-  background: #2563eb;
+  border-color: var(--primary-color, #2563eb);
+  background: var(--primary-color, #2563eb);
   color: #fff;
 }
 
@@ -1735,3 +1735,74 @@ table, button, input, label, p, h2, h3, h4, textarea, select {
   outline: 2px solid #3b82f6;
   outline-offset: -2px;
 }
+
+/* ── Posnet modal — clases extraídas de inline ── */
+.posnet-modal-content { text-align: center; padding: 28px 24px; }
+.posnet-modal-header  { justify-content: center; margin-bottom: 12px; }
+.posnet-amount        { font-size: 2rem; font-weight: 800; color: var(--primary-dark, #1e3a8a); margin: 16px 0; }
+.posnet-action-hint   {
+  display: none;
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+  padding: 10px 14px; margin: 0 0 14px; font-size: 13px; font-weight: 600;
+  color: #1e40af; line-height: 1.5;
+}
+.posnet-spinner {
+  margin: 16px auto; width: 36px; height: 36px;
+  border: 4px solid #e2e8f0; border-top-color: var(--primary-dark, #1e3a8a);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+.posnet-cancel-btn  { margin-top: 12px; width: 100%; }
+.posnet-state-icon  { display: flex; justify-content: center; margin: 12px 0; }
+.posnet-state-icon--success svg { stroke: #15803d; }
+.posnet-state-icon--error   svg { stroke: #dc2626; }
+
+/* ── Shortcuts overlay ── */
+.shortcuts-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, .65);
+  backdrop-filter: blur(3px);
+  align-items: center;
+  justify-content: center;
+}
+.shortcuts-overlay.visible { display: flex; }
+
+.shortcuts-panel {
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px 28px 24px;
+  max-width: 460px;
+  width: calc(100% - 40px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+  position: relative;
+}
+
+.shortcuts-close-btn {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: none; border: none;
+  cursor: pointer; color: #94a3b8; padding: 4px;
+}
+
+/* ── Botón flotante de atajos ── */
+.btn-shortcuts-help {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  z-index: 9998;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--primary-dark, #1e3a8a);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 15px; font-weight: 800;
+  font-family: monospace;
+  display: flex; align-items: center; justify-content: center;
+  opacity: .6;
+  line-height: 1;
+  transition: opacity .15s, transform .15s;
+  box-shadow: 0 2px 10px rgba(30, 58, 138, .35);
+}
+.btn-shortcuts-help:hover { opacity: 1; transform: scale(1.08); }

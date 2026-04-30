@@ -25,6 +25,7 @@ document.addEventListener("app-ready", () => {
     _posnetIntentId: null,
     mixtoActivo: false,
     mixtoMetodo2: null,
+    _pendingCantidad: null,
   };
 
   // DOM
@@ -507,6 +508,7 @@ document.addEventListener("app-ready", () => {
 
   // ── Dropdown de sugerencias fuzzy ──────────────────────────────────────────
   let _suggestionBox = null;
+  let _suggestionSelectedIdx = -1;
 
   function getSuggestionBox() {
     if (_suggestionBox) return _suggestionBox;
@@ -533,25 +535,39 @@ document.addEventListener("app-ready", () => {
 
   function hideSuggestions() {
     if (_suggestionBox) _suggestionBox.style.display = 'none';
+    _suggestionSelectedIdx = -1;
+  }
+
+  function updateSuggestionHighlight() {
+    if (!_suggestionBox) return;
+    const items = _suggestionBox.querySelectorAll('li');
+    items.forEach((li, i) => {
+      li.style.background = i === _suggestionSelectedIdx ? '#eff6ff' : '';
+      li.style.color = i === _suggestionSelectedIdx ? '#1e3a8a' : '';
+    });
+    if (_suggestionSelectedIdx >= 0 && items[_suggestionSelectedIdx]) {
+      items[_suggestionSelectedIdx].scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function showSuggestions(results) {
+    _suggestionSelectedIdx = -1;
     const box = getSuggestionBox();
     box.innerHTML = '';
     results.forEach((p) => {
       const li = document.createElement('li');
-      li.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;';
-      const scoreLabel = Math.round((p._score || 0) * 100);
+      li.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;transition:background .08s;';
       li.innerHTML = `<span>${p.nombre}</span><span style="color:#64748b;font-size:12px;">${formatCurrency(p.precioVenta)}</span>`;
-      li.title = `Similitud: ${scoreLabel}%`;
       li.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        const cant = CajaState._pendingCantidad || 1;
+        CajaState._pendingCantidad = null;
         hideSuggestions();
-        agregarProductoALaVenta(p, 1, null);
+        agregarProductoALaVenta(p, cant, null);
         if (mainInput) mainInput.value = '';
       });
-      li.addEventListener('mouseover', () => li.style.background = '#f8fafc');
-      li.addEventListener('mouseout',  () => li.style.background = '');
+      li.addEventListener('mouseover', () => { if (li.style.color !== '#1e3a8a') li.style.background = '#f8fafc'; });
+      li.addEventListener('mouseout',  () => { if (li.style.color !== '#1e3a8a') li.style.background = ''; });
       box.appendChild(li);
     });
     positionSuggestionBox();
@@ -565,6 +581,27 @@ document.addEventListener("app-ready", () => {
     if (!valor) return;
     hideSuggestions();
     try {
+      // Formato "NxProducto" o "N*Producto" — cantidad × búsqueda
+      const cantMatch = valor.match(/^(\d+(?:[.,]\d+)?)\s*[xX*]\s*(.+)$/);
+      if (cantMatch) {
+        const cantidad = parseFloat(cantMatch[1].replace(',', '.'));
+        const termino  = cantMatch[2].trim();
+        if (cantidad > 0 && termino) {
+          const results = await window.electronAPI.invoke('buscar-productos-nombre', termino);
+          if (results.length === 0) {
+            showErrorModal(`No se encontró ningún producto para: "${termino}"`);
+          } else if (results.length === 1 || results[0]._score >= 0.85) {
+            agregarProductoALaVenta(results[0], cantidad, null);
+          } else {
+            // Guardar cantidad para aplicarla al seleccionar del dropdown
+            CajaState._pendingCantidad = cantidad;
+            showSuggestions(results.slice(0, 6));
+          }
+          if (mainInput) mainInput.value = '';
+          return;
+        }
+      }
+
       const esNumeroValido = /^[0-9]+(.[0-9]+)?$/.test(valor);
       const numero = parseFloat(valor);
 
@@ -788,6 +825,7 @@ ${footerHtml}
     CajaState.metodoPagoSeleccionado = null;
     CajaState.clienteActual = null;
     CajaState.ultimaExternalReference = null;
+    CajaState._pendingCantidad = null;
     CajaState.mixtoActivo = false;
     CajaState.mixtoMetodo2 = null;
     if (mainInput) mainInput.value = "";
@@ -860,6 +898,35 @@ ${footerHtml}
       return;
     }
 
+    // Interceptar navegación del dropdown de sugerencias (tiene prioridad sobre todo)
+    if (_suggestionBox && _suggestionBox.style.display !== 'none') {
+      const _sItems = _suggestionBox.querySelectorAll('li');
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        _suggestionSelectedIdx = Math.min(_suggestionSelectedIdx + 1, _sItems.length - 1);
+        updateSuggestionHighlight();
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        _suggestionSelectedIdx = Math.max(_suggestionSelectedIdx - 1, -1);
+        updateSuggestionHighlight();
+        return;
+      }
+      if (event.key === 'Enter' && _suggestionSelectedIdx >= 0) {
+        event.preventDefault();
+        _sItems[_suggestionSelectedIdx]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        _suggestionSelectedIdx = -1;
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        hideSuggestions();
+        mainInput?.focus();
+        return;
+      }
+    }
+
     // Hotkeys rápidos
     let isHot = true;
     switch (event.key) {
@@ -876,7 +943,11 @@ ${footerHtml}
         document.querySelector('[data-metodo="' + _next + '"]')?.classList.add("active");
         if (_next === "Efectivo") {
           efectivoArea?.classList.remove("oculto");
+          if (montoPagadoInput && CajaState.totalFinalRedondeado > 0) {
+            montoPagadoInput.value = CajaState.totalFinalRedondeado.toFixed(2);
+          }
           montoPagadoInput?.focus();
+          montoPagadoInput?.select();
         } else {
           efectivoArea?.classList.add("oculto");
           btnRegistrarVenta?.focus();
@@ -894,12 +965,37 @@ ${footerHtml}
       // case "Ñ": // ❌ ELIMINADO
       //    if (!btnRegistrarVenta?.disabled) btnRegistrarVenta.click();
       //    break;
+      case "F2":
+        mainInput?.focus();
+        mainInput?.select();
+        break;
+      case "F4":
+        if (!btnRegistrarVenta?.disabled) btnRegistrarVenta.click();
+        break;
       case "/":
         if (!btnImprimirTicket?.disabled) btnImprimirTicket.click();
         break;
       case ".":
         btnCancelarVenta?.click();
         break;
+      case "1": case "2": case "3": case "4": {
+        // Selección directa de método de pago — solo si el input está vacío y no hay sugerencias abiertas
+        const _ae4 = document.activeElement;
+        const _inForm4 = _ae4 && ['INPUT', 'TEXTAREA'].includes(_ae4.tagName);
+        const _mainEmpty4 = _ae4?.id === 'main-input' && !mainInput?.value?.trim();
+        const _dropOpen4 = _suggestionBox && _suggestionBox.style.display !== 'none';
+        if ((_inForm4 && !_mainEmpty4) || _dropOpen4) { isHot = false; break; }
+        const _metodos4 = ['Efectivo', 'Débito', 'Crédito', 'QR'];
+        document.querySelector(`[data-metodo="${_metodos4[parseInt(event.key) - 1]}"]`)?.click();
+        break;
+      }
+      case "?": {
+        // Abre overlay de shortcuts — solo si no se está escribiendo en un campo
+        const _ae7 = document.activeElement;
+        if (_ae7 && ['INPUT', 'TEXTAREA'].includes(_ae7.tagName)) { isHot = false; break; }
+        openShortcuts();
+        break;
+      }
       case "+": {
         const _ae = document.activeElement;
         const _inOtherInput = _ae && ['INPUT','TEXTAREA'].includes(_ae.tagName) && _ae.id !== 'main-input';
@@ -983,18 +1079,18 @@ if (event.key === "Enter") {
         // Si NO estamos en estado de confirmación, pedimos el primer Enter
         if (!CajaState.confirmarVentaPending) {
             CajaState.confirmarVentaPending = true;
-            showToast("⚠️ Presiona Enter otra vez para confirmar (Efectivo)", "warning");
+            showToast("Presiona Enter otra vez para confirmar (Efectivo)", "warning");
             // W5-F6: Visual state — pulse border on confirm button during the 2s window
             btnRegistrarVenta?.classList.add('confirm-pending');
 
             // Reiniciamos el timer si existía
             clearTimeout(CajaState.confirmarVentaTimer);
 
-            // El usuario tiene 2 segundos para dar el segundo Enter
+            // El usuario tiene 1 segundo para dar el segundo Enter
             CajaState.confirmarVentaTimer = setTimeout(() => {
                 CajaState.confirmarVentaPending = false;
                 btnRegistrarVenta?.classList.remove('confirm-pending');
-            }, 2000);
+            }, 1000);
             return; // Detenemos aquí, esperando el segundo Enter
         }
 
@@ -1058,26 +1154,39 @@ if (event.key === "Enter") {
     }
   });
 
+  // Búsqueda en tiempo real mientras el usuario escribe (debounce 150ms)
+  let _liveSearchTimer = null;
+  mainInput?.addEventListener('input', () => {
+    clearTimeout(_liveSearchTimer);
+    const val = mainInput.value.trim();
+    if (!val || val.length < 2 || esCodigoBarras(val)) { hideSuggestions(); return; }
+    _liveSearchTimer = setTimeout(async () => {
+      try {
+        const results = await window.electronAPI.invoke('buscar-productos-nombre', val);
+        if (results.length > 1) showSuggestions(results.slice(0, 6));
+        else hideSuggestions();
+      } catch {}
+    }, 150);
+  });
+
   modalAcceptBtn?.addEventListener("click", hideErrorModal);
 
   // ── Shortcuts overlay ─────────────────────────────────────────────────────
   const shortcutsOverlay = document.getElementById('shortcuts-overlay');
   const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
 
-  const SHORTCUTS_VERSION = '3';
+  const SHORTCUTS_VERSION = '4';
 
   function openShortcuts() {
-    if (shortcutsOverlay) shortcutsOverlay.style.display = 'flex';
+    shortcutsOverlay?.classList.add('visible');
   }
   function closeShortcuts() {
-    if (shortcutsOverlay) shortcutsOverlay.style.display = 'none';
+    shortcutsOverlay?.classList.remove('visible');
     localStorage.setItem('vs-shortcuts-seen', SHORTCUTS_VERSION);
   }
 
   if (localStorage.getItem('vs-shortcuts-seen') !== SHORTCUTS_VERSION) {
     openShortcuts();
-  } else if (shortcutsOverlay) {
-    shortcutsOverlay.style.display = 'none';
   }
 
   document.getElementById('shortcuts-close')?.addEventListener('click', closeShortcuts);
@@ -1090,7 +1199,19 @@ if (event.key === "Enter") {
     if (e.key === 'Escape' || e.key === 'Enter') { closeShortcuts(); e.stopPropagation(); }
   });
 
-  // Shortcuts overlay available via admin panel
+  // Búsqueda de cliente automática al escribir el DNI (debounce 600ms)
+  let _dniTimer = null;
+  dniInput?.addEventListener('input', () => {
+    clearTimeout(_dniTimer);
+    const val = dniInput.value.trim();
+    if (val.length >= 7) {
+      _dniTimer = setTimeout(() => btnBuscarCliente?.click(), 600);
+    } else if (val.length === 0) {
+      CajaState.clienteActual = null;
+      if (clienteInfo) clienteInfo.textContent = '';
+      renderizarVenta();
+    }
+  });
 
   btnBuscarCliente?.addEventListener("click", async () => {
     const dni = (dniInput?.value || "").trim();
@@ -1250,7 +1371,11 @@ if (event.key === "Enter") {
       } else if (metodo === "Efectivo") {
         efectivoArea?.classList.remove("oculto");
         if (labelPago1) labelPago1.textContent = "Paga con:";
+        if (montoPagadoInput && CajaState.totalFinalRedondeado > 0) {
+          montoPagadoInput.value = CajaState.totalFinalRedondeado.toFixed(2);
+        }
         montoPagadoInput?.focus();
+        montoPagadoInput?.select();
       } else {
         efectivoArea?.classList.add("oculto");
         btnRegistrarVenta?.focus();
@@ -1456,7 +1581,7 @@ if (event.key === "Enter") {
         nombreImpresora: impresora,
       });
       if (result?.success)
-        showToast("✅ Ticket enviado a la impresora.", "success");
+        showToast("Ticket enviado a la impresora.", "success");
       else
         showErrorModal(
           `Error de impresión: ${result?.message || "desconocido"}`

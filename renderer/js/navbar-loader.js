@@ -231,7 +231,7 @@ function _mostrarPopupPrueba(forzar = false) {
       'color:#86efac', 'padding:12px 18px', 'border-radius:10px',
       'font-size:14px', 'font-weight:500', 'display:flex', 'align-items:center', 'gap:8px',
     ].join(';');
-    toast.textContent = '✓ Licencia activada — Plan ' + (data?.plan || '') + ' activo';
+    toast.textContent = 'Licencia activada — Plan ' + (data?.plan || '') + ' activo';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
   });

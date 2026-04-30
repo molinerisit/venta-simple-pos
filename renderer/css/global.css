@@ -318,18 +318,8 @@ tbody tr:last-child td{ border-bottom:none; }
 .modal-cuerpo{ flex:1 1 auto; overflow-y:auto; }
 .modal-acciones{ display:flex; justify-content:flex-end; gap:.75rem; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color); flex-shrink:0; }
 
-/* --- 6) TOAST / NOTIFS (legacy — hidden by ui-notifications.js) --- */
-.notification{
-  position:fixed; bottom:-100px; left:50%; transform:translateX(-50%);
-  padding:12px 25px; border-radius:8px; color:#fff; font-size:1rem; font-weight:500;
-  z-index:2000; opacity:0; transition: bottom .5s ease-in-out, opacity .5s ease-in-out;
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
-}
-.notification.show{ bottom:20px; opacity:1; }
-.notification.success{ background:#28a745; }
-.notification.error{ background:#dc3545; }
-/* Legacy .toast element is intercepted and hidden by ui-notifications.js */
-.toast{ display:none !important; }
+/* --- 6) TOAST / NOTIFS --- */
+/* Sistema reemplazado por AppToast (ui-notifications.js) */
 
 /* --- 7) CONFIRM OVERLAY --- */
 .confirm-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:2000; }
