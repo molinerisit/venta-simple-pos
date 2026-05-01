@@ -565,7 +565,35 @@ function registerMercadoPagoHandlers(models) {
         { mp_payment_config: cfg },
         { where: { rol: "administrador" } }
       );
-      return { success: true };
+
+      // Si QR está habilitado y mp_pos_id está vacío, auto-fetch del primer POS disponible
+      let posAutoSaved = null;
+      if (cfg.qr_mode !== "none") {
+        const admin = await Usuario.findOne({
+          where: { rol: "administrador" },
+          attributes: ["id", "mp_pos_id"],
+          raw: true,
+        });
+        if (!admin?.mp_pos_id) {
+          const ctxRes = await resolveActiveMpContext(models);
+          if (ctxRes.ok && ctxRes.ctx.accessToken) {
+            const posList = await doFetch(
+              "https://api.mercadopago.com/pos?limit=50&offset=0",
+              { headers: authHeaders(ctxRes.ctx.accessToken, { "Content-Type": undefined }) }
+            );
+            const firstPos = (posList.data?.results || []).find(p => p.external_id);
+            if (firstPos) {
+              await Usuario.update(
+                { mp_pos_id: firstPos.external_id },
+                { where: { id: admin.id } }
+              );
+              posAutoSaved = firstPos.external_id;
+            }
+          }
+        }
+      }
+
+      return { success: true, posAutoSaved };
     } catch (e) {
       console.error("[MP][PAYMENT-CONFIG] Error:", e);
       return { success: false, message: e.message };
@@ -613,7 +641,6 @@ function registerMercadoPagoHandlers(models) {
 
       const body = {
         amount: amountCents,
-        description: description || "Cobro VentaSimple",
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,

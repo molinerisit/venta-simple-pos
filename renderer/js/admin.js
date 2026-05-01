@@ -235,9 +235,17 @@
         point_device_id: mpPointDevice?.value || null,
       });
       setBtnLoading(btnSaveMpPaymentConfig, false, "Guardar configuración de cobros");
-      result?.success
-        ? toast.show("Configuración de cobros guardada.")
-        : toast.show(result?.message || "Error al guardar.", "error");
+      if (result?.success) {
+        const msg = result.posAutoSaved
+          ? `Configuración guardada. Caja (POS) detectada automáticamente: ${result.posAutoSaved}`
+          : "Configuración de cobros guardada.";
+        toast.show(msg);
+        // Refrescar el detalle de MP para mostrar el posId actualizado
+        const ctx = await ipcInvoke("mp:get-context").catch(() => null);
+        if (ctx) renderMpStatus(ctx);
+      } else {
+        toast.show(result?.message || "Error al guardar.", "error");
+      }
     });
 
     function renderMpStatus(ctx) {
