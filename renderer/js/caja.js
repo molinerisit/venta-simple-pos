@@ -1160,7 +1160,6 @@ if (event.key === "Enter") {
 
   // ── Shortcuts overlay ─────────────────────────────────────────────────────
   const shortcutsOverlay = document.getElementById('shortcuts-overlay');
-  const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
 
   const SHORTCUTS_VERSION = '5';
 
@@ -1178,9 +1177,6 @@ if (event.key === "Enter") {
 
   document.getElementById('shortcuts-close')?.addEventListener('click', closeShortcuts);
   document.getElementById('shortcuts-ok')?.addEventListener('click', closeShortcuts);
-  btnShortcutsHelp?.addEventListener('click', openShortcuts);
-  btnShortcutsHelp?.addEventListener('mouseenter', () => { if (btnShortcutsHelp) btnShortcutsHelp.style.opacity = '1'; });
-  btnShortcutsHelp?.addEventListener('mouseleave', () => { if (btnShortcutsHelp) btnShortcutsHelp.style.opacity = '0.75'; });
 
   shortcutsOverlay?.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' || e.key === 'Enter') { closeShortcuts(); e.stopPropagation(); }
