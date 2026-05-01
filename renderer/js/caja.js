@@ -976,17 +976,6 @@ ${footerHtml}
       case ".":
         btnCancelarVenta?.click();
         break;
-      case "1": case "2": case "3": case "4": {
-        // Selección directa de método de pago — solo si el input está vacío y no hay sugerencias abiertas
-        const _ae4 = document.activeElement;
-        const _inForm4 = _ae4 && ['INPUT', 'TEXTAREA'].includes(_ae4.tagName);
-        const _mainEmpty4 = _ae4?.id === 'main-input' && !mainInput?.value?.trim();
-        const _dropOpen4 = _suggestionBox && _suggestionBox.style.display !== 'none';
-        if ((_inForm4 && !_mainEmpty4) || _dropOpen4) { isHot = false; break; }
-        const _metodos4 = ['Efectivo', 'Débito', 'Crédito', 'QR'];
-        document.querySelector(`[data-metodo="${_metodos4[parseInt(event.key) - 1]}"]`)?.click();
-        break;
-      }
       case "?": {
         // Abre overlay de shortcuts — solo si no se está escribiendo en un campo
         const _ae7 = document.activeElement;
@@ -1173,7 +1162,7 @@ if (event.key === "Enter") {
   const shortcutsOverlay = document.getElementById('shortcuts-overlay');
   const btnShortcutsHelp = document.getElementById('btn-shortcuts-help');
 
-  const SHORTCUTS_VERSION = '4';
+  const SHORTCUTS_VERSION = '5';
 
   function openShortcuts() {
     shortcutsOverlay?.classList.add('visible');
