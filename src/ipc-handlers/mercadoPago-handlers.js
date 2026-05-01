@@ -473,7 +473,7 @@ function registerMercadoPagoHandlers(models) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (res.status === 401) {
-          // Token expirado: limpiar datos de MP para forzar reconexión limpia
+          // Token expirado: limpiar datos de MP y abrir la web para renovar sesión
           const admin = await Usuario.findOne({ where: { rol: "administrador" }, attributes: ["id"] });
           if (admin) {
             await Usuario.update(
@@ -481,7 +481,8 @@ function registerMercadoPagoHandlers(models) {
               { where: { id: admin.id } }
             );
           }
-          return { ok: false, error: "Sesión de nube expirada. Reconectá tu cuenta de MP.", tokenExpired: true };
+          shell.openExternal("https://ventasimple.cloud/cuenta");
+          return { ok: false, tokenExpired: true };
         }
         return { ok: false, error: body?.detail || `Error ${res.status}` };
       }

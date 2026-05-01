@@ -265,7 +265,7 @@
         btnMpConnect.disabled = false;
         if (result.tokenExpired) {
           renderMpStatus({ ok: false });
-          toast.show("Sesión de nube expirada. Hacé clic en Conectar para vincular MP.", "warning");
+          toast.show("Sesión expirada. Se abrió tu cuenta en el navegador — hacé click en 'Activar en la app', luego volvé a conectar MP.", "warning");
         } else {
           toast.show(result.error || "No se pudo iniciar la conexión.", "error");
         }
@@ -290,7 +290,7 @@
         mpOauthLoading.classList.add("hidden");
         if (result.tokenExpired) {
           renderMpStatus({ ok: false });
-          toast.show("Sesión de nube expirada. Hacé clic en Conectar para vincular MP.", "warning");
+          toast.show("Sesión expirada. Se abrió tu cuenta en el navegador — hacé click en 'Activar en la app', luego volvé a conectar MP.", "warning");
         } else {
           toast.show(result.error || "No se pudo reconectar.", "error");
         }
