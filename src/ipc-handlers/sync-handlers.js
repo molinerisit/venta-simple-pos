@@ -262,6 +262,7 @@ function registerSyncHandlers(models) {
       // ── 2. PULL: traer cambios del panel web ────────────────────────────────
       const pullUrl = `${apiUrl}/api/sync/pull?since=${encodeURIComponent(sinceDate.toISOString())}`;
       const pullData = await withRefresh(t => _request('GET', pullUrl, t, null));
+      // (pullUrl normal: delta desde last_sync_at)
       const changes = Array.isArray(pullData) ? pullData : [];
 
       let pulled = 0;
@@ -356,6 +357,126 @@ function registerSyncHandlers(models) {
       wins.forEach(w => w.webContents.send('show-toast', { msg: result.error || 'Error al sincronizar', type: 'error' }));
     }
     return result;
+  });
+
+  // force-full-sync: sincronización completa ignorando timestamps.
+  // Resetea last_sync_at (fuerza push de todo) y usa pull?full=1 (trae toda la nube).
+  ipcMain.handle('force-full-sync', async () => {
+    const wins = BrowserWindow.getAllWindows();
+    try {
+      const state = readSyncState();
+      const lic = readLicense();
+      if (!lic?.token) {
+        return { ok: false, error: 'No hay licencia activa.' };
+      }
+      const apiUrl = (lic.api_url || CLOUD_API_URL).replace(/\/$/, '');
+      let token = getActiveToken() || lic.token;
+      const syncStart = new Date().toISOString();
+
+      const withRefresh = async (fn) => {
+        try { return await fn(token); }
+        catch (e) {
+          if (e.statusCode === 401) {
+            const newToken = await _tryRefreshToken(apiUrl, token);
+            if (newToken) {
+              const { writeLicense } = require('./license-handlers');
+              writeLicense({ ...lic, token: newToken });
+              token = newToken;
+              return await fn(token);
+            }
+          }
+          throw e;
+        }
+      };
+
+      // Push: enviar TODOS los productos sin filtro de fecha
+      const allProductos = await Producto.findAll({ raw: true });
+      const allProveedores = (lic.plan || 'FREE') !== 'FREE'
+        ? await Proveedor.findAll({ raw: true })
+        : [];
+
+      const batch = [];
+      for (const p of allProductos) {
+        const datos = mapProductoToCloud(p);
+        if (p.cloud_id) {
+          batch.push({ tabla: 'productos', operacion: 'UPDATE', server_id: p.cloud_id, local_id: p.id, datos });
+        } else {
+          batch.push({ tabla: 'productos', operacion: 'INSERT', local_id: p.id, datos });
+        }
+      }
+      for (const pv of allProveedores) {
+        const datos = mapProveedorToCloud(pv);
+        if (pv.cloud_id) {
+          batch.push({ tabla: 'proveedores', operacion: 'UPDATE', server_id: pv.cloud_id, local_id: pv.id, datos });
+        } else {
+          batch.push({ tabla: 'proveedores', operacion: 'INSERT', local_id: pv.id, datos });
+        }
+      }
+
+      let pushed = 0;
+      if (batch.length > 0) {
+        const pushRes = await withRefresh(t => _request('POST', `${apiUrl}/api/sync/push`, t, { batch }));
+        for (const r of pushRes.results || []) {
+          if (!r.error && r.server_id && r.local_id) {
+            const isProd = allProductos.some(p => p.id === r.local_id);
+            if (isProd) await Producto.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+            else        await Proveedor.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+          }
+        }
+        pushed = pushRes.processed || batch.length;
+      }
+
+      // Pull: traer TODO de la nube (full=true)
+      const pullData = await withRefresh(t => _request('GET', `${apiUrl}/api/sync/pull?full=true`, t, null));
+      const changes = Array.isArray(pullData) ? pullData : [];
+      let pulled = 0;
+      for (const change of changes) {
+        try {
+          const { tabla, registro_id, local_id, operacion } = change;
+          const datos = typeof change.datos === 'string' ? JSON.parse(change.datos) : (change.datos || {});
+          if (tabla === 'productos') {
+            const exists = registro_id ? await Producto.findOne({ where: { cloud_id: registro_id } }) : null;
+            if (!exists) {
+              const mapped = mapProductoFromCloud(datos);
+              const byCodigo = mapped.codigo ? await Producto.findOne({ where: { codigo: mapped.codigo } }) : null;
+              if (byCodigo) {
+                await Producto.update({ ...mapped, cloud_id: registro_id }, { where: { id: byCodigo.id } });
+              } else {
+                await Producto.create({ ...mapped, cloud_id: registro_id });
+              }
+            } else {
+              await Producto.update({ ...mapProductoFromCloud(datos), cloud_id: registro_id }, { where: { cloud_id: registro_id } });
+            }
+          } else if (tabla === 'proveedores') {
+            const exists = registro_id ? await Proveedor.findOne({ where: { cloud_id: registro_id } }) : null;
+            if (!exists) {
+              const mapped = mapProveedorFromCloud(datos);
+              const byNombre = await Proveedor.findOne({ where: { nombreEmpresa: mapped.nombreEmpresa } });
+              if (byNombre) {
+                await Proveedor.update({ ...mapped, cloud_id: registro_id }, { where: { id: byNombre.id } });
+              } else {
+                await Proveedor.create({ ...mapped, cloud_id: registro_id });
+              }
+            } else {
+              await Proveedor.update({ ...mapProveedorFromCloud(datos), cloud_id: registro_id }, { where: { cloud_id: registro_id } });
+            }
+          }
+          pulled++;
+        } catch (e) {
+          console.error('[FullSync] Error aplicando cambio:', e.message);
+        }
+      }
+
+      writeSyncState({ ...state, last_sync_at: syncStart });
+
+      const msg = `Sincronización completa — ${pushed} enviados, ${pulled} recibidos`;
+      wins.forEach(w => w.webContents.send('show-toast', { msg, type: 'success' }));
+      return { ok: true, pushed, pulled, last_sync_at: syncStart };
+    } catch (err) {
+      console.error('[FullSync] Error:', err.message);
+      wins.forEach(w => w.webContents.send('show-toast', { msg: err.message || 'Error en sincronización completa', type: 'error' }));
+      return { ok: false, error: err.message };
+    }
   });
 }
 

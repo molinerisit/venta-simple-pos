@@ -42,6 +42,7 @@ const validInvokeChannels = [
   "show-toast", // para toasts iniciados desde main
   "save-sync-config",
   "force-sync-now",
+  "force-full-sync",
   "abrir-caja",
   "cerrar-caja",
   "get-resumen-cierre",

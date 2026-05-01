@@ -435,6 +435,7 @@
 
     // Sync nube
     const btnSyncNow       = document.getElementById("btn-sync-now");
+    const btnFullSync      = document.getElementById("btn-full-sync");
     const btnToggleSync    = document.getElementById("btn-toggle-sync");
     const syncLastAt       = document.getElementById("sync-last-at");
     const syncResultMsg    = document.getElementById("sync-result-msg");
@@ -1930,8 +1931,9 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
         btnToggleSync.textContent = enabled ? "Desactivar sync" : "Activar sync";
         btnToggleSync.className   = enabled ? "btn btn-danger" : "btn btn-success";
       }
-      // Botón sync now solo visible cuando activo
-      if (btnSyncNow) btnSyncNow.style.display = enabled ? "" : "none";
+      // Botones de sync solo visibles cuando activo
+      if (btnSyncNow)  btnSyncNow.style.display  = enabled ? "" : "none";
+      if (btnFullSync) btnFullSync.style.display  = enabled ? "" : "none";
     }
 
     async function refreshSyncUI() {
@@ -1977,6 +1979,46 @@ if (redondeoToggle) redondeoToggle.checked = !!(config.config_redondeo_automatic
       } finally {
         btnSyncNow.disabled = false;
         btnSyncNow.innerHTML = origHtml;
+      }
+    });
+
+    // Botón "Sync completo" — descarga todo de la nube ignorando timestamps
+    on(btnFullSync, "click", async () => {
+      if (!btnFullSync) return;
+      const origHtml = btnFullSync.innerHTML;
+      btnFullSync.disabled = true;
+      btnFullSync.textContent = "Sincronizando todo...";
+      if (btnSyncNow) btnSyncNow.disabled = true;
+      if (syncResultMsg) { syncResultMsg.style.display = "none"; }
+      try {
+        const result = await ipcInvoke("force-full-sync");
+        await refreshSyncUI();
+        if (syncResultMsg) {
+          syncResultMsg.style.display = "block";
+          if (result?.ok) {
+            syncResultMsg.textContent = `Sync completo — ${result.pushed} enviados, ${result.pulled} recibidos de la nube.`;
+            syncResultMsg.style.background = "#dcfce7";
+            syncResultMsg.style.color      = "#15803d";
+            syncResultMsg.style.border     = "1px solid #bbf7d0";
+          } else {
+            syncResultMsg.textContent = "Error: " + (result?.error || "No se pudo completar el sync.");
+            syncResultMsg.style.background = "#fee2e2";
+            syncResultMsg.style.color      = "#b91c1c";
+            syncResultMsg.style.border     = "1px solid #fecaca";
+          }
+        }
+      } catch (err) {
+        if (syncResultMsg) {
+          syncResultMsg.style.display = "block";
+          syncResultMsg.textContent = "Error inesperado: " + err.message;
+          syncResultMsg.style.background = "#fee2e2";
+          syncResultMsg.style.color      = "#b91c1c";
+          syncResultMsg.style.border     = "1px solid #fecaca";
+        }
+      } finally {
+        btnFullSync.disabled = false;
+        btnFullSync.innerHTML = origHtml;
+        if (btnSyncNow) btnSyncNow.disabled = false;
       }
     });
 
