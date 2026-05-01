@@ -1304,6 +1304,7 @@ if (event.key === "Enter") {
               title: "Venta de productos",
               description: "Cobro en local",
               items: itemsParaMP,
+              method: "PUT",
             });
             if (!result?.ok) {
               showErrorModal(`Error al crear QR: ${result?.error || "error desconocido"}`);

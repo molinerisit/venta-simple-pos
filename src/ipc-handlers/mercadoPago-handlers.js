@@ -255,7 +255,7 @@ function registerMercadoPagoHandlers(models) {
 
   /** --------- Crear QR (Para la caja) --------- */
   // B-5: removed all console.log from hot path; only console.error on genuine failures
-  ipcMain.handle("create-mp-order", async (_evt, { title, description, external_reference, notification_url, total_amount, items }) => {
+  ipcMain.handle("create-mp-order", async (_evt, { title, description, external_reference, notification_url, total_amount, items, method }) => {
     try {
       const res = await resolveActiveMpContext(models);
       if (!res.ok) return { ok: false, error: res.error };
@@ -292,7 +292,7 @@ function registerMercadoPagoHandlers(models) {
       };
 
       const apiResponse = await doFetch(url, {
-        method: "POST",
+        method: method === "PUT" ? "PUT" : "POST",
         headers: authHeaders(accessToken),
         body: JSON.stringify(body),
       });
