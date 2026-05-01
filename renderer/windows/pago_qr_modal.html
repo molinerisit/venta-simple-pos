@@ -15,7 +15,11 @@
       </div>
 
       <h1>Cobro con Mercado Pago</h1>
-      <p>El cliente debe escanear el QR físico con la app de Mercado Pago.</p>
+      <p id="qr-instruction">Esperando datos...</p>
+
+      <div id="qr-image-container" style="display:none;text-align:center;margin:10px 0;">
+        <img id="qr-image" style="width:240px;height:240px;border-radius:8px;border:4px solid #eee;" alt="Código QR">
+      </div>
 
       <div class="amount-container">
         <span>Monto a pagar:</span>

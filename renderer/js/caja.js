@@ -1288,12 +1288,13 @@ if (event.key === "Enter") {
         const total = CajaState.totalFinalRedondeado;
         if (total <= 0) { showErrorModal("No hay un monto para cobrar."); return; }
 
-        if (qrMode === "posnet") {
+        // posnet con device configurado → QR en la pantalla del terminal
+        if (qrMode === "posnet" && mpCfg.point_device_id) {
           await iniciarCobroPosnet("QR", total, button);
           return;
         }
 
-        // qrMode === "dinamico" — QR dinámico en pantalla
+        // qrMode === "dinamico" O posnet sin device → QR dinámico en pantalla
         toggleButtonLoading(button, true, "QR");
         const externalReference = `VENTA-${Date.now()}`;
         const itemsParaMP = CajaState.ventaActual.map((item) => ({
@@ -1316,6 +1317,8 @@ if (event.key === "Enter") {
               externalReference,
               qrData: result.data.qr_data,
             });
+          } else if (result?.ok && !result.data?.qr_data) {
+            showErrorModal("Mercado Pago no devolvió el código QR. Verificá que el POS esté activo en tu cuenta de MP.");
           } else {
             showErrorModal(`Error MP: ${result?.error || "fallo desconocido"}`);
           }
@@ -1332,7 +1335,8 @@ if (event.key === "Enter") {
       if ((metodo === "Débito" || metodo === "Crédito") && mpOk) {
         const modeKey = metodo === "Débito" ? "debit_mode" : "credit_mode";
         const mode = mpCfg[modeKey] || "none";
-        if (mode === "posnet") {
+        // Solo lanzar flujo posnet si hay device_id configurado; si no, caer al flujo estándar
+        if (mode === "posnet" && mpCfg.point_device_id) {
           const total = CajaState.totalFinalRedondeado;
           if (total <= 0) { showErrorModal("No hay un monto para cobrar."); return; }
           await iniciarCobroPosnet(metodo, total, button);
@@ -1916,7 +1920,7 @@ if (event.key === "Enter") {
     const cfg = CajaState.mpPaymentConfig || {};
     const deviceId = cfg.point_device_id;
     if (!deviceId) {
-      showErrorModal("No hay posnet configurado. Configuralo en Ajustes → Mercado Pago.");
+      showErrorModal("No hay posnet (MP Point) configurado.\n\nVé a Admin → Mercado Pago → seleccioná el dispositivo en 'Configurar cobros' y guardá.");
       return;
     }
 

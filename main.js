@@ -663,30 +663,34 @@ ipcMain.on("hardware-setup-complete", () => {
   app.quit();
 });
 
-// === IPC: QR modal (RESTAURADO) ===
+// === IPC: QR modal ===
 
-ipcMain.on("open-qr-modal", (event, data) => {
+ipcMain.on("open-qr-modal", async (event, data) => {
   if (qrWindow) {
     qrWindow.focus();
-
     return;
   }
 
   const parentWindow = BrowserWindow.fromWebContents(event.sender);
 
+  // Generar imagen QR a partir del qr_data devuelto por MP
+  let qrImageUrl = null;
+  if (data.qrData) {
+    try {
+      const QRCode = require("qrcode");
+      qrImageUrl = await QRCode.toDataURL(data.qrData, { width: 280, margin: 2 });
+    } catch (e) {
+      console.error("[QR] Error generando imagen QR:", e);
+    }
+  }
+
   qrWindow = new BrowserWindow({
     parent: parentWindow,
-
     modal: true,
-
     width: 400,
-
-    height: 550,
-
+    height: qrImageUrl ? 640 : 520,
     frame: false,
-
     resizable: false,
-
     webPreferences: { preload: path.join(__dirname, "renderer/preload.js") },
   });
 
@@ -695,7 +699,7 @@ ipcMain.on("open-qr-modal", (event, data) => {
   );
 
   qrWindow.webContents.on("did-finish-load", () =>
-    qrWindow.webContents.send("venta-data", data)
+    qrWindow.webContents.send("venta-data", { ...data, qrImageUrl })
   );
 
   qrWindow.on("closed", () => {

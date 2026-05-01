@@ -1,10 +1,13 @@
 // renderer/js/pago_qr_modal.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  // --- REFERENCIAS AL DOM (IDs originales de tu archivo) ---
+  // --- REFERENCIAS AL DOM ---
   const amountEl = document.getElementById("qr-amount");
   const statusMsgEl = document.getElementById("status-message");
   const btnCancelar = document.getElementById("btn-cancelar-pago");
+  const qrInstruction = document.getElementById("qr-instruction");
+  const qrImageContainer = document.getElementById("qr-image-container");
+  const qrImageEl = document.getElementById("qr-image");
 
   const spinnerEl = document.getElementById("spinner");
   const successIconEl = document.getElementById("success-icon");
@@ -102,8 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- EVENT LISTENERS ---
   window.electronAPI.on("venta-data", (data) => {
-    // 🟢 CORRECCIÓN: No necesitamos 'qrData' aquí,
-    // porque tu modal original no lo renderiza (usa QR físico).
     if (!data || typeof data.total !== "number" || !data.externalReference) {
       setUIState("error");
       if (statusMsgEl) statusMsgEl.textContent = "Error: Datos de la venta inválidos.";
@@ -112,12 +113,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     externalReference = data.externalReference;
-    // 🟢 Usamos la función formatCurrency para mostrar el $
     if (amountEl) amountEl.textContent = formatCurrency(data.total);
+
+    // Mostrar QR dinámico si el main process lo generó
+    if (data.qrImageUrl && qrImageEl && qrImageContainer) {
+      qrImageEl.src = data.qrImageUrl;
+      qrImageContainer.style.display = "block";
+      if (qrInstruction) qrInstruction.textContent = "El cliente escanea este QR con la app de Mercado Pago.";
+    } else {
+      if (qrInstruction) qrInstruction.textContent = "El cliente escanea el QR en el dispositivo con la app de Mercado Pago.";
+    }
 
     if (statusMsgEl) statusMsgEl.textContent = "Esperando pago del cliente...";
     setUIState("polling");
-    startPolling(); // Inicia la verificación de estado
+    startPolling();
   });
 
   btnCancelar.addEventListener("click", () => {
