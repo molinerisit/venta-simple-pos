@@ -1,9 +1,19 @@
 // renderer/js/mp_transactions.js
 
-// ─── Normalization helpers ────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escapeAttr(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ─── Normalization ────────────────────────────────────────────────────────────
 
 function normalizePaymentMethod(tx) {
-  const desc    = String(tx.description || tx.external_reference || '').toUpperCase();
+  const desc     = String(tx.description || tx.external_reference || '').toUpperCase();
   const methodId = String(tx.payment_method_id || '').toLowerCase();
   const typeId   = String(tx.payment_type_id   || '').toLowerCase();
 
@@ -59,15 +69,17 @@ function normalizePayer(tx) {
   return { displayName: 'Cliente sin identificar', email: null, source: 'unknown', confidence: 'low' };
 }
 
+// ─── Status & method config ───────────────────────────────────────────────────
+
 const STATUS_CONFIG = {
-  approved:     { label: 'Aprobado',    cls: 'status-approved',     icon: 'check'  },
-  authorized:   { label: 'Autorizado',  cls: 'status-authorized',   icon: 'clock'  },
-  pending:      { label: 'Pendiente',   cls: 'status-pending',      icon: 'clock'  },
-  in_process:   { label: 'En proceso',  cls: 'status-in-process',   icon: 'clock'  },
-  rejected:     { label: 'Rechazado',   cls: 'status-rejected',     icon: 'x'      },
-  cancelled:    { label: 'Cancelado',   cls: 'status-cancelled',    icon: 'x'      },
-  charged_back: { label: 'Contracargo', cls: 'status-charged-back', icon: 'x'      },
-  refunded:     { label: 'Devuelto',    cls: 'status-refunded',     icon: 'return' },
+  approved:     { label: 'Aprobado',    cls: 'status-approved',      icon: 'check'  },
+  authorized:   { label: 'Autorizado',  cls: 'status-authorized',    icon: 'clock'  },
+  pending:      { label: 'Pendiente',   cls: 'status-pending',       icon: 'clock'  },
+  in_process:   { label: 'En proceso',  cls: 'status-in-process',    icon: 'clock'  },
+  rejected:     { label: 'Rechazado',   cls: 'status-rejected',      icon: 'x'      },
+  cancelled:    { label: 'Cancelado',   cls: 'status-cancelled',     icon: 'x'      },
+  charged_back: { label: 'Contracargo', cls: 'status-charged-back',  icon: 'x'      },
+  refunded:     { label: 'Devuelto',    cls: 'status-refunded',      icon: 'return' },
 };
 
 const STATUS_ICONS = {
@@ -86,34 +98,32 @@ function renderMethodBadge(method) {
   return `<span class="method-badge method-${method.type}">${method.label}</span>`;
 }
 
-function escapeAttr(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('app-ready', () => {
-  const tableBody    = document.getElementById('transactions-body');
-  const btnRefresh   = document.getElementById('btn-refresh');
-  const btnApply     = document.getElementById('btn-apply-filters');
-  const btnSync      = document.getElementById('btn-sync-clientes');
-  const filterStatus = document.getElementById('filter-status');
-  const filterMedio  = document.getElementById('filter-medio');
-  const filterSearch = document.getElementById('filter-search');
-  const connBadge    = document.getElementById('conn-badge');
-  const connLabel    = document.getElementById('conn-badge-label');
-  const rangeTabsEl  = document.getElementById('range-tabs');
+  const tableBody        = document.getElementById('transactions-body');
+  const btnRefresh       = document.getElementById('btn-refresh');
+  const btnApply         = document.getElementById('btn-apply-filters');
+  const btnSync          = document.getElementById('btn-sync-clientes');
+  const filterStatus     = document.getElementById('filter-status');
+  const filterMedio      = document.getElementById('filter-medio');
+  const filterSearch     = document.getElementById('filter-search');
+  const connBadge        = document.getElementById('conn-badge');
+  const connLabel        = document.getElementById('conn-badge-label');
+  const rangeTabsEl      = document.getElementById('range-tabs');
+  const toggleAutoCreate = document.getElementById('toggle-auto-create');
+  const detailModal      = document.getElementById('tx-detail-modal');
+  const btnCloseDetail   = document.getElementById('btn-close-detail');
 
-  const mpModal       = document.getElementById('mp-cliente-modal');
-  const mpForm        = document.getElementById('mp-cliente-form');
-  const btnCancelarMp = document.getElementById('btn-cancelar-mp-modal');
-  const btnGuardarMp  = document.getElementById('btn-guardar-mp-cliente');
+  let allTransactions    = [];
+  let knownPayers        = { byPayerId: {}, byEmail: {} };
+  let activeRange        = 'all';
+  let activeDropdown     = null;
+  let autoCreateClientes = localStorage.getItem('mp_auto_create') !== 'false';
 
-  let allTransactions = [];
-  let knownPayers     = { byPayerId: {}, byEmail: {} };
-  let activeRange     = 'all';
+  if (toggleAutoCreate) toggleAutoCreate.checked = autoCreateClientes;
 
-  // Toast
+  // ── Toast ─────────────────────────────────────────────────────────────────────
   const toast = document.getElementById('toast-notification');
   let toastTimer;
   const showToast = (msg, type = 'error') => {
@@ -124,7 +134,7 @@ document.addEventListener('app-ready', () => {
     toastTimer = setTimeout(() => toast.classList.remove('visible'), 3500);
   };
 
-  // Connection badge
+  // ── Connection badge ──────────────────────────────────────────────────────────
   const setConnBadge = (state) => {
     if (!connBadge) return;
     connBadge.className = `conn-badge conn-badge--${state}`;
@@ -137,7 +147,7 @@ document.addEventListener('app-ready', () => {
     if (connLabel) connLabel.textContent = labels[state] || state;
   };
 
-  // Summary cards
+  // ── Summary cards ─────────────────────────────────────────────────────────────
   const updateSummary = (txs) => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
@@ -157,7 +167,7 @@ document.addEventListener('app-ready', () => {
     set('stat-ultima-sync', new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
   };
 
-  // Range tabs
+  // ── Range tabs ────────────────────────────────────────────────────────────────
   rangeTabsEl?.addEventListener('click', (e) => {
     const tab = e.target.closest('.mp-range-tab');
     if (!tab) return;
@@ -166,15 +176,15 @@ document.addEventListener('app-ready', () => {
     activeRange = tab.dataset.value;
   });
 
-  // Load known payers (for "Ver cliente" vs "Crear cliente" logic)
+  // ── Known payers lookup ───────────────────────────────────────────────────────
   const loadKnownPayers = async () => {
     try {
       const result = await window.electronAPI.invoke('get-mp-known-payers');
       if (result) knownPayers = result;
-    } catch (_) { /* non-critical */ }
+    } catch (_) {}
   };
 
-  // Build date range for API
+  // ── Date range filter ─────────────────────────────────────────────────────────
   const buildDateFilter = () => {
     const now = new Date();
     switch (activeRange) {
@@ -194,15 +204,13 @@ document.addEventListener('app-ready', () => {
     }
   };
 
-  // Client-side filters (after API load)
+  // ── Client-side filters ───────────────────────────────────────────────────────
   const applyClientFilters = (txs) => {
     const medioFilter = filterMedio?.value  || '';
     const searchTerm  = (filterSearch?.value || '').toLowerCase().trim();
 
     return txs.filter(tx => {
-      if (medioFilter) {
-        if (normalizePaymentMethod(tx).type !== medioFilter) return false;
-      }
+      if (medioFilter && normalizePaymentMethod(tx).type !== medioFilter) return false;
       if (searchTerm) {
         const payer    = normalizePayer(tx);
         const ref      = cleanPaymentReference(tx.description);
@@ -214,7 +222,22 @@ document.addEventListener('app-ready', () => {
     });
   };
 
-  // Load from MP API
+  // ── Auto-create clientes ──────────────────────────────────────────────────────
+  const autoSyncIfEnabled = async () => {
+    if (!autoCreateClientes || !allTransactions.length) return;
+    try {
+      const result = await window.electronAPI.invoke('sync-mp-to-clientes', allTransactions);
+      if (result?.success && (result.created > 0 || result.updated > 0)) {
+        const parts = [];
+        if (result.created > 0) parts.push(`${result.created} nuevo${result.created > 1 ? 's' : ''}`);
+        if (result.updated > 0) parts.push(`${result.updated} actualizado${result.updated > 1 ? 's' : ''}`);
+        showToast(`Clientes: ${parts.join(', ')}.`, 'success');
+        await loadKnownPayers();
+      }
+    } catch (_) {}
+  };
+
+  // ── Load transactions from MP API ─────────────────────────────────────────────
   const loadTransactions = async () => {
     const { dateFrom, dateTo } = buildDateFilter();
     const filters = { dateFrom, dateTo, status: filterStatus?.value || '' };
@@ -228,7 +251,7 @@ document.addEventListener('app-ready', () => {
 
       if (!result.success) {
         setConnBadge('error');
-        tableBody.innerHTML = `<tr><td colspan="7" class="table-empty" style="color:var(--danger-color)">${result.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" class="table-empty table-empty--error">${escapeHtml(result.message)}</td></tr>`;
         showToast(result.message);
         return;
       }
@@ -237,10 +260,11 @@ document.addEventListener('app-ready', () => {
       allTransactions = result.data || [];
       updateSummary(allTransactions);
       await loadKnownPayers();
+      await autoSyncIfEnabled();
       renderTable(applyClientFilters(allTransactions));
-    } catch (err) {
+    } catch (_) {
       setConnBadge('error');
-      tableBody.innerHTML = `<tr><td colspan="7" class="table-empty" style="color:var(--danger-color)">Error de comunicación con el sistema.</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="7" class="table-empty table-empty--error">Error de comunicación con el sistema.</td></tr>`;
       showToast('Error de comunicación con el sistema.');
     } finally {
       if (btnRefresh) btnRefresh.disabled = false;
@@ -248,7 +272,7 @@ document.addEventListener('app-ready', () => {
     }
   };
 
-  // Render table rows
+  // ── Render table ──────────────────────────────────────────────────────────────
   const renderTable = (txs) => {
     if (!txs || txs.length === 0) {
       tableBody.innerHTML = `<tr><td colspan="7" class="table-empty">No se encontraron transacciones.</td></tr>`;
@@ -257,7 +281,7 @@ document.addEventListener('app-ready', () => {
 
     tableBody.innerHTML = txs.map(tx => {
       const date    = tx.date_created ? new Date(tx.date_created) : null;
-      const dateStr = date ? date.toLocaleDateString('es-AR')                              : '—';
+      const dateStr = date ? date.toLocaleDateString('es-AR') : '—';
       const timeStr = date ? date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
 
       const payer  = normalizePayer(tx);
@@ -265,134 +289,227 @@ document.addEventListener('app-ready', () => {
       const ref    = cleanPaymentReference(tx.description);
       const amount = (tx.transaction_amount ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
+      const payerIdStr = String(tx.payer?.id || '');
+      const emailLower = (payer.email || '').toLowerCase();
+      const clienteId  = (payerIdStr && knownPayers.byPayerId[payerIdStr])
+                      || (emailLower && knownPayers.byEmail[emailLower])
+                      || null;
+
+      // Payer cell
       let payerHtml;
       if (payer.confidence === 'low') {
-        payerHtml = `<span class="payer-name">${payer.displayName}</span><span class="badge-unidentified">Sin identificar</span>`;
+        payerHtml = `
+          <div class="payer-name payer-name--muted">Cliente sin identificar</div>
+          <div class="payer-email">sin datos</div>`;
       } else {
-        payerHtml = `<div class="payer-name">${payer.displayName}</div>`;
-        if (payer.email) payerHtml += `<div class="payer-email">${payer.email}</div>`;
+        const clientBadge = clienteId
+          ? `<span class="client-status client-status--ok">● Registrado</span>`
+          : `<span class="client-status client-status--new">● Nuevo</span>`;
+        payerHtml = `
+          <div class="payer-name">${escapeHtml(payer.displayName)}</div>
+          ${payer.email ? `<div class="payer-email">${escapeHtml(payer.email)}</div>` : ''}
+          ${clientBadge}`;
       }
 
-      const payerIdStr  = String(tx.payer?.id || '');
-      const emailLower  = (payer.email || '').toLowerCase();
-      const clienteId   = (payerIdStr && knownPayers.byPayerId[payerIdStr])
-                       || (emailLower && knownPayers.byEmail[emailLower])
-                       || null;
+      // ⋯ Actions menu
+      const menuItems = [];
+      if (clienteId) {
+        menuItems.push(`<button class="tx-menu-item" data-action="ver-cliente" data-cliente-id="${escapeAttr(clienteId)}">Ver cliente</button>`);
+      } else if (payer.confidence !== 'low') {
+        menuItems.push(`<button class="tx-menu-item" data-action="vincular-cliente" data-payer-id="${escapeAttr(payerIdStr)}" data-payment-id="${escapeAttr(String(tx.id || ''))}" data-name="${escapeAttr(payer.displayName)}" data-email="${escapeAttr(payer.email || '')}">Vincular cliente</button>`);
+      }
+      if (payer.email) {
+        menuItems.push(`<button class="tx-menu-item" data-action="copiar-email" data-email="${escapeAttr(payer.email)}">Copiar email</button>`);
+      }
 
-      const actionBtn = clienteId
-        ? `<button class="btn-xs btn-xs--ghost" data-action="ver-cliente" data-cliente-id="${clienteId}">Ver cliente</button>`
-        : `<button class="btn-xs btn-xs--primary" data-action="crear-cliente"
-              data-payer-id="${escapeAttr(payerIdStr)}"
-              data-payment-id="${escapeAttr(tx.id || '')}"
-              data-name="${escapeAttr(payer.displayName)}"
-              data-email="${escapeAttr(payer.email || '')}"
-            >Crear cliente</button>`;
-
-      const copyBtn = payer.email
-        ? `<button class="btn-xs btn-xs--ghost" data-action="copiar-email" data-email="${escapeAttr(payer.email)}" title="Copiar email">Copiar email</button>`
-        : '';
+      const actionsHtml = menuItems.length > 0
+        ? `<div class="tx-actions-wrap">
+            <button class="btn-dots" data-action="open-menu" title="Acciones">
+              <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg>
+            </button>
+            <div class="tx-dropdown hidden">${menuItems.join('')}</div>
+           </div>`
+        : `<span class="tx-no-actions">—</span>`;
 
       return `
-        <tr>
+        <tr class="tx-row" data-tx-id="${escapeAttr(String(tx.id || ''))}">
           <td>
             <div class="tx-date">${dateStr}</div>
             <div class="tx-date-time">${timeStr}</div>
           </td>
           <td>${payerHtml}</td>
           <td>${renderMethodBadge(method)}</td>
-          <td><span class="tx-ref" title="${escapeAttr(ref)}">${ref}</span></td>
+          <td><span class="tx-ref" title="${escapeAttr(ref)}">${escapeHtml(ref)}</span></td>
           <td class="text-right"><span class="tx-amount">${amount}</span></td>
           <td>${renderStatusBadge(tx.status)}</td>
-          <td><div class="tx-actions">${actionBtn}${copyBtn}</div></td>
+          <td>${actionsHtml}</td>
         </tr>
       `;
     }).join('');
   };
 
-  // Action delegation
-  tableBody?.addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn || btn.dataset.busy === '1') return;
-    btn.dataset.busy = '1';
-    try {
-      switch (btn.dataset.action) {
-        case 'crear-cliente':
-          openMpModal({ payerId: btn.dataset.payerId, paymentId: btn.dataset.paymentId, name: btn.dataset.name, email: btn.dataset.email });
-          break;
-        case 'ver-cliente':
-          showToast('Abrí la sección Clientes para ver el detalle del cliente.', 'info');
-          break;
-        case 'copiar-email':
-          await navigator.clipboard.writeText(btn.dataset.email || '');
-          showToast('Email copiado al portapapeles.', 'success');
-          break;
-      }
-    } finally {
-      btn.dataset.busy = '0';
+  // ── Dropdown logic ────────────────────────────────────────────────────────────
+  const closeAllDropdowns = () => {
+    if (activeDropdown) {
+      activeDropdown.classList.add('hidden');
+      activeDropdown = null;
     }
-  });
-
-  // MP Cliente Modal
-  const openMpModal = ({ payerId, paymentId, name, email }) => {
-    document.getElementById('mp-payer-id').value   = payerId    || '';
-    document.getElementById('mp-payment-id').value = paymentId  || '';
-    document.getElementById('mp-nombre').value     = name       || '';
-    document.getElementById('mp-email').value      = email      || '';
-    document.getElementById('mp-telefono').value   = '';
-    document.getElementById('mp-dni').value        = '';
-    document.getElementById('mp-descuento').value  = '0';
-    mpModal?.classList.add('visible');
-    document.getElementById('mp-nombre')?.focus();
   };
 
-  const closeMpModal = () => mpModal?.classList.remove('visible');
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.tx-actions-wrap')) closeAllDropdowns();
+  });
 
-  btnCancelarMp?.addEventListener('click', closeMpModal);
-  mpModal?.addEventListener('click', (e) => { if (e.target === mpModal) closeMpModal(); });
+  // ── Table click delegation ────────────────────────────────────────────────────
+  tableBody?.addEventListener('click', async (e) => {
+    // Open ⋯ dropdown
+    const dotsBtn = e.target.closest('[data-action="open-menu"]');
+    if (dotsBtn) {
+      e.stopPropagation();
+      const wrap = dotsBtn.closest('.tx-actions-wrap');
+      const menu = wrap?.querySelector('.tx-dropdown');
+      if (!menu) return;
+      if (activeDropdown && activeDropdown !== menu) closeAllDropdowns();
+      const opening = menu.classList.contains('hidden');
+      menu.classList.toggle('hidden');
+      activeDropdown = opening ? menu : null;
+      return;
+    }
 
-  mpForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!btnGuardarMp) return;
-    btnGuardarMp.disabled = true;
-
-    const data = {
-      mercadoPagoPayerId: document.getElementById('mp-payer-id').value  || null,
-      nombre:    (document.getElementById('mp-nombre').value    || '').trim(),
-      email:     (document.getElementById('mp-email').value     || '').trim()  || null,
-      telefono:  (document.getElementById('mp-telefono').value  || '').trim()  || null,
-      dni:       (document.getElementById('mp-dni').value       || '').replace(/\D/g, '') || null,
-      descuento: parseFloat(document.getElementById('mp-descuento').value) || 0,
-      origenCliente: 'mercado_pago',
-    };
-
-    try {
-      const result = await window.electronAPI.invoke('guardar-cliente-desde-mp', data);
-      if (result?.exists) {
-        showToast('Este cliente ya existe en la base de datos.', 'info');
-        closeMpModal();
-      } else if (result?.success) {
-        showToast('Cliente guardado correctamente.', 'success');
-        closeMpModal();
-        await loadKnownPayers();
-        renderTable(applyClientFilters(allTransactions));
-      } else {
-        showToast(result?.message || 'Error al guardar el cliente.', 'error');
+    // Menu item actions
+    const menuBtn = e.target.closest('.tx-menu-item[data-action]');
+    if (menuBtn) {
+      closeAllDropdowns();
+      if (menuBtn.dataset.busy === '1') return;
+      menuBtn.dataset.busy = '1';
+      try {
+        switch (menuBtn.dataset.action) {
+          case 'ver-cliente':
+            showToast('Abrí la sección Clientes para ver el detalle del cliente.', 'info');
+            break;
+          case 'copiar-email':
+            await navigator.clipboard.writeText(menuBtn.dataset.email || '');
+            showToast('Email copiado al portapapeles.', 'success');
+            break;
+          case 'vincular-cliente':
+            showToast('Usá la sección Clientes para vincular manualmente.', 'info');
+            break;
+        }
+      } finally {
+        menuBtn.dataset.busy = '0';
       }
-    } catch (_) {
-      showToast('Error al guardar el cliente.', 'error');
-    } finally {
-      btnGuardarMp.disabled = false;
+      return;
+    }
+
+    // Row click → detail modal
+    const row = e.target.closest('tr.tx-row');
+    if (row && !e.target.closest('.tx-actions-wrap')) {
+      const txId = row.dataset.txId;
+      if (txId) {
+        const tx = allTransactions.find(t => String(t.id) === txId);
+        if (tx) openDetailModal(tx);
+      }
     }
   });
 
-  // Sync MP payers → Clientes (bulk)
+  // ── Transaction detail modal ──────────────────────────────────────────────────
+  const openDetailModal = (tx) => {
+    if (!detailModal) return;
+
+    const payer  = normalizePayer(tx);
+    const method = normalizePaymentMethod(tx);
+    const ref    = cleanPaymentReference(tx.description);
+    const date   = tx.date_created ? new Date(tx.date_created) : null;
+    const amount = (tx.transaction_amount ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+
+    const payerIdStr = String(tx.payer?.id || '');
+    const emailLower = (payer.email || '').toLowerCase();
+    const clienteId  = (payerIdStr && knownPayers.byPayerId[payerIdStr])
+                    || (emailLower && knownPayers.byEmail[emailLower])
+                    || null;
+
+    const set    = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const show   = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis ? '' : 'none'; };
+
+    set('detail-status-badge', renderStatusBadge(tx.status));
+    setTxt('detail-payer-name', payer.displayName);
+    setTxt('detail-amount', amount);
+    setTxt('detail-date', date
+      ? date.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '—');
+    set('detail-method', renderMethodBadge(method));
+    setTxt('detail-ref', ref);
+    setTxt('detail-email', payer.email || '—');
+    setTxt('detail-payment-id', String(tx.id || '—'));
+
+    // Client status
+    let clientHtml;
+    if (payer.confidence === 'low') {
+      clientHtml = '<span class="badge-unidentified">Sin identificar</span>';
+    } else {
+      clientHtml = clienteId
+        ? '<span class="client-status client-status--ok">● Cliente registrado</span>'
+        : '<span class="client-status client-status--new">● Nuevo cliente</span>';
+    }
+    set('detail-client-status', clientHtml);
+
+    // Cuotas
+    if (tx.installments && tx.installments > 1) {
+      setTxt('detail-installments', `${tx.installments} cuotas`);
+      show('detail-row-installments', true);
+    } else {
+      show('detail-row-installments', false);
+    }
+
+    // Tarjeta (últimos 4 dígitos)
+    const cardLast4 = tx.card?.last_four_digits;
+    if (cardLast4) {
+      const brand = tx.payment_method_id ? ` · ${tx.payment_method_id.toUpperCase()}` : '';
+      setTxt('detail-card', `**** ${cardLast4}${brand}`);
+      show('detail-row-card', true);
+    } else {
+      show('detail-row-card', false);
+    }
+
+    // Comisión MP
+    const fees  = Array.isArray(tx.fee_details) ? tx.fee_details : [];
+    const mpFee = fees.find(f => f.type === 'mercadopago_fee');
+    if (mpFee?.amount) {
+      setTxt('detail-fee', Math.abs(mpFee.amount).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }));
+      show('detail-row-fee', true);
+    } else {
+      show('detail-row-fee', false);
+    }
+
+    // Identificación (DNI/CUIT)
+    const ident = tx.payer?.identification;
+    if (ident?.type && ident?.number) {
+      setTxt('detail-identification', `${ident.type}: ${ident.number}`);
+      show('detail-row-identification', true);
+    } else {
+      show('detail-row-identification', false);
+    }
+
+    detailModal.classList.add('visible');
+  };
+
+  const closeDetailModal = () => detailModal?.classList.remove('visible');
+
+  btnCloseDetail?.addEventListener('click', closeDetailModal);
+  detailModal?.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeDetailModal(); closeAllDropdowns(); }
+  });
+
+  // ── Manual bulk sync ──────────────────────────────────────────────────────────
   btnSync?.addEventListener('click', async () => {
     if (!allTransactions.length) {
       showToast('No hay transacciones cargadas para importar.', 'info');
       return;
     }
     const orig = btnSync.textContent;
-    btnSync.disabled   = true;
+    btnSync.disabled    = true;
     btnSync.textContent = 'Importando...';
     try {
       const result = await window.electronAPI.invoke('sync-mp-to-clientes', allTransactions);
@@ -406,18 +523,28 @@ document.addEventListener('app-ready', () => {
     } catch (_) {
       showToast('Error al importar clientes.', 'error');
     } finally {
-      btnSync.disabled   = false;
+      btnSync.disabled    = false;
       btnSync.textContent = orig;
     }
   });
 
-  // Filter event bindings
+  // ── Auto-create toggle ────────────────────────────────────────────────────────
+  toggleAutoCreate?.addEventListener('change', async () => {
+    autoCreateClientes = toggleAutoCreate.checked;
+    localStorage.setItem('mp_auto_create', String(autoCreateClientes));
+    if (autoCreateClientes && allTransactions.length) {
+      await autoSyncIfEnabled();
+      renderTable(applyClientFilters(allTransactions));
+    }
+  });
+
+  // ── Filter bindings ───────────────────────────────────────────────────────────
   btnRefresh?.addEventListener('click', loadTransactions);
   btnApply?.addEventListener('click', loadTransactions);
   filterSearch?.addEventListener('input', () => renderTable(applyClientFilters(allTransactions)));
   filterMedio?.addEventListener('change', () => renderTable(applyClientFilters(allTransactions)));
 
-  // Init
+  // ── Init ──────────────────────────────────────────────────────────────────────
   setConnBadge('unknown');
   loadTransactions();
 });

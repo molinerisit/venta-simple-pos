@@ -22,6 +22,7 @@ module.exports = (sequelize) => {
       cantidadComprasMP:  { type: DataTypes.INTEGER, defaultValue: 0 },
       ultimoMedioPago:    { type: DataTypes.STRING, allowNull: true },
       cloud_id:           { type: DataTypes.STRING(36), allowNull: true },
+      estadoCliente:      { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'activo' },
       paymentStats: {
         type: DataTypes.TEXT,
         allowNull: true,

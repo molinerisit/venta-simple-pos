@@ -26,20 +26,24 @@
         <div class="mp-page-header">
           <div class="mp-page-header__titles">
             <h2 class="mp-page-header__title">Transacciones de Mercado Pago</h2>
-            <p class="mp-page-header__subtitle">Pagos recibidos por QR, transferencia y otros medios conectados</p>
+            <p class="mp-page-header__subtitle">Pagos recibidos por QR, tarjeta y transferencias</p>
           </div>
           <div class="mp-page-header__status">
             <span id="conn-badge" class="conn-badge conn-badge--unknown">
               <svg class="conn-badge__icon" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
               <span id="conn-badge-label">Verificando</span>
             </span>
-            <button id="btn-refresh" class="btn-icon-action" title="Actualizar">
+            <button id="btn-refresh" class="btn-icon-action" title="Sincronizar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 4 23 10 17 10"/>
                 <polyline points="1 20 1 14 7 14"/>
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
               </svg>
             </button>
+            <label class="mp-auto-toggle" title="Crear y actualizar clientes automáticamente al cargar pagos">
+              <input type="checkbox" id="toggle-auto-create" checked>
+              <span class="mp-auto-toggle__label">Auto crear clientes</span>
+            </label>
           </div>
         </div>
 
@@ -139,7 +143,7 @@
             </div>
             <div class="mp-filter-group mp-filter-group--actions">
               <button id="btn-apply-filters" class="btn-primary">Filtrar</button>
-              <button id="btn-sync-clientes" class="btn-secondary">Importar clientes</button>
+              <button id="btn-sync-clientes" class="btn-secondary">Sincronizar clientes</button>
             </div>
           </div>
         </div>
@@ -156,7 +160,7 @@
                   <th>Referencia</th>
                   <th class="text-right">Monto</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="transactions-body">
@@ -170,37 +174,64 @@
     </main>
   </div>
 
-  <!-- Modal: Crear cliente desde MP -->
-  <div id="mp-cliente-modal" class="modal" aria-hidden="true">
-    <div class="modal-contenido" role="dialog" aria-modal="true">
-      <h2 class="modal-titulo">Crear cliente desde Mercado Pago</h2>
-      <form id="mp-cliente-form">
-        <input type="hidden" id="mp-payer-id">
-        <input type="hidden" id="mp-payment-id">
-        <div class="form-campo">
-          <label for="mp-nombre">Nombre y Apellido</label>
-          <input type="text" id="mp-nombre" required autocomplete="off">
+  <!-- Transaction detail modal -->
+  <div id="tx-detail-modal" class="modal-overlay" aria-hidden="true">
+    <div class="tx-detail-panel" role="dialog" aria-modal="true">
+      <header class="tx-detail-header">
+        <div class="tx-detail-header__info">
+          <h3 class="tx-detail-payer" id="detail-payer-name">—</h3>
+          <div id="detail-status-badge"></div>
         </div>
-        <div class="form-campo">
-          <label for="mp-email">Email</label>
-          <input type="email" id="mp-email" autocomplete="off">
+        <button id="btn-close-detail" class="btn-icon-action" title="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </header>
+      <div class="tx-detail-body">
+        <div class="tx-detail-row tx-detail-row--highlight">
+          <span class="tx-detail-label">Monto</span>
+          <span class="tx-detail-value tx-detail-amount" id="detail-amount">—</span>
         </div>
-        <div class="form-campo">
-          <label for="mp-telefono">Teléfono (opcional)</label>
-          <input type="text" id="mp-telefono" autocomplete="off">
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Fecha</span>
+          <span class="tx-detail-value" id="detail-date">—</span>
         </div>
-        <div class="form-campo">
-          <label for="mp-dni">DNI (opcional)</label>
-          <input type="text" id="mp-dni" autocomplete="off">
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Medio de pago</span>
+          <span class="tx-detail-value" id="detail-method">—</span>
         </div>
-        <div class="form-campo">
-          <label for="mp-descuento">Descuento (%)</label>
-          <input type="number" id="mp-descuento" value="0" min="0" max="100" step="0.5">
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Referencia</span>
+          <span class="tx-detail-value" id="detail-ref">—</span>
         </div>
-      </form>
-      <div class="modal-acciones">
-        <button type="button" id="btn-cancelar-mp-modal" class="btn btn-secundario">Cancelar</button>
-        <button type="submit" id="btn-guardar-mp-cliente" class="btn btn-primario" form="mp-cliente-form">Guardar cliente</button>
+        <div class="tx-detail-row" id="detail-row-installments">
+          <span class="tx-detail-label">Cuotas</span>
+          <span class="tx-detail-value" id="detail-installments">—</span>
+        </div>
+        <div class="tx-detail-row" id="detail-row-card">
+          <span class="tx-detail-label">Tarjeta</span>
+          <span class="tx-detail-value" id="detail-card">—</span>
+        </div>
+        <div class="tx-detail-row" id="detail-row-fee">
+          <span class="tx-detail-label">Comisión MP</span>
+          <span class="tx-detail-value tx-detail-value--muted" id="detail-fee">—</span>
+        </div>
+        <div class="tx-detail-divider"></div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Email</span>
+          <span class="tx-detail-value" id="detail-email">—</span>
+        </div>
+        <div class="tx-detail-row" id="detail-row-identification">
+          <span class="tx-detail-label">Identificación</span>
+          <span class="tx-detail-value" id="detail-identification">—</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Cliente</span>
+          <span class="tx-detail-value" id="detail-client-status">—</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">ID de pago</span>
+          <span class="tx-detail-value tx-detail-id" id="detail-payment-id">—</span>
+        </div>
       </div>
     </div>
   </div>

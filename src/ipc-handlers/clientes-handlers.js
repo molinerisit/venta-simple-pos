@@ -9,6 +9,14 @@ function registerClientesHandlers(models) {
 
   // ─── helpers ────────────────────────────────────────────────────────────────
 
+  function computeEstadoCliente(lastPurchaseDate) {
+    if (!lastPurchaseDate) return 'inactivo';
+    const daysSince = (Date.now() - new Date(lastPurchaseDate).getTime()) / 86400000;
+    if (daysSince <= 30)  return 'activo';
+    if (daysSince <= 90)  return 'en_riesgo';
+    return 'inactivo';
+  }
+
   function normalizePaymentMethod(tx) {
     const desc    = String(tx.description || tx.external_reference || '').toUpperCase();
     const methodId = String(tx.payment_method_id || '').toLowerCase();
@@ -310,6 +318,7 @@ function registerClientesHandlers(models) {
             cantidadComprasMP:(cliente.cantidadComprasMP || 0) + 1,
             ultimoMedioPago:  medio,
             paymentStats:     stats,
+            estadoCliente:    computeEstadoCliente(txDate),
             ...(payer.payerId && !cliente.mercadoPagoPayerId ? { mercadoPagoPayerId: payer.payerId } : {}),
             ...(payer.email && !cliente.email ? { email: payer.email } : {}),
           });
@@ -331,6 +340,7 @@ function registerClientesHandlers(models) {
             cantidadComprasMP:  1,
             ultimoMedioPago:    medio,
             paymentStats:       newStats,
+            estadoCliente:      'activo',
             descuento:          0,
           };
 
