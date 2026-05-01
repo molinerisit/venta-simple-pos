@@ -537,7 +537,7 @@ function registerMercadoPagoHandlers(models) {
     try {
       const admin = await Usuario.findOne({
         where: { rol: "administrador" },
-        attributes: ["mp_payment_config"],
+        attributes: ["mp_payment_config", "mp_pos_id"],
         raw: true,
       });
       const raw = admin?.mp_payment_config;
@@ -547,28 +547,33 @@ function registerMercadoPagoHandlers(models) {
         debit_mode:     cfg.debit_mode     || "posnet",
         credit_mode:    cfg.credit_mode    || "posnet",
         point_device_id: cfg.point_device_id || null,
+        pos_id:          cfg.pos_id || admin?.mp_pos_id || null,
       };
     } catch (e) {
-      return { qr_mode: "dinamico", debit_mode: "posnet", credit_mode: "posnet", point_device_id: null };
+      return { qr_mode: "dinamico", debit_mode: "posnet", credit_mode: "posnet", point_device_id: null, pos_id: null };
     }
   });
 
   ipcMain.handle("save-mp-payment-config", async (_evt, data) => {
     try {
       const cfg = {
-        qr_mode:        ["dinamico", "posnet", "none"].includes(data?.qr_mode)    ? data.qr_mode    : "dinamico",
+        qr_mode:        ["dinamico", "impreso", "none"].includes(data?.qr_mode)   ? data.qr_mode    : "dinamico",
         debit_mode:     ["posnet", "none"].includes(data?.debit_mode)             ? data.debit_mode  : "posnet",
         credit_mode:    ["posnet", "none"].includes(data?.credit_mode)            ? data.credit_mode : "posnet",
         point_device_id: data?.point_device_id || null,
+        pos_id:          data?.pos_id || null,
       };
       await Usuario.update(
         { mp_payment_config: cfg },
         { where: { rol: "administrador" } }
       );
 
-      // Si QR está habilitado y mp_pos_id está vacío, auto-fetch del primer POS disponible
+      // Si viene pos_id explícito, guardarlo en mp_pos_id directamente
       let posAutoSaved = null;
-      if (cfg.qr_mode !== "none") {
+      if (cfg.pos_id) {
+        await Usuario.update({ mp_pos_id: cfg.pos_id }, { where: { rol: "administrador" } });
+      } else if (cfg.qr_mode !== "none") {
+        // Auto-fetch si no hay pos_id explícito y mp_pos_id está vacío
         const admin = await Usuario.findOne({
           where: { rol: "administrador" },
           attributes: ["id", "mp_pos_id"],
@@ -646,6 +651,9 @@ function registerMercadoPagoHandlers(models) {
           print_on_terminal: true,
         },
       };
+      if (paymentType) {
+        body.payment = { type: paymentType };
+      }
 
       return await doFetch(
         `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,

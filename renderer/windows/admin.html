@@ -672,7 +672,7 @@
                   <label for="mp-qr-mode">QR</label>
                   <select id="mp-qr-mode">
                     <option value="dinamico">Generar QR en pantalla ✓ recomendado</option>
-                    <option value="posnet">Mostrar QR en el posnet</option>
+                    <option value="impreso">QR impreso (escanear con celular)</option>
                     <option value="none">No hacer nada</option>
                   </select>
                   <small id="mp-qr-mode-hint">El cliente escanea el QR con su celular desde la pantalla de la PC.</small>
@@ -684,16 +684,8 @@
                         <p style="margin:0;">VentaSimple genera un QR único por venta en la pantalla de la PC. El cliente lo escanea con la app de Mercado Pago. <strong>No requiere posnet</strong>. Solo necesitás tener MP conectado.</p>
                       </div>
                       <div>
-                        <p style="font-weight:700;margin:0 0 3px;">QR en el posnet (Point Smart)</p>
-                        <p style="margin:0 0 4px;">El monto se envía al terminal Point y el cliente escanea el QR que aparece en la pantalla del posnet. Requiere un <strong>Point Smart o Point Pro 2</strong> (el Point Air no soporta QR).</p>
-                        <p style="font-weight:600;margin:0 0 3px;">Para habilitarlo:</p>
-                        <ol style="margin:0;padding-left:18px;line-height:1.7;">
-                          <li>Abrí la <strong>app de Mercado Pago</strong> en tu celular.</li>
-                          <li>Ir a <strong>Cobrar → Punto de venta → tu local</strong>.</li>
-                          <li>En la sección del terminal Point, activá <strong>"Cobros con QR"</strong>.</li>
-                          <li>Reiniciá el terminal.</li>
-                          <li>Volvé aquí y seleccioná <em>"Mostrar QR en el posnet"</em>.</li>
-                        </ol>
+                        <p style="font-weight:700;margin:0 0 3px;">QR impreso</p>
+                        <p style="margin:0;">El monto se envía a la caja de MP. El cliente escanea el <strong>QR físico impreso</strong> de tu local para pagar. Debés tener un QR impreso asociado a la caja configurada abajo.</p>
                       </div>
                     </div>
                   </details>
@@ -713,6 +705,20 @@
                     <option value="none">No hacer nada</option>
                   </select>
                   <small>El monto se envía al posnet ya configurado como crédito. El cliente solo pasa o acerca la tarjeta.</small>
+                </div>
+              </div>
+
+              <!-- Caja para QR impreso (se muestra solo cuando qr_mode === "impreso") -->
+              <div id="mp-caja-wrap" style="display:none;margin-top:.75rem;">
+                <div class="form-campo">
+                  <label for="mp-caja-select">Caja para QR impreso</label>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="mp-caja-select" style="flex:1">
+                      <option value="">-- Seleccioná la caja --</option>
+                    </select>
+                    <button type="button" id="btn-refresh-cajas" class="btn btn-secundario btn-sm" title="Actualizar lista de cajas">↻</button>
+                  </div>
+                  <small>La caja (punto de venta) de Mercado Pago asociada al QR impreso de tu local.</small>
                 </div>
               </div>
 

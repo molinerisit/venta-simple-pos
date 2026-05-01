@@ -115,13 +115,39 @@
     const btnActivatePdv          = document.getElementById("btn-activate-pdv");
     const btnRefreshTerminals     = document.getElementById("btn-refresh-terminals");
     const mpActivateResult        = document.getElementById("mp-activate-result");
+    const mpCajaWrap              = document.getElementById("mp-caja-wrap");
+    const mpCajaSelect            = document.getElementById("mp-caja-select");
+    const btnRefreshCajas         = document.getElementById("btn-refresh-cajas");
 
     function _mpNeedsDevice() {
-      return [mpQrMode?.value, mpDebitMode?.value, mpCreditMode?.value].includes("posnet");
+      // Solo débito/crédito por posnet necesitan el selector de dispositivo Point
+      return [mpDebitMode?.value, mpCreditMode?.value].includes("posnet");
     }
 
     function updateMpDeviceWrap() {
       if (mpDeviceWrap) mpDeviceWrap.style.display = _mpNeedsDevice() ? "" : "none";
+    }
+
+    function updateMpCajaWrap() {
+      if (mpCajaWrap) mpCajaWrap.style.display = mpQrMode?.value === "impreso" ? "" : "none";
+    }
+
+    async function refreshCajas(selectedId = null) {
+      if (!mpCajaSelect) return;
+      mpCajaSelect.innerHTML = '<option value="">Buscando cajas…</option>';
+      const res = await ipcInvoke("get-mp-pos-list").catch(() => null);
+      if (!res?.success || !res.data?.length) {
+        mpCajaSelect.innerHTML = '<option value="">No se encontraron cajas en MP</option>';
+        return;
+      }
+      mpCajaSelect.innerHTML = '<option value="">-- Seleccioná la caja --</option>';
+      res.data.forEach(pos => {
+        const opt = document.createElement("option");
+        opt.value = pos.external_id;
+        opt.textContent = pos.name ? `${pos.name} (${pos.external_id})` : pos.external_id;
+        if (selectedId && pos.external_id === selectedId) opt.selected = true;
+        mpCajaSelect.appendChild(opt);
+      });
     }
 
     async function loadAllTerminalsForActivation() {
@@ -191,7 +217,7 @@
     const mpQrModeHint = document.getElementById("mp-qr-mode-hint");
     const QR_HINTS = {
       dinamico: "El cliente escanea el QR con su celular desde la pantalla de la PC. Recomendado: no requiere posnet.",
-      posnet:   "El QR aparece en la pantalla del posnet (solo Point Smart / Pro 2). Necesitás activar 'Cobros con QR' desde la app de MP. Expandí '¿Cómo funciona cada modo?' para los pasos.",
+      impreso:  "El cliente escanea el QR físico impreso de tu local. VentaSimple envía el monto a la caja seleccionada y espera la confirmación de pago.",
       none:     "El botón QR solo registra el método de pago sin interactuar con Mercado Pago.",
     };
 
@@ -208,22 +234,29 @@
       if (mpDebitMode)  mpDebitMode.value  = cfg.debit_mode  || "posnet";
       if (mpCreditMode) mpCreditMode.value = cfg.credit_mode || "posnet";
       updateMpDeviceWrap();
+      updateMpCajaWrap();
       updateQrHint();
       if (_mpNeedsDevice()) await refreshPointDevices(cfg.point_device_id);
+      if (mpQrMode?.value === "impreso") await refreshCajas(cfg.pos_id);
     }
 
     [mpQrMode, mpDebitMode, mpCreditMode].forEach(sel => {
       if (!sel) return;
       sel.addEventListener("change", async () => {
         updateMpDeviceWrap();
+        updateMpCajaWrap();
         updateQrHint();
         if (_mpNeedsDevice() && mpPointDevice && mpPointDevice.options.length <= 1) {
           await refreshPointDevices();
+        }
+        if (mpQrMode?.value === "impreso" && mpCajaSelect && mpCajaSelect.options.length <= 1) {
+          await refreshCajas();
         }
       });
     });
 
     on(btnRefreshDevices, "click", () => refreshPointDevices(mpPointDevice?.value));
+    on(btnRefreshCajas,   "click", () => refreshCajas(mpCajaSelect?.value));
     on(btnRefreshTerminals, "click", () => loadAllTerminalsForActivation());
 
     on(btnSaveMpPaymentConfig, "click", async () => {
@@ -233,6 +266,7 @@
         debit_mode:     mpDebitMode?.value   || "posnet",
         credit_mode:    mpCreditMode?.value  || "posnet",
         point_device_id: mpPointDevice?.value || null,
+        pos_id:         mpCajaSelect?.value  || null,
       });
       setBtnLoading(btnSaveMpPaymentConfig, false, "Guardar configuración de cobros");
       if (result?.success) {

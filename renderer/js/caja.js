@@ -1288,8 +1288,8 @@ if (event.key === "Enter") {
         const total = CajaState.totalFinalRedondeado;
         if (total <= 0) { showErrorModal("No hay un monto para cobrar."); return; }
 
-        // posnet con device configurado → orden instore QR: el terminal muestra el QR automáticamente
-        if (qrMode === "posnet" && mpCfg.point_device_id) {
+        // QR impreso → enviar orden a la caja de MP, el cliente escanea el QR físico
+        if (qrMode === "impreso") {
           toggleButtonLoading(button, true, "QR");
           const externalReference = `VENTA-${Date.now()}`;
           const itemsParaMP = CajaState.ventaActual.map((item) => ({
@@ -1306,17 +1306,16 @@ if (event.key === "Enter") {
               items: itemsParaMP,
             });
             if (!result?.ok) {
-              showErrorModal(`Error al crear QR en posnet: ${result?.error || "error desconocido"}`);
+              showErrorModal(`Error al crear QR: ${result?.error || "error desconocido"}`);
               return;
             }
-            // Mostrar modal posnet en modo QR (el QR está en la pantalla del terminal)
-            CajaState._posnetDeviceId = mpCfg.point_device_id;
+            // Mostrar modal de espera — el cliente escanea el QR impreso del local
             CajaState._posnetMode = "qr";
             CajaState._posnetExternalRef = externalReference;
             if (posnetAmountEl) posnetAmountEl.textContent = formatCurrency(total);
-            if (posnetStatusMsg) posnetStatusMsg.textContent = "QR enviado al dispositivo...";
+            if (posnetStatusMsg) posnetStatusMsg.textContent = "Esperando que el cliente escanee el QR...";
             if (posnetActionHint) {
-              posnetActionHint.textContent = "El QR apareció en el posnet. Pedile al cliente que lo escanee con la app de MP o su billetera digital.";
+              posnetActionHint.textContent = "Pedile al cliente que escanee el QR impreso de la caja con la app de Mercado Pago.";
               posnetActionHint.style.display = "block";
             }
             posnetSpinnerEl?.classList.remove("oculto");
@@ -1361,7 +1360,7 @@ if (event.key === "Enter") {
           return;
         }
 
-        // qrMode === "dinamico" O posnet sin device → QR dinámico en pantalla
+        // qrMode === "dinamico" → QR dinámico en pantalla
         toggleButtonLoading(button, true, "QR");
         const externalReference = `VENTA-${Date.now()}`;
         const itemsParaMP = CajaState.ventaActual.map((item) => ({
@@ -2001,7 +2000,7 @@ if (event.key === "Enter") {
         deviceId,
         amount: total,
         externalReference,
-        description: `${metodo} - VentaSimple`,
+        paymentType: metodo === "Débito" ? "debit_card" : "credit_card",
       });
 
       if (!intentResult?.ok) {
