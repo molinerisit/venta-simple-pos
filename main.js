@@ -298,6 +298,8 @@ app.on("ready", async () => {
       Oferta: require("./src/database/models/Oferta")(sequelize),
 
       CatalogCache: require("./src/database/models/CatalogCache")(sequelize),
+
+      MpSyncLog: require("./src/database/models/MpSyncLog")(sequelize),
     };
 
     const { applyAssociations } = require("./src/database/associations");
