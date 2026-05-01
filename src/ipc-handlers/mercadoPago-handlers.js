@@ -462,28 +462,37 @@ function registerMercadoPagoHandlers(models) {
   ipcMain.handle("mp:connect-oauth", async () => {
     try {
       const lic = readLicense();
-      // Preferir el token activo de sesión (login reciente) sobre el de la licencia
-      const token = getActiveToken() || lic?.token;
+      let token = getActiveToken() || lic?.token;
       if (!token) return { ok: false, error: "Activá tu licencia primero." };
 
       const apiUrl = (lic?.api_url || CLOUD_API).replace(/\/$/, "");
-      const res = await fetch(`${apiUrl}/mercadopago/oauth/start?platform=desktop`, {
+
+      // Intento inicial
+      let res = await fetch(`${apiUrl}/mercadopago/oauth/start?platform=desktop`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      // Si el token expiró → auto-refresh transparente y reintento
+      if (res.status === 401) {
+        const refreshRes = await fetch(`${apiUrl}/api/auth/refresh`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+
+        if (refreshRes?.ok) {
+          const { token: newToken } = await refreshRes.json();
+          const { writeLicense } = require("./license-handlers");
+          writeLicense({ ...lic, token: newToken });
+          token = newToken;
+          // Reintentar con token renovado
+          res = await fetch(`${apiUrl}/mercadopago/oauth/start?platform=desktop`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+      }
+
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          // Token expirado: limpiar datos de MP y abrir la web para renovar sesión
-          const admin = await Usuario.findOne({ where: { rol: "administrador" }, attributes: ["id"] });
-          if (admin) {
-            await Usuario.update(
-              { mp_access_token: null, mp_user_id: null, mp_pos_id: null },
-              { where: { id: admin.id } }
-            );
-          }
-          shell.openExternal("https://ventasimple.cloud/cuenta");
-          return { ok: false, tokenExpired: true };
-        }
         return { ok: false, error: body?.detail || `Error ${res.status}` };
       }
       const { auth_url } = await res.json();

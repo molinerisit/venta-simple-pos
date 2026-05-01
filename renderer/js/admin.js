@@ -263,12 +263,7 @@
       if (!result.ok) {
         mpOauthLoading.classList.add("hidden");
         btnMpConnect.disabled = false;
-        if (result.tokenExpired) {
-          renderMpStatus({ ok: false });
-          toast.show("Sesión expirada. Se abrió tu cuenta en el navegador — hacé click en 'Activar en la app', luego volvé a conectar MP.", "warning");
-        } else {
-          toast.show(result.error || "No se pudo iniciar la conexión.", "error");
-        }
+        toast.show(result.error || "No se pudo iniciar la conexión.", "error");
       }
       // Si ok: el browser abrió MP. El resultado llega por mp-oauth-connected.
     });
@@ -288,12 +283,7 @@
       const result = await ipcInvoke("mp:connect-oauth");
       if (!result.ok) {
         mpOauthLoading.classList.add("hidden");
-        if (result.tokenExpired) {
-          renderMpStatus({ ok: false });
-          toast.show("Sesión expirada. Se abrió tu cuenta en el navegador — hacé click en 'Activar en la app', luego volvé a conectar MP.", "warning");
-        } else {
-          toast.show(result.error || "No se pudo reconectar.", "error");
-        }
+        toast.show(result.error || "No se pudo reconectar.", "error");
       }
     });
 

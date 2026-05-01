@@ -41,7 +41,7 @@ function _request(method, url, token, body) {
       let data = '';
       res.on('data', c => (data += c));
       res.on('end', () => {
-        if (res.statusCode >= 400) return reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+        if (res.statusCode >= 400) return reject(Object.assign(new Error(`HTTP ${res.statusCode}: ${data}`), { statusCode: res.statusCode }));
         try { resolve(JSON.parse(data)); }
         catch { resolve({}); }
       });
@@ -49,6 +49,28 @@ function _request(method, url, token, body) {
     req.on('error', reject);
     req.setTimeout(30000, () => req.destroy(new Error('Timeout de red al sincronizar')));
     if (bodyStr) req.write(bodyStr);
+    req.end();
+  });
+}
+
+// Intenta renovar el token de sesión contra el endpoint /api/auth/refresh.
+// Devuelve el nuevo token si fue exitoso, o null si falló.
+function _tryRefreshToken(apiUrl, expiredToken) {
+  return new Promise((resolve) => {
+    const mod = apiUrl.startsWith('https') ? https : http;
+    const headers = { Authorization: `Bearer ${expiredToken}`, 'Content-Length': '0' };
+    const req = mod.request(`${apiUrl}/api/auth/refresh`, { method: 'POST', headers }, (res) => {
+      let data = '';
+      res.on('data', c => (data += c));
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          resolve(res.statusCode === 200 && json.token ? json.token : null);
+        } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.setTimeout(10000, () => { req.destroy(); resolve(null); });
     req.end();
   });
 }
@@ -162,10 +184,28 @@ function registerSyncHandlers(models) {
     }
 
     const apiUrl = (lic.api_url || CLOUD_API_URL).replace(/\/$/, '');
-    const token = getActiveToken() || lic.token;
+    let token = getActiveToken() || lic.token;
     const plan = lic.plan || 'FREE';
     const sinceDate = state.last_sync_at ? new Date(state.last_sync_at) : new Date(0);
     const syncStart = new Date().toISOString();
+
+    // Helper: ejecuta fn(token); si devuelve 401 renueva el token y reintenta una vez
+    const withRefresh = async (fn) => {
+      try {
+        return await fn(token);
+      } catch (e) {
+        if (e.statusCode === 401) {
+          const newToken = await _tryRefreshToken(apiUrl, token);
+          if (newToken) {
+            const { writeLicense } = require('./license-handlers');
+            writeLicense({ ...lic, token: newToken });
+            token = newToken;
+            return await fn(token);
+          }
+        }
+        throw e;
+      }
+    };
 
     try {
       // ── 1. Construir lote PUSH ──────────────────────────────────────────────
@@ -204,7 +244,7 @@ function registerSyncHandlers(models) {
 
       let pushResults = { results: [], processed: 0 };
       if (batch.length > 0) {
-        pushResults = await _request('POST', `${apiUrl}/api/sync/push`, token, { batch });
+        pushResults = await withRefresh(t => _request('POST', `${apiUrl}/api/sync/push`, t, { batch }));
 
         // Guardar server_ids devueltos por la nube
         for (const result of pushResults.results || []) {
@@ -221,7 +261,7 @@ function registerSyncHandlers(models) {
 
       // ── 2. PULL: traer cambios del panel web ────────────────────────────────
       const pullUrl = `${apiUrl}/api/sync/pull?since=${encodeURIComponent(sinceDate.toISOString())}`;
-      const pullData = await _request('GET', pullUrl, token, null);
+      const pullData = await withRefresh(t => _request('GET', pullUrl, t, null));
       const changes = Array.isArray(pullData) ? pullData : [];
 
       let pulled = 0;
