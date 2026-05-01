@@ -613,20 +613,12 @@ function registerMercadoPagoHandlers(models) {
 
       const body = {
         amount: amountCents,
+        description: description || "Cobro VentaSimple",
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,
         },
       };
-
-      // Si se especifica el tipo de pago, lo mandamos para que el posnet no pregunte
-      // "credit_card" o "debit_card" → el terminal va directo a esperar la tarjeta
-      if (paymentType === "credit_card" || paymentType === "debit_card") {
-        body.payment = {
-          installments: 1,
-          type: paymentType,
-        };
-      }
 
       return await doFetch(
         `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,

@@ -1288,9 +1288,76 @@ if (event.key === "Enter") {
         const total = CajaState.totalFinalRedondeado;
         if (total <= 0) { showErrorModal("No hay un monto para cobrar."); return; }
 
-        // posnet con device configurado → QR en la pantalla del terminal
+        // posnet con device configurado → orden instore QR: el terminal muestra el QR automáticamente
         if (qrMode === "posnet" && mpCfg.point_device_id) {
-          await iniciarCobroPosnet("QR", total, button);
+          toggleButtonLoading(button, true, "QR");
+          const externalReference = `VENTA-${Date.now()}`;
+          const itemsParaMP = CajaState.ventaActual.map((item) => ({
+            title: item.nombreProducto,
+            quantity: item.cantidad,
+            unit_price: item.precioUnitario,
+          }));
+          try {
+            const result = await window.electronAPI.invoke("create-mp-order", {
+              total_amount: total,
+              external_reference: externalReference,
+              title: "Venta de productos",
+              description: "Cobro en local",
+              items: itemsParaMP,
+            });
+            if (!result?.ok) {
+              showErrorModal(`Error al crear QR en posnet: ${result?.error || "error desconocido"}`);
+              return;
+            }
+            // Mostrar modal posnet en modo QR (el QR está en la pantalla del terminal)
+            CajaState._posnetDeviceId = mpCfg.point_device_id;
+            CajaState._posnetMode = "qr";
+            CajaState._posnetExternalRef = externalReference;
+            if (posnetAmountEl) posnetAmountEl.textContent = formatCurrency(total);
+            if (posnetStatusMsg) posnetStatusMsg.textContent = "QR enviado al dispositivo...";
+            if (posnetActionHint) {
+              posnetActionHint.textContent = "El QR apareció en el posnet. Pedile al cliente que lo escanee con la app de MP o su billetera digital.";
+              posnetActionHint.style.display = "block";
+            }
+            posnetSpinnerEl?.classList.remove("oculto");
+            posnetSuccessEl?.classList.add("oculto");
+            posnetErrorEl?.classList.add("oculto");
+            if (btnCancelarPosnet) { btnCancelarPosnet.disabled = false; btnCancelarPosnet.textContent = "Cancelar cobro"; }
+            posnetModal?.classList.remove("oculto");
+            // Polling con check-mp-payment-status (usa externalReference, no intentId)
+            clearInterval(CajaState._posnetPollingTimer);
+            CajaState._posnetPollingTimer = setInterval(async () => {
+              try {
+                const statusResult = await window.electronAPI.invoke("check-mp-payment-status", { externalReference });
+                if (!statusResult?.ok) {
+                  cerrarPosnetModal(false);
+                  showErrorModal(`Error consultando QR: ${statusResult?.error || "error"}`);
+                  return;
+                }
+                const status = statusResult.data?.status;
+                if (status === "approved") {
+                  cerrarPosnetModal(true);
+                  CajaState.metodoPagoSeleccionado = "QR";
+                  paymentButtons.forEach((b) => b.classList.remove("active"));
+                  document.querySelector('[data-metodo="QR"]')?.classList.add("active");
+                  CajaState.ultimaExternalReference = externalReference;
+                  setTimeout(() => btnRegistrarVenta?.click(), 300);
+                } else if (["rejected", "cancelled"].includes(status)) {
+                  cerrarPosnetModal(false);
+                  showErrorModal("El pago QR fue rechazado o cancelado.");
+                } else {
+                  if (posnetStatusMsg) posnetStatusMsg.textContent = "Esperando que el cliente escanee el QR...";
+                }
+              } catch (e) {
+                cerrarPosnetModal(false);
+                showErrorModal("Error de comunicación con Mercado Pago.");
+              }
+            }, 3000);
+          } catch (e) {
+            showErrorModal(`Error al crear QR: ${e.message}`);
+          } finally {
+            toggleButtonLoading(button, false, "QR");
+          }
           return;
         }
 
@@ -1927,9 +1994,7 @@ if (event.key === "Enter") {
     toggleButtonLoading(button, true, metodo);
 
     const externalReference = `VS-${Date.now()}`;
-    // Mapear método al tipo que espera la API de MP Point para saltear la selección en el terminal
-    const paymentTypeMap = { "Débito": "debit_card", "Crédito": "credit_card" };
-    const paymentType = paymentTypeMap[metodo] || null;
+    CajaState._posnetMode = "intent";
 
     try {
       const intentResult = await window.electronAPI.invoke("mp:point-create-intent", {
@@ -1937,7 +2002,6 @@ if (event.key === "Enter") {
         amount: total,
         externalReference,
         description: `${metodo} - VentaSimple`,
-        paymentType,
       });
 
       if (!intentResult?.ok) {
@@ -2029,9 +2093,13 @@ if (event.key === "Enter") {
   }
 
   btnCancelarPosnet?.addEventListener("click", async () => {
-    const deviceId = CajaState._posnetDeviceId;
-    if (deviceId) {
-      await window.electronAPI.invoke("mp:point-cancel-intent", { deviceId }).catch(() => {});
+    if (CajaState._posnetMode === "qr") {
+      await window.electronAPI.invoke("mp:cancel-qr").catch(() => {});
+    } else {
+      const deviceId = CajaState._posnetDeviceId;
+      if (deviceId) {
+        await window.electronAPI.invoke("mp:point-cancel-intent", { deviceId }).catch(() => {});
+      }
     }
     cerrarPosnetModal(false);
   });
