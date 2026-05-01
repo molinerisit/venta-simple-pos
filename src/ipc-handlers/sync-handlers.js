@@ -338,11 +338,16 @@ function registerSyncHandlers(models) {
         const ventasPayload = ventasSinSync.map(v => ({
           local_id: v.id,
           datos: {
-            total:       v.total,
-            descuento:   v.montoDescuento || 0,
-            metodo_pago: v.metodoPago,
-            estado:      'completada',
-            fecha:       v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+            total:                  v.total,
+            descuento:              v.montoDescuento || 0,
+            metodo_pago:            v.metodoPago,
+            estado:                 'completada',
+            fecha:                  v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+            mp_payment_id:          v.mpPaymentId || null,
+            mp_transaction_status:  v.mpTransactionStatus || null,
+            mp_payment_method:      v.mpPaymentMethod || null,
+            mp_matched_at:          v.mpMatchedAt instanceof Date ? v.mpMatchedAt.toISOString() : (v.mpMatchedAt || null),
+            mp_match_confidence:    v.mpMatchConfidence ?? null,
           },
           items: (v.detalles || []).map(d => ({
             nombre_producto: d.nombreProducto,
@@ -586,11 +591,16 @@ function registerSyncHandlers(models) {
         const ventasPayload = todasVentas.map(v => ({
           local_id: v.id,
           datos: {
-            total:       v.total,
-            descuento:   v.montoDescuento || 0,
-            metodo_pago: v.metodoPago,
-            estado:      'completada',
-            fecha:       v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+            total:                  v.total,
+            descuento:              v.montoDescuento || 0,
+            metodo_pago:            v.metodoPago,
+            estado:                 'completada',
+            fecha:                  v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+            mp_payment_id:          v.mpPaymentId || null,
+            mp_transaction_status:  v.mpTransactionStatus || null,
+            mp_payment_method:      v.mpPaymentMethod || null,
+            mp_matched_at:          v.mpMatchedAt instanceof Date ? v.mpMatchedAt.toISOString() : (v.mpMatchedAt || null),
+            mp_match_confidence:    v.mpMatchConfidence ?? null,
           },
           items: (v.detalles || []).map(d => ({
             nombre_producto: d.nombreProducto,
