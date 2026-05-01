@@ -292,10 +292,13 @@ function registerSyncHandlers(models) {
             if (!r.error && r.server_id && r.local_id) {
               await Venta.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
               ventasPushed++;
+            } else if (r.error) {
+              console.warn('[Sync] Venta no subida:', r.local_id, r.error);
             }
           }
         } catch (e) {
           console.error('[Sync] Error subiendo ventas:', e.message);
+          throw e;
         }
       }
 
@@ -495,11 +498,14 @@ function registerSyncHandlers(models) {
           for (const r of (ventasRes.results || [])) {
             if (!r.error && r.server_id && r.local_id) {
               await Venta.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+            } else if (r.error) {
+              console.warn('[FullSync] Venta no subida:', r.local_id, r.error);
             }
           }
           pushed += ventasRes.processed || 0;
         } catch (e) {
           console.error('[FullSync] Error subiendo ventas:', e.message);
+          throw e;
         }
       }
 
