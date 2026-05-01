@@ -26,10 +26,7 @@ module.exports = (sequelize) => {
 
     facturada:    { type: DataTypes.BOOLEAN, defaultValue: false },
 
-    // ---- CAMPOS DE SYNC ELIMINADOS ----
-    // cloud_tenant_id: ELIMINADO
-    // cloud_id:          ELIMINADO
-    // dirty:             ELIMINADO
+    cloud_id: { type: DataTypes.STRING(36), allowNull: true },
 
   }, {
     tableName: 'ventas',

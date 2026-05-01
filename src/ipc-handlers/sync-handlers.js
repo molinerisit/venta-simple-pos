@@ -135,7 +135,7 @@ function mapProveedorFromCloud(datos) {
 // ─── Handlers IPC ──────────────────────────────────────────────────────────────
 
 function registerSyncHandlers(models) {
-  const { Producto, Proveedor } = models;
+  const { Producto, Proveedor, Venta, DetalleVenta } = models;
   const { Op } = require('sequelize');
 
   ipcMain.handle('get-sync-status', () => {
@@ -259,6 +259,46 @@ function registerSyncHandlers(models) {
         }
       }
 
+      // ── 1b. PUSH ventas sin cloud_id ───────────────────────────────────────
+      let ventasPushed = 0;
+      const ventasSinSync = await Venta.findAll({
+        where: { cloud_id: null },
+        include: [{ model: DetalleVenta, as: 'detalles' }],
+      });
+
+      if (ventasSinSync.length > 0) {
+        const ventasPayload = ventasSinSync.map(v => ({
+          local_id: v.id,
+          datos: {
+            total:       v.total,
+            descuento:   v.montoDescuento || 0,
+            metodo_pago: v.metodoPago,
+            estado:      'completada',
+            fecha:       v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+          },
+          items: (v.detalles || []).map(d => ({
+            nombre_producto: d.nombreProducto,
+            cantidad:        d.cantidad,
+            precio_unitario: d.precioUnitario,
+            subtotal:        d.subtotal,
+          })),
+        }));
+
+        try {
+          const ventasRes = await withRefresh(t =>
+            _request('POST', `${apiUrl}/api/sync/push-ventas`, t, { ventas: ventasPayload })
+          );
+          for (const r of (ventasRes.results || [])) {
+            if (!r.error && r.server_id && r.local_id) {
+              await Venta.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+              ventasPushed++;
+            }
+          }
+        } catch (e) {
+          console.error('[Sync] Error subiendo ventas:', e.message);
+        }
+      }
+
       // ── 2. PULL: traer cambios del panel web ────────────────────────────────
       const pullUrl = `${apiUrl}/api/sync/pull?since=${encodeURIComponent(sinceDate.toISOString())}`;
       const pullData = await withRefresh(t => _request('GET', pullUrl, t, null));
@@ -329,7 +369,7 @@ function registerSyncHandlers(models) {
 
       return {
         ok: true,
-        pushed: pushResults.processed || batch.length,
+        pushed: (pushResults.processed || batch.length) + ventasPushed,
         pulled,
         last_sync_at: syncStart,
       };
@@ -424,6 +464,43 @@ function registerSyncHandlers(models) {
           }
         }
         pushed = pushRes.processed || batch.length;
+      }
+
+      // Push: ventas sin cloud_id (full sync también las incluye)
+      const todasVentas = await Venta.findAll({
+        where: { cloud_id: null },
+        include: [{ model: DetalleVenta, as: 'detalles' }],
+      });
+      if (todasVentas.length > 0) {
+        const ventasPayload = todasVentas.map(v => ({
+          local_id: v.id,
+          datos: {
+            total:       v.total,
+            descuento:   v.montoDescuento || 0,
+            metodo_pago: v.metodoPago,
+            estado:      'completada',
+            fecha:       v.createdAt instanceof Date ? v.createdAt.toISOString() : v.createdAt,
+          },
+          items: (v.detalles || []).map(d => ({
+            nombre_producto: d.nombreProducto,
+            cantidad:        d.cantidad,
+            precio_unitario: d.precioUnitario,
+            subtotal:        d.subtotal,
+          })),
+        }));
+        try {
+          const ventasRes = await withRefresh(t =>
+            _request('POST', `${apiUrl}/api/sync/push-ventas`, t, { ventas: ventasPayload })
+          );
+          for (const r of (ventasRes.results || [])) {
+            if (!r.error && r.server_id && r.local_id) {
+              await Venta.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+            }
+          }
+          pushed += ventasRes.processed || 0;
+        } catch (e) {
+          console.error('[FullSync] Error subiendo ventas:', e.message);
+        }
       }
 
       // Pull: traer TODO de la nube (full=true)
