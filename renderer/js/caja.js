@@ -287,9 +287,7 @@ document.addEventListener("app-ready", () => {
     }
     if (CajaState.arqueoActual) {
       abrirCajaBtn?.classList.add("oculto");
-      cerrarCajaBtn?.classList.remove("oculto");
-      movimientoBtn?.classList.remove("oculto");
-      informeXBtn?.classList.remove("oculto");
+      // Los botones reales permanecen ocultos — la UI los expone solo desde el overlay de gestión
       sidebarGestionLi?.classList.remove("oculto");
       desbloquearUI();
     } else {
