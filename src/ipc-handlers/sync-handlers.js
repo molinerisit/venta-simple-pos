@@ -297,14 +297,18 @@ function registerSyncHandlers(models) {
       const proveedorIds = new Set(proveedores.map(pv => pv.id));
       const clienteIds = new Set(clientes.map(c => c.id));
 
+      console.log(`[Sync] Lote: ${batch.length} items (productos=${productos.length}, proveedores=${proveedores.length}, clientes=${clientes.length})`);
+
       let pushResults = { results: [], processed: 0 };
       if (batch.length > 0) {
         pushResults = await withRefresh(t => _request('POST', `${apiUrl}/api/sync/push`, t, { batch }));
 
+        let pushErrors = 0;
         // Guardar server_ids devueltos por la nube
         for (const result of pushResults.results || []) {
           if (result.error) {
-            console.warn('[Sync] Push error:', result.local_id, result.error);
+            pushErrors++;
+            console.warn('[Sync] Error en item:', result.local_id, '→', result.error);
             continue;
           }
           if (!result.server_id || !result.local_id) continue;
@@ -316,6 +320,11 @@ function registerSyncHandlers(models) {
             await Cliente.update({ cloud_id: result.server_id }, { where: { id: result.local_id } });
           }
         }
+        if (pushErrors > 0) {
+          console.error(`[Sync] ${pushErrors} de ${batch.length} items fallaron al subir a la nube.`);
+        }
+      } else {
+        console.log('[Sync] Lote vacío — no hay items pendientes de push.');
       }
 
       // ── 1b. PUSH ventas sin cloud_id ───────────────────────────────────────
@@ -511,36 +520,32 @@ function registerSyncHandlers(models) {
         }
       };
 
-      // Push: enviar TODOS los registros sin filtro de fecha
+      // Push: enviar TODOS los registros sin filtro de fecha.
+      // Resetear cloud_id localmente primero para garantizar que todo va como INSERT,
+      // así el backend usa la idempotencia por local_id y restaura cualquier producto
+      // soft-deleted o con cloud_id desincronizado.
       const plan = lic.plan || 'FREE';
+      await Producto.update({ cloud_id: null }, { where: {} });
+      if (plan !== 'FREE') {
+        await Proveedor.update({ cloud_id: null }, { where: {} });
+        await Cliente.update({ cloud_id: null }, { where: {} });
+      }
+
       const allProductos   = await Producto.findAll({ raw: true });
       const allProveedores = plan !== 'FREE' ? await Proveedor.findAll({ raw: true }) : [];
       const allClientes    = plan !== 'FREE' ? await Cliente.findAll({ raw: true }) : [];
 
+      console.log(`[FullSync] Iniciando: ${allProductos.length} productos, ${allProveedores.length} proveedores, ${allClientes.length} clientes`);
+
       const batch = [];
       for (const p of allProductos) {
-        const datos = mapProductoToCloud(p);
-        if (p.cloud_id) {
-          batch.push({ tabla: 'productos', operacion: 'UPDATE', server_id: p.cloud_id, local_id: p.id, datos });
-        } else {
-          batch.push({ tabla: 'productos', operacion: 'INSERT', local_id: p.id, datos });
-        }
+        batch.push({ tabla: 'productos', operacion: 'INSERT', local_id: p.id, datos: mapProductoToCloud(p) });
       }
       for (const pv of allProveedores) {
-        const datos = mapProveedorToCloud(pv);
-        if (pv.cloud_id) {
-          batch.push({ tabla: 'proveedores', operacion: 'UPDATE', server_id: pv.cloud_id, local_id: pv.id, datos });
-        } else {
-          batch.push({ tabla: 'proveedores', operacion: 'INSERT', local_id: pv.id, datos });
-        }
+        batch.push({ tabla: 'proveedores', operacion: 'INSERT', local_id: pv.id, datos: mapProveedorToCloud(pv) });
       }
       for (const c of allClientes) {
-        const datos = mapClienteToCloud(c);
-        if (c.cloud_id) {
-          batch.push({ tabla: 'clientes', operacion: 'UPDATE', server_id: c.cloud_id, local_id: c.id, datos });
-        } else {
-          batch.push({ tabla: 'clientes', operacion: 'INSERT', local_id: c.id, datos });
-        }
+        batch.push({ tabla: 'clientes', operacion: 'INSERT', local_id: c.id, datos: mapClienteToCloud(c) });
       }
 
       const allProductoIds  = new Set(allProductos.map(p => p.id));
@@ -550,8 +555,13 @@ function registerSyncHandlers(models) {
       let pushed = 0;
       if (batch.length > 0) {
         const pushRes = await withRefresh(t => _request('POST', `${apiUrl}/api/sync/push`, t, { batch }));
+        let fullSyncErrors = 0;
         for (const r of pushRes.results || []) {
-          if (r.error) { console.warn('[FullSync] Push error:', r.local_id, r.error); continue; }
+          if (r.error) {
+            fullSyncErrors++;
+            console.warn('[FullSync] Error en item:', r.local_id, '→', r.error);
+            continue;
+          }
           if (!r.server_id || !r.local_id) continue;
           if (allProductoIds.has(r.local_id)) {
             await Producto.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
@@ -561,7 +571,10 @@ function registerSyncHandlers(models) {
             await Cliente.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
           }
         }
-        pushed = pushRes.processed || batch.length;
+        if (fullSyncErrors > 0) {
+          console.error(`[FullSync] ${fullSyncErrors} de ${batch.length} items fallaron.`);
+        }
+        pushed = (pushRes.results || []).filter(r => !r.error).length;
       }
 
       // Push: ventas sin cloud_id (full sync también las incluye)
