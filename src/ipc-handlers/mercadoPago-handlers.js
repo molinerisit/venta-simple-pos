@@ -646,6 +646,8 @@ function registerMercadoPagoHandlers(models) {
 
       const body = {
         amount: amountCents,
+        description: description || "Cobro en tienda",
+        payment_mode: paymentType || "credit_card",
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,
