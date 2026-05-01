@@ -1,110 +1,214 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Transacciones de Mercado Pago</title>
-    <link rel="stylesheet" href="../css/global.css">
-    <link rel="stylesheet" href="../css/navbar.css" />
-    <link rel="stylesheet" href="../css/mp_transactions.css">
-
-    <!-- 🟢 INICIO: CORRECCIÓN DE SCROLL 🟢 -->
-    <style>
-        .table-container {
-            /*
-              Esto establece una altura máxima para el contenedor de la tabla.
-              '65vh' significa 65% de la altura de la ventana.
-              Si el contenido de la tabla (tbody) supera esta altura,
-              aparecerá una barra de scroll vertical SÓLO en este div.
-            */
-            max-height: 65vh;
-            overflow-y: auto; /* Muestra el scrollbar vertical si es necesario */
-        }
-    </style>
-    <!-- 🟢 FIN: CORRECCIÓN DE SCROLL 🟢 -->
-
+  <meta charset="UTF-8">
+  <title>Transacciones de Mercado Pago</title>
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/navbar.css">
+  <link rel="stylesheet" href="../css/mp_transactions.css">
 </head>
 <body>
-    <div class="container">
-         <aside id="sidebar-placeholder" class="sidebar"></aside>
+  <div class="container">
+    <aside id="sidebar-placeholder" class="sidebar"></aside>
 
-        <main class="main-content">
-            <header class="main-header">
-              <h1 class="page-title">Ventas</h1>
-            </header>
-            <nav class="module-tabs">
-              <a href="reportes.html" class="mod-tab">Historial</a>
-              <a href="mp_transactions.html" class="mod-tab active">Transacciones MP</a>
-            </nav>
+    <main class="main-content">
+      <header class="main-header">
+        <h1 class="page-title">Ventas</h1>
+      </header>
+      <nav class="module-tabs">
+        <a href="reportes.html" class="mod-tab">Historial</a>
+        <a href="mp_transactions.html" class="mod-tab active">Transacciones MP</a>
+      </nav>
 
-            <div class="content-body">
-            <!-- Contenedor unificado tipo "card" -->
-            <div class="card">
+      <div class="content-body">
 
-                <header>
-                    <h1>Transacciones de Mercado Pago</h1>
-                </header>
-                
-                <!-- Eliminé el h1 vacío, puedes agregarlo si era para espaciado -->
+        <!-- Page header -->
+        <div class="mp-page-header">
+          <div class="mp-page-header__titles">
+            <h2 class="mp-page-header__title">Transacciones de Mercado Pago</h2>
+            <p class="mp-page-header__subtitle">Pagos recibidos por QR, transferencia y otros medios conectados</p>
+          </div>
+          <div class="mp-page-header__status">
+            <span id="conn-badge" class="conn-badge conn-badge--unknown">
+              <svg class="conn-badge__icon" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              <span id="conn-badge-label">Verificando</span>
+            </span>
+            <button id="btn-refresh" class="btn-icon-action" title="Actualizar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+            </button>
+          </div>
+        </div>
 
-                <div class="filter-container">
-                    <form id="filter-form">
-                        <div class="form-field">
-                            <label for="range">Rango de Fechas</label>
-                            <select id="range" name="range">
-                                <option value="today">Hoy</option>
-                                <option value="last7days">Últimos 7 días</option>
-                                <option value="last30days">Últimos 30 días</option>
-                                <option value="all" selected>Siempre</option>
-                            </select>
-                        </div>
-                        <div class="form-field">
-                            <label for="status">Estado</label>
-                            <select id="status" name="status">
-                                <option value="">Todos</option>
-                                <option value="approved">Aprobado</option>
-                                <option value="pending">Pendiente</option>
-                                <!-- 🟢 INICIO: OPCIONES AÑADIDAS 🟢 -->
-                                <option value="rejected">Rechazado</option>
-                                <option value="refunded">Reembolsado</option>
-                                <!-- 🟢 FIN: OPCIONES AÑADIDAS 🟢 -->
-                            </select>
-                        </div>
-                        <div class="filter-actions">
-                            <button type="submit" class="btn-primario">Filtrar</button>
-                            <button type="button" id="btn-refresh" class="btn-secondary">🔄 Actualizar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="table-container">
-                    <table id="transactions-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Pagador</th>
-                                <th>Descripción / Referencia</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Las filas se generarán con JS -->
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Summary cards -->
+        <div class="mp-summary">
+          <div class="mp-summary-card">
+            <span class="mp-summary-card__icon mp-summary-card__icon--blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </span>
+            <div>
+              <p class="mp-summary-card__label">Total recibido hoy</p>
+              <p class="mp-summary-card__value" id="stat-total-hoy">—</p>
             </div>
-            </div><!-- /.content-body -->
-        </main>
-    </div>
+          </div>
+          <div class="mp-summary-card">
+            <span class="mp-summary-card__icon mp-summary-card__icon--green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <div>
+              <p class="mp-summary-card__label">Pagos aprobados</p>
+              <p class="mp-summary-card__value" id="stat-aprobados">—</p>
+            </div>
+          </div>
+          <div class="mp-summary-card">
+            <span class="mp-summary-card__icon mp-summary-card__icon--amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <div>
+              <p class="mp-summary-card__label">Pendientes</p>
+              <p class="mp-summary-card__value" id="stat-pendientes">—</p>
+            </div>
+          </div>
+          <div class="mp-summary-card">
+            <span class="mp-summary-card__icon mp-summary-card__icon--red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </span>
+            <div>
+              <p class="mp-summary-card__label">Rechazados</p>
+              <p class="mp-summary-card__value" id="stat-rechazados">—</p>
+            </div>
+          </div>
+          <div class="mp-summary-card">
+            <span class="mp-summary-card__icon mp-summary-card__icon--gray">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <div>
+              <p class="mp-summary-card__label">Última sincronización</p>
+              <p class="mp-summary-card__value mp-summary-card__value--sm" id="stat-ultima-sync">—</p>
+            </div>
+          </div>
+        </div>
 
-    <script src="../js/navbar-loader.js"></script>
-    <script src="../js/mp_transactions.js"></script>
-    <script>
-      document.addEventListener('app-ready', () => {
-        const link = document.querySelector('nav a[href="reportes.html"]');
-        if (link) link.setAttribute('aria-current', 'page');
-      });
-    </script>
+        <!-- Filters -->
+        <div class="mp-filters">
+          <div class="mp-filters__row">
+            <div class="mp-filter-group">
+              <span class="mp-filter-label">Período</span>
+              <div class="mp-range-tabs" id="range-tabs">
+                <button class="mp-range-tab" data-value="today">Hoy</button>
+                <button class="mp-range-tab" data-value="yesterday">Ayer</button>
+                <button class="mp-range-tab" data-value="last7days">7 días</button>
+                <button class="mp-range-tab" data-value="last30days">30 días</button>
+                <button class="mp-range-tab mp-range-tab--active" data-value="all">Siempre</button>
+              </div>
+            </div>
+            <div class="mp-filter-group">
+              <label class="mp-filter-label" for="filter-status">Estado</label>
+              <select id="filter-status" class="mp-select">
+                <option value="">Todos</option>
+                <option value="approved">Aprobados</option>
+                <option value="authorized">Autorizados</option>
+                <option value="pending">Pendientes</option>
+                <option value="in_process">En proceso</option>
+                <option value="rejected">Rechazados</option>
+                <option value="cancelled">Cancelados</option>
+                <option value="refunded">Devueltos</option>
+                <option value="charged_back">Contracargos</option>
+              </select>
+            </div>
+            <div class="mp-filter-group">
+              <label class="mp-filter-label" for="filter-medio">Medio</label>
+              <select id="filter-medio" class="mp-select">
+                <option value="">Todos</option>
+                <option value="qr">QR</option>
+                <option value="transfer">Transferencia</option>
+                <option value="card">Tarjeta</option>
+                <option value="account_money">Dinero en cuenta</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+            <div class="mp-filter-group mp-filter-group--search">
+              <label class="mp-filter-label" for="filter-search">Buscar</label>
+              <div class="mp-search-wrap">
+                <svg class="mp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="filter-search" class="mp-search-input" placeholder="Pagador, email, referencia...">
+              </div>
+            </div>
+            <div class="mp-filter-group mp-filter-group--actions">
+              <button id="btn-apply-filters" class="btn-primary">Filtrar</button>
+              <button id="btn-sync-clientes" class="btn-secondary">Importar clientes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="mp-table-card">
+          <div class="table-container">
+            <table id="transactions-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Pagador</th>
+                  <th>Medio</th>
+                  <th>Referencia</th>
+                  <th class="text-right">Monto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-body">
+                <tr><td colspan="7" class="table-empty">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /.content-body -->
+    </main>
+  </div>
+
+  <!-- Modal: Crear cliente desde MP -->
+  <div id="mp-cliente-modal" class="modal" aria-hidden="true">
+    <div class="modal-contenido" role="dialog" aria-modal="true">
+      <h2 class="modal-titulo">Crear cliente desde Mercado Pago</h2>
+      <form id="mp-cliente-form">
+        <input type="hidden" id="mp-payer-id">
+        <input type="hidden" id="mp-payment-id">
+        <div class="form-campo">
+          <label for="mp-nombre">Nombre y Apellido</label>
+          <input type="text" id="mp-nombre" required autocomplete="off">
+        </div>
+        <div class="form-campo">
+          <label for="mp-email">Email</label>
+          <input type="email" id="mp-email" autocomplete="off">
+        </div>
+        <div class="form-campo">
+          <label for="mp-telefono">Teléfono (opcional)</label>
+          <input type="text" id="mp-telefono" autocomplete="off">
+        </div>
+        <div class="form-campo">
+          <label for="mp-dni">DNI (opcional)</label>
+          <input type="text" id="mp-dni" autocomplete="off">
+        </div>
+        <div class="form-campo">
+          <label for="mp-descuento">Descuento (%)</label>
+          <input type="number" id="mp-descuento" value="0" min="0" max="100" step="0.5">
+        </div>
+      </form>
+      <div class="modal-acciones">
+        <button type="button" id="btn-cancelar-mp-modal" class="btn btn-secundario">Cancelar</button>
+        <button type="submit" id="btn-guardar-mp-cliente" class="btn btn-primario" form="mp-cliente-form">Guardar cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-notification" class="toast"></div>
+
+  <script src="../js/navbar-loader.js"></script>
   <script src="../js/ui-notifications.js"></script>
+  <script src="../js/mp_transactions.js"></script>
 </body>
 </html>

@@ -84,16 +84,24 @@
       <form id="cliente-form" class="modal-cuerpo">
         <input type="hidden" id="cliente-id" />
         <div class="form-campo">
-          <label for="dni">DNI</label>
-          <input type="text" id="dni" required />
+          <label for="nombre">Nombre y Apellido</label>
+          <input type="text" id="nombre" required autocomplete="off" />
         </div>
         <div class="form-campo">
-          <label for="nombre">Nombre y Apellido</label>
-          <input type="text" id="nombre" required />
+          <label for="dni">DNI <span style="font-weight:400;color:#94a3b8">(opcional para clientes de MP)</span></label>
+          <input type="text" id="dni" autocomplete="off" />
+        </div>
+        <div class="form-campo">
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="off" />
+        </div>
+        <div class="form-campo">
+          <label for="telefono">Teléfono</label>
+          <input type="text" id="telefono" autocomplete="off" />
         </div>
         <div class="form-campo">
           <label for="descuento">Descuento (%)</label>
-          <input type="number" id="descuento" value="0" step="0.5" />
+          <input type="number" id="descuento" value="0" step="0.5" min="0" max="100" />
         </div>
       </form>
 

@@ -11,11 +11,13 @@ document.addEventListener("app-ready", () => {
   const clienteForm = document.getElementById("cliente-form");
   const btnNuevoCliente = document.getElementById("btn-nuevo-cliente");
   const btnCancelarModal = document.getElementById("btn-cancelar-modal");
-  const inputId = document.getElementById("cliente-id");
-  const inputDni = document.getElementById("dni");
-  const inputNombre = document.getElementById("nombre");
+  const inputId       = document.getElementById("cliente-id");
+  const inputNombre   = document.getElementById("nombre");
+  const inputDni      = document.getElementById("dni");
+  const inputEmail    = document.getElementById("email");
+  const inputTelefono = document.getElementById("telefono");
   const inputDescuento = document.getElementById("descuento");
-  const btnGuardar = document.getElementById("btn-guardar-cliente");
+  const btnGuardar    = document.getElementById("btn-guardar-cliente");
   const toast = document.getElementById("toast-notification");
 
   let toastTimer;
@@ -92,19 +94,21 @@ document.addEventListener("app-ready", () => {
   const abrirModal = (cliente = null) => {
     clienteForm?.reset();
     if (cliente) {
-      modalTitulo.textContent = "Editar Cliente";
-      inputId.value = cliente.id;
-      inputDni.value = cliente.dni || "";
-      inputNombre.value = cliente.nombre || "";
-      inputDescuento.value = cliente.descuento ?? 0;
+      modalTitulo.textContent  = "Editar Cliente";
+      inputId.value            = cliente.id;
+      inputNombre.value        = cliente.nombre   || "";
+      inputDni.value           = cliente.dni      || "";
+      if (inputEmail)    inputEmail.value    = cliente.email    || "";
+      if (inputTelefono) inputTelefono.value = cliente.telefono || "";
+      inputDescuento.value     = cliente.descuento ?? 0;
     } else {
       modalTitulo.textContent = "Nuevo Cliente";
-      inputId.value = "";
-      inputDescuento.value = "0";
+      inputId.value           = "";
+      inputDescuento.value    = "0";
     }
     modal?.classList.add("visible");
     bloquearFondo(true);
-    inputDni?.focus();
+    inputNombre?.focus();
   };
 
   // --- Stat cards ---
@@ -145,16 +149,24 @@ document.addEventListener("app-ready", () => {
       }
       todosLosClientes = lista;
       actualizarStatCards(lista);
+      const ORIGEN_BADGE = {
+        mercado_pago: '<span class="badge-origen badge-origen--mp">Mercado Pago</span>',
+        importado:    '<span class="badge-origen badge-origen--imp">Importado</span>',
+        manual:       '',
+      };
+
       const rows = lista
         .map((c) => {
-          const esDeudor = parseFloat(c.deuda || 0) > 0;
+          const esDeudor    = parseFloat(c.deuda || 0) > 0;
           const estadoBadge = esDeudor
             ? '<span class="badge-estado badge-estado--deudor">Deudor</span>'
             : '<span class="badge-estado badge-estado--activo">Activo</span>';
+          const origenBadge = ORIGEN_BADGE[c.origenCliente] || '';
+          const dniStr      = c.dni || '<span style="color:#94a3b8">—</span>';
           return `
           <tr>
-            <td>${c.dni}</td>
-            <td>${c.nombre}</td>
+            <td>${dniStr}</td>
+            <td>${c.nombre}${origenBadge ? ' ' + origenBadge : ''}</td>
             <td>${c.descuento || 0}%</td>
             <td>${estadoBadge}</td>
             <td class="acciones-btn">
@@ -202,8 +214,10 @@ document.addEventListener("app-ready", () => {
     btnGuardar.disabled = true;
 
     const clienteData = {
-      dni: (inputDni.value || "").trim(),
-      nombre: (inputNombre.value || "").trim(),
+      nombre:    (inputNombre.value   || "").trim(),
+      dni:       (inputDni.value      || "").trim(),
+      email:     (inputEmail?.value   || "").trim() || null,
+      telefono:  (inputTelefono?.value || "").trim() || null,
       descuento: parseFloat(inputDescuento.value) || 0,
     };
     if (inputId.value) clienteData.id = inputId.value;

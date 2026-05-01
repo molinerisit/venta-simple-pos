@@ -442,6 +442,19 @@ fieldset legend {
 }
 #imagen-preview.imagen-preview-oculta { display: none; }
 
+/* ── Clientes: origen badges ── */
+.badge-origen {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.badge-origen--mp  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.badge-origen--imp { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
 /* 2-column card layout (producto-form.html) */
 .pf-grid {
   display: grid;
