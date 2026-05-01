@@ -132,10 +132,32 @@ function mapProveedorFromCloud(datos) {
   };
 }
 
+function mapClienteToCloud(c) {
+  return {
+    nombre: c.apellido ? `${c.nombre} ${c.apellido}`.trim() : c.nombre,
+    email: c.email || null,
+    telefono: c.telefono || null,
+    dni: c.dni || null,
+    deuda: c.deuda || 0,
+    notas: null,
+    activo: true,
+  };
+}
+
+function mapClienteFromCloud(datos) {
+  return {
+    nombre: datos.nombre,
+    email: datos.email || null,
+    telefono: datos.telefono || null,
+    dni: datos.dni || null,
+    deuda: datos.deuda || 0,
+  };
+}
+
 // ─── Handlers IPC ──────────────────────────────────────────────────────────────
 
 function registerSyncHandlers(models) {
-  const { Producto, Proveedor, Venta, DetalleVenta } = models;
+  const { Producto, Proveedor, Venta, DetalleVenta, Cliente } = models;
   const { Op } = require('sequelize');
 
   ipcMain.handle('get-sync-status', () => {
@@ -212,7 +234,12 @@ function registerSyncHandlers(models) {
       const batch = [];
 
       const productos = await Producto.findAll({
-        where: { updatedAt: { [Op.gt]: sinceDate } },
+        where: {
+          [Op.or]: [
+            { updatedAt: { [Op.gt]: sinceDate } },
+            { cloud_id: null },
+          ],
+        },
         raw: true,
       });
 
@@ -225,11 +252,17 @@ function registerSyncHandlers(models) {
         }
       }
 
-      // Proveedores solo en planes pagos
+      // Proveedores y clientes solo en planes pagos
       let proveedores = [];
+      let clientes = [];
       if (plan !== 'FREE') {
         proveedores = await Proveedor.findAll({
-          where: { updatedAt: { [Op.gt]: sinceDate } },
+          where: {
+            [Op.or]: [
+              { updatedAt: { [Op.gt]: sinceDate } },
+              { cloud_id: null },
+            ],
+          },
           raw: true,
         });
         for (const pv of proveedores) {
@@ -240,7 +273,29 @@ function registerSyncHandlers(models) {
             batch.push({ tabla: 'proveedores', operacion: 'INSERT', local_id: pv.id, datos });
           }
         }
+
+        clientes = await Cliente.findAll({
+          where: {
+            [Op.or]: [
+              { updatedAt: { [Op.gt]: sinceDate } },
+              { cloud_id: null },
+            ],
+          },
+          raw: true,
+        });
+        for (const c of clientes) {
+          const datos = mapClienteToCloud(c);
+          if (c.cloud_id) {
+            batch.push({ tabla: 'clientes', operacion: 'UPDATE', server_id: c.cloud_id, local_id: c.id, datos });
+          } else {
+            batch.push({ tabla: 'clientes', operacion: 'INSERT', local_id: c.id, datos });
+          }
+        }
       }
+
+      const productoIds = new Set(productos.map(p => p.id));
+      const proveedorIds = new Set(proveedores.map(pv => pv.id));
+      const clienteIds = new Set(clientes.map(c => c.id));
 
       let pushResults = { results: [], processed: 0 };
       if (batch.length > 0) {
@@ -248,13 +303,17 @@ function registerSyncHandlers(models) {
 
         // Guardar server_ids devueltos por la nube
         for (const result of pushResults.results || []) {
-          if (!result.error && result.server_id && result.local_id) {
-            const isProd = productos.some(p => p.id === result.local_id);
-            if (isProd) {
-              await Producto.update({ cloud_id: result.server_id }, { where: { id: result.local_id } });
-            } else {
-              await Proveedor.update({ cloud_id: result.server_id }, { where: { id: result.local_id } });
-            }
+          if (result.error) {
+            console.warn('[Sync] Push error:', result.local_id, result.error);
+            continue;
+          }
+          if (!result.server_id || !result.local_id) continue;
+          if (productoIds.has(result.local_id)) {
+            await Producto.update({ cloud_id: result.server_id }, { where: { id: result.local_id } });
+          } else if (proveedorIds.has(result.local_id)) {
+            await Proveedor.update({ cloud_id: result.server_id }, { where: { id: result.local_id } });
+          } else if (clienteIds.has(result.local_id)) {
+            await Cliente.update({ cloud_id: result.server_id }, { where: { id: result.local_id } });
           }
         }
       }
@@ -360,6 +419,26 @@ function registerSyncHandlers(models) {
                 }
               }
             }
+          } else if (tabla === 'clientes' && plan !== 'FREE') {
+            if (operacion === 'DELETE') {
+              if (registro_id) await Cliente.destroy({ where: { cloud_id: registro_id } });
+            } else if (operacion === 'UPDATE' && registro_id) {
+              const mapped = mapClienteFromCloud(datos);
+              await Cliente.update(mapped, { where: { cloud_id: registro_id } });
+            } else if (operacion === 'INSERT') {
+              const exists = registro_id
+                ? await Cliente.findOne({ where: { cloud_id: registro_id } })
+                : null;
+              if (!exists) {
+                const mapped = mapClienteFromCloud(datos);
+                const byDni = mapped.dni ? await Cliente.findOne({ where: { dni: mapped.dni } }) : null;
+                if (byDni) {
+                  await Cliente.update({ ...mapped, cloud_id: registro_id }, { where: { id: byDni.id } });
+                } else {
+                  await Cliente.create({ ...mapped, cloud_id: registro_id });
+                }
+              }
+            }
           }
           pulled++;
         } catch (changeErr) {
@@ -432,11 +511,11 @@ function registerSyncHandlers(models) {
         }
       };
 
-      // Push: enviar TODOS los productos sin filtro de fecha
-      const allProductos = await Producto.findAll({ raw: true });
-      const allProveedores = (lic.plan || 'FREE') !== 'FREE'
-        ? await Proveedor.findAll({ raw: true })
-        : [];
+      // Push: enviar TODOS los registros sin filtro de fecha
+      const plan = lic.plan || 'FREE';
+      const allProductos   = await Producto.findAll({ raw: true });
+      const allProveedores = plan !== 'FREE' ? await Proveedor.findAll({ raw: true }) : [];
+      const allClientes    = plan !== 'FREE' ? await Cliente.findAll({ raw: true }) : [];
 
       const batch = [];
       for (const p of allProductos) {
@@ -455,15 +534,31 @@ function registerSyncHandlers(models) {
           batch.push({ tabla: 'proveedores', operacion: 'INSERT', local_id: pv.id, datos });
         }
       }
+      for (const c of allClientes) {
+        const datos = mapClienteToCloud(c);
+        if (c.cloud_id) {
+          batch.push({ tabla: 'clientes', operacion: 'UPDATE', server_id: c.cloud_id, local_id: c.id, datos });
+        } else {
+          batch.push({ tabla: 'clientes', operacion: 'INSERT', local_id: c.id, datos });
+        }
+      }
+
+      const allProductoIds  = new Set(allProductos.map(p => p.id));
+      const allProveedorIds = new Set(allProveedores.map(pv => pv.id));
+      const allClienteIds   = new Set(allClientes.map(c => c.id));
 
       let pushed = 0;
       if (batch.length > 0) {
         const pushRes = await withRefresh(t => _request('POST', `${apiUrl}/api/sync/push`, t, { batch }));
         for (const r of pushRes.results || []) {
-          if (!r.error && r.server_id && r.local_id) {
-            const isProd = allProductos.some(p => p.id === r.local_id);
-            if (isProd) await Producto.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
-            else        await Proveedor.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+          if (r.error) { console.warn('[FullSync] Push error:', r.local_id, r.error); continue; }
+          if (!r.server_id || !r.local_id) continue;
+          if (allProductoIds.has(r.local_id)) {
+            await Producto.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+          } else if (allProveedorIds.has(r.local_id)) {
+            await Proveedor.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
+          } else if (allClienteIds.has(r.local_id)) {
+            await Cliente.update({ cloud_id: r.server_id }, { where: { id: r.local_id } });
           }
         }
         pushed = pushRes.processed || batch.length;
@@ -542,6 +637,19 @@ function registerSyncHandlers(models) {
               }
             } else {
               await Proveedor.update({ ...mapProveedorFromCloud(datos), cloud_id: registro_id }, { where: { cloud_id: registro_id } });
+            }
+          } else if (tabla === 'clientes' && plan !== 'FREE') {
+            const exists = registro_id ? await Cliente.findOne({ where: { cloud_id: registro_id } }) : null;
+            if (!exists) {
+              const mapped = mapClienteFromCloud(datos);
+              const byDni = mapped.dni ? await Cliente.findOne({ where: { dni: mapped.dni } }) : null;
+              if (byDni) {
+                await Cliente.update({ ...mapped, cloud_id: registro_id }, { where: { id: byDni.id } });
+              } else {
+                await Cliente.create({ ...mapped, cloud_id: registro_id });
+              }
+            } else {
+              await Cliente.update({ ...mapClienteFromCloud(datos), cloud_id: registro_id }, { where: { cloud_id: registro_id } });
             }
           }
           pulled++;
