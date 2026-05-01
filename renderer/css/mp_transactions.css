@@ -702,4 +702,108 @@
 
 .table-empty--error { color: var(--danger-color); }
 
+/* ── Row link indicator dots ──────────────────────────────────────────── */
+.tx-link-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.tx-link-dot--linked   { background: var(--success-color, #22c55e); }
+.tx-link-dot--partial  { background: var(--warning-color, #f59e0b); }
+.tx-link-dot--none     { background: var(--border-color, #d1d5db); }
+
+/* ── Detail modal — new rows ─────────────────────────────────────────── */
+.tx-detail-venta-section {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.tx-detail-venta-section:empty { display: none; }
+
+.venta-link-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-secondary, #f9fafb);
+  font-size: var(--text-sm, 13px);
+}
+.venta-link-status--linked   { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.venta-link-status--pending  { background: #fffbeb; border: 1px solid #fde68a; }
+.venta-link-status--none     { color: var(--text-muted, #9ca3af); font-style: italic; }
+
+.venta-link-icon { font-size: 16px; line-height: 1; margin-top: 1px; }
+.venta-link-info { flex: 1; }
+.venta-link-title { font-weight: 600; color: var(--text-primary, #111827); margin-bottom: 2px; }
+.venta-link-meta  { color: var(--text-secondary, #6b7280); font-size: 12px; }
+
+/* Candidate match cards */
+.venta-candidates { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.venta-candidate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-primary, #fff);
+  cursor: default;
+}
+.venta-candidate:hover { border-color: var(--primary-color, #3b82f6); }
+.venta-candidate__score {
+  min-width: 34px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-primary, #111827);
+}
+.venta-candidate__score--high { background: #dcfce7; color: #166534; }
+.venta-candidate__score--mid  { background: #fef9c3; color: #854d0e; }
+.venta-candidate__info { flex: 1; font-size: 12px; }
+.venta-candidate__total { font-weight: 600; font-size: 13px; }
+.venta-candidate__meta  { color: var(--text-secondary, #6b7280); margin-top: 1px; }
+.venta-candidate__btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--primary-color, #3b82f6);
+  background: transparent;
+  color: var(--primary-color, #3b82f6);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.venta-candidate__btn:hover { background: var(--primary-color, #3b82f6); color: #fff; }
+
+/* Detail action bar */
+.tx-detail-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s;
+}
+.btn-sm:hover { opacity: 0.85; }
+.btn-ghost  { border-color: var(--border-color, #d1d5db); background: transparent; color: var(--text-secondary, #6b7280); }
+.btn-ghost:hover { color: var(--text-primary, #111827); border-color: var(--text-secondary); }
+.btn-secondary-sm { border-color: var(--primary-color, #3b82f6); background: transparent; color: var(--primary-color, #3b82f6); }
+.btn-secondary-sm:hover { background: var(--primary-color, #3b82f6); color: #fff; }
+.btn-danger { border-color: var(--error-color, #ef4444); background: transparent; color: var(--error-color, #ef4444); }
+.btn-danger:hover { background: var(--error-color, #ef4444); color: #fff; }
+
 } /* fin @layer page */

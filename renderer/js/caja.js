@@ -2047,7 +2047,7 @@ if (event.key === "Enter") {
           const state = (statusResult.data?.state || "").toUpperCase();
           const paymentStatus = (statusResult.data?.payment?.status || "").toLowerCase();
 
-          if (state === "FINISHED" && paymentStatus === "approved") {
+          if ((state === "FINISHED" || state === "PROCESSED") && paymentStatus === "approved") {
             cerrarPosnetModal(true);
             CajaState.metodoPagoSeleccionado = metodo;
             paymentButtons.forEach((b) => b.classList.remove("active"));

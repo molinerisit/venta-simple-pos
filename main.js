@@ -448,6 +448,7 @@ app.on("ready", async () => {
       { name: "proveedores-handlers", needsSequelize: true },
 
       { name: "ventas-handlers", needsSequelize: true },
+      { name: "ventas-mp-handlers", needsSequelize: true },
 
       { name: "lotes-handlers", needsSequelize: false },
 

@@ -117,6 +117,8 @@ document.addEventListener('app-ready', () => {
 
   let allTransactions    = [];
   let knownPayers        = { byPayerId: {}, byEmail: {} };
+  let linkedPayments     = {};   // { [mpPaymentId]: { ventaId, confidence, clienteId } }
+  let currentTx          = null; // transaction currently shown in detail modal
   let activeRange        = 'all';
   let activeDropdown     = null;
   let autoCreateClientes = localStorage.getItem('mp_auto_create') !== 'false';
@@ -181,6 +183,14 @@ document.addEventListener('app-ready', () => {
     try {
       const result = await window.electronAPI.invoke('get-mp-known-payers');
       if (result) knownPayers = result;
+    } catch (_) {}
+  };
+
+  // ── Linked payments lookup ────────────────────────────────────────────────────
+  const loadLinkedPayments = async () => {
+    try {
+      const result = await window.electronAPI.invoke('get-linked-mp-payments');
+      if (result) linkedPayments = result;
     } catch (_) {}
   };
 
@@ -260,6 +270,7 @@ document.addEventListener('app-ready', () => {
       allTransactions = result.data || [];
       updateSummary(allTransactions);
       await loadKnownPayers();
+      await loadLinkedPayments();
       await autoSyncIfEnabled();
       renderTable(applyClientFilters(allTransactions));
     } catch (_) {
@@ -289,11 +300,26 @@ document.addEventListener('app-ready', () => {
       const ref    = cleanPaymentReference(tx.description);
       const amount = (tx.transaction_amount ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
-      const payerIdStr = String(tx.payer?.id || '');
-      const emailLower = (payer.email || '').toLowerCase();
-      const clienteId  = (payerIdStr && knownPayers.byPayerId[payerIdStr])
-                      || (emailLower && knownPayers.byEmail[emailLower])
-                      || null;
+      const payerIdStr   = String(tx.payer?.id || '');
+      const emailLower   = (payer.email || '').toLowerCase();
+      const clienteId    = (payerIdStr && knownPayers.byPayerId[payerIdStr])
+                        || (emailLower && knownPayers.byEmail[emailLower])
+                        || null;
+      const paymentIdStr = String(tx.id || '');
+      const linked       = linkedPayments[paymentIdStr];
+
+      // Row link indicator
+      let dotClass, dotTitle;
+      if (linked && linked.clienteId) {
+        dotClass = 'tx-link-dot--linked';
+        dotTitle  = 'Cliente y venta vinculada';
+      } else if (clienteId) {
+        dotClass = 'tx-link-dot--partial';
+        dotTitle  = 'Cliente vinculado, venta pendiente';
+      } else {
+        dotClass = 'tx-link-dot--none';
+        dotTitle  = 'Sin datos suficientes';
+      }
 
       // Payer cell
       let payerHtml;
@@ -316,7 +342,7 @@ document.addEventListener('app-ready', () => {
       if (clienteId) {
         menuItems.push(`<button class="tx-menu-item" data-action="ver-cliente" data-cliente-id="${escapeAttr(clienteId)}">Ver cliente</button>`);
       } else if (payer.confidence !== 'low') {
-        menuItems.push(`<button class="tx-menu-item" data-action="vincular-cliente" data-payer-id="${escapeAttr(payerIdStr)}" data-payment-id="${escapeAttr(String(tx.id || ''))}" data-name="${escapeAttr(payer.displayName)}" data-email="${escapeAttr(payer.email || '')}">Vincular cliente</button>`);
+        menuItems.push(`<button class="tx-menu-item" data-action="vincular-cliente" data-payer-id="${escapeAttr(payerIdStr)}" data-payment-id="${escapeAttr(paymentIdStr)}" data-name="${escapeAttr(payer.displayName)}" data-email="${escapeAttr(payer.email || '')}">Vincular cliente</button>`);
       }
       if (payer.email) {
         menuItems.push(`<button class="tx-menu-item" data-action="copiar-email" data-email="${escapeAttr(payer.email)}">Copiar email</button>`);
@@ -332,7 +358,7 @@ document.addEventListener('app-ready', () => {
         : `<span class="tx-no-actions">—</span>`;
 
       return `
-        <tr class="tx-row" data-tx-id="${escapeAttr(String(tx.id || ''))}">
+        <tr class="tx-row" data-tx-id="${escapeAttr(paymentIdStr)}">
           <td>
             <div class="tx-date">${dateStr}</div>
             <div class="tx-date-time">${timeStr}</div>
@@ -342,7 +368,10 @@ document.addEventListener('app-ready', () => {
           <td><span class="tx-ref" title="${escapeAttr(ref)}">${escapeHtml(ref)}</span></td>
           <td class="text-right"><span class="tx-amount">${amount}</span></td>
           <td>${renderStatusBadge(tx.status)}</td>
-          <td>${actionsHtml}</td>
+          <td style="white-space:nowrap;">
+            <span class="tx-link-dot ${dotClass}" title="${escapeAttr(dotTitle)}"></span>
+            ${actionsHtml}
+          </td>
         </tr>
       `;
     }).join('');
@@ -413,8 +442,9 @@ document.addEventListener('app-ready', () => {
   });
 
   // ── Transaction detail modal ──────────────────────────────────────────────────
-  const openDetailModal = (tx) => {
+  const openDetailModal = async (tx) => {
     if (!detailModal) return;
+    currentTx = tx;
 
     const payer  = normalizePayer(tx);
     const method = normalizePaymentMethod(tx);
@@ -442,6 +472,35 @@ document.addEventListener('app-ready', () => {
     setTxt('detail-ref', ref);
     setTxt('detail-email', payer.email || '—');
     setTxt('detail-payment-id', String(tx.id || '—'));
+
+    // Approval date
+    const dateApproved = tx.date_approved ? new Date(tx.date_approved) : null;
+    if (dateApproved) {
+      setTxt('detail-date-approved', dateApproved.toLocaleString('es-AR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      }));
+      show('detail-row-date-approved', true);
+    } else {
+      show('detail-row-date-approved', false);
+    }
+
+    // Net received amount
+    const netAmount = tx.net_received_amount ?? null;
+    if (netAmount != null) {
+      setTxt('detail-net-amount', netAmount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }));
+      show('detail-row-net-amount', true);
+    } else {
+      show('detail-row-net-amount', false);
+    }
+
+    // Banco / emisor
+    const banco = tx.card?.issuer?.name || null;
+    if (banco) {
+      setTxt('detail-banco', banco);
+      show('detail-row-banco', true);
+    } else {
+      show('detail-row-banco', false);
+    }
 
     // Client status
     let clientHtml;
@@ -491,15 +550,229 @@ document.addEventListener('app-ready', () => {
       show('detail-row-identification', false);
     }
 
+    // Venta section
+    const linked = linkedPayments[String(tx.id || '')];
+    renderVentaSection(tx, linked);
+
+    // Action buttons visibility
+    show('detail-btn-ver-cliente',    !!clienteId);
+    show('detail-btn-vincular-venta', !linked);
+    show('detail-btn-desvincular',    !!linked);
+
     detailModal.classList.add('visible');
   };
 
-  const closeDetailModal = () => detailModal?.classList.remove('visible');
+  // ── Render venta section (static state) ──────────────────────────────────────
+  const renderVentaSection = (_tx, linked) => {
+    const el = document.getElementById('detail-venta-section');
+    if (!el) return;
+
+    if (!linked) {
+      el.innerHTML = `<div class="venta-link-status venta-link-status--none">
+        <span class="venta-link-icon">○</span>
+        <div class="venta-link-info">
+          <div class="venta-link-title">Sin venta vinculada</div>
+          <div class="venta-link-meta">Usá "Vincular venta" para asociar este pago a una venta local.</div>
+        </div>
+      </div>`;
+      return;
+    }
+
+    const confLabel  = linked.confidence != null ? `${linked.confidence}% de confianza` : '';
+    const confClass  = (linked.confidence ?? 0) >= 80 ? 'venta-link-status--linked' : 'venta-link-status--pending';
+    el.innerHTML = `<div class="venta-link-status ${confClass}">
+      <span class="venta-link-icon">✓</span>
+      <div class="venta-link-info">
+        <div class="venta-link-title">Venta vinculada</div>
+        <div class="venta-link-meta">ID ${escapeHtml(String(linked.ventaId))}${confLabel ? ` · ${confLabel}` : ''}</div>
+      </div>
+    </div>`;
+  };
+
+  // ── Render venta candidates (matching panel) ──────────────────────────────────
+  const renderVentaCandidates = (_tx, matchResult) => {
+    const el = document.getElementById('detail-venta-section');
+    if (!el) return;
+
+    const { candidates = [] } = matchResult;
+    const autoLink = matchResult.autoLink || null;
+
+    if (!candidates.length) {
+      el.innerHTML = `<div class="venta-link-status venta-link-status--none">
+        <span class="venta-link-icon">○</span>
+        <div class="venta-link-info">
+          <div class="venta-link-title">Sin ventas coincidentes</div>
+          <div class="venta-link-meta">No se encontraron ventas locales con monto y horario cercanos.</div>
+        </div>
+      </div>`;
+      return;
+    }
+
+    const fmtCurrency = v => (v || 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+    const fmtDate     = v => v ? new Date(v).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    const autoNote = autoLink
+      ? `<div style="font-size:11px;color:var(--success-color,#22c55e);font-weight:600;margin-bottom:6px;">⚡ Coincidencia automática sugerida (score ${autoLink.score})</div>`
+      : '';
+
+    const candidatesHtml = candidates.map(c => {
+      const scoreClass = c.score >= 80 ? 'venta-candidate__score--high' : 'venta-candidate__score--mid';
+      const productos  = c.productos && c.productos.length ? c.productos.join(', ') : '—';
+      return `<div class="venta-candidate">
+        <span class="venta-candidate__score ${scoreClass}">${c.score}</span>
+        <div class="venta-candidate__info">
+          <div class="venta-candidate__total">${fmtCurrency(c.total)}</div>
+          <div class="venta-candidate__meta">${fmtDate(c.createdAt)} · ${escapeHtml(c.metodoPago || '—')} · ${escapeHtml(productos)}</div>
+        </div>
+        <button class="venta-candidate__btn"
+                data-action="link-candidate"
+                data-venta-id="${escapeAttr(String(c.ventaId))}"
+                data-score="${c.score}">Vincular</button>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="venta-candidates">
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Posibles ventas relacionadas</div>
+      ${autoNote}
+      ${candidatesHtml}
+    </div>`;
+  };
+
+  // ── Close detail modal ────────────────────────────────────────────────────────
+  const closeDetailModal = () => {
+    detailModal?.classList.remove('visible');
+    currentTx = null;
+  };
 
   btnCloseDetail?.addEventListener('click', closeDetailModal);
   detailModal?.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeDetailModal(); closeAllDropdowns(); }
+  });
+
+  // ── Detail action buttons ─────────────────────────────────────────────────────
+
+  document.getElementById('detail-btn-copiar')?.addEventListener('click', async () => {
+    if (!currentTx) return;
+    const payer  = normalizePayer(currentTx);
+    const method = normalizePaymentMethod(currentTx);
+    const amount = (currentTx.transaction_amount ?? 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+    const date   = currentTx.date_created ? new Date(currentTx.date_created).toLocaleString('es-AR') : '—';
+    const lines  = [
+      `Pago: ${amount}`,
+      `Pagador: ${payer.displayName}`,
+      payer.email ? `Email: ${payer.email}` : null,
+      `Medio: ${method.label}`,
+      `Estado: ${STATUS_CONFIG[currentTx.status]?.label || currentTx.status || '—'}`,
+      `Fecha: ${date}`,
+      `ID: ${currentTx.id || '—'}`,
+    ].filter(Boolean).join('\n');
+    try {
+      await navigator.clipboard.writeText(lines);
+      showToast('Datos copiados al portapapeles.', 'success');
+    } catch (_) {
+      showToast('No se pudo copiar.', 'error');
+    }
+  });
+
+  document.getElementById('detail-btn-ver-cliente')?.addEventListener('click', () => {
+    showToast('Abrí la sección Clientes para ver el detalle del cliente.', 'info');
+  });
+
+  document.getElementById('detail-btn-vincular-venta')?.addEventListener('click', async () => {
+    if (!currentTx) return;
+    const btn = document.getElementById('detail-btn-vincular-venta');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Buscando...';
+    try {
+      const result = await window.electronAPI.invoke('match-mp-to-venta', currentTx);
+      renderVentaCandidates(currentTx, result);
+      btn.style.display = 'none';
+    } catch (_) {
+      showToast('Error al buscar ventas relacionadas.', 'error');
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  });
+
+  document.getElementById('detail-btn-desvincular')?.addEventListener('click', async () => {
+    if (!currentTx) return;
+    const paymentIdStr = String(currentTx.id || '');
+    const linked = linkedPayments[paymentIdStr];
+    if (!linked) return;
+
+    const btn = document.getElementById('detail-btn-desvincular');
+    btn.disabled = true;
+    btn.textContent = 'Desvinculando...';
+    try {
+      const result = await window.electronAPI.invoke('unlink-venta-from-mp', linked.ventaId);
+      if (result?.success) {
+        delete linkedPayments[paymentIdStr];
+        renderVentaSection(currentTx, null);
+        const btnVincular = document.getElementById('detail-btn-vincular-venta');
+        if (btnVincular) btnVincular.style.display = '';
+        btn.style.display = 'none';
+        renderTable(applyClientFilters(allTransactions));
+        showToast('Venta desvinculada.', 'success');
+      } else {
+        showToast(result?.message || 'Error al desvincular.', 'error');
+      }
+    } catch (_) {
+      showToast('Error al desvincular la venta.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Desvincular venta';
+    }
+  });
+
+  // Delegate "Vincular" clicks inside the candidates panel
+  document.getElementById('detail-venta-section')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action="link-candidate"]');
+    if (!btn || !currentTx) return;
+
+    btn.disabled    = true;
+    btn.textContent = 'Vinculando...';
+
+    const ventaId      = btn.dataset.ventaId;
+    const score        = Number(btn.dataset.score || 0);
+    const paymentIdStr = String(currentTx.id || '');
+    const payer        = normalizePayer(currentTx);
+    const emailLower   = (payer.email || '').toLowerCase();
+    const payerIdStr   = String(currentTx.payer?.id || '');
+    const clienteId    = (payerIdStr && knownPayers.byPayerId[payerIdStr])
+                      || (emailLower && knownPayers.byEmail[emailLower])
+                      || undefined;
+
+    try {
+      const result = await window.electronAPI.invoke('link-venta-to-mp', {
+        ventaId,
+        paymentId:     paymentIdStr,
+        paymentStatus: currentTx.status,
+        paymentMethod: normalizePaymentMethod(currentTx).label,
+        confidence:    score,
+        clienteId,
+      });
+
+      if (result?.success) {
+        linkedPayments[paymentIdStr] = { ventaId, confidence: score, clienteId: clienteId || null };
+        renderVentaSection(currentTx, linkedPayments[paymentIdStr]);
+        const btnVincular   = document.getElementById('detail-btn-vincular-venta');
+        const btnDesvincular = document.getElementById('detail-btn-desvincular');
+        if (btnVincular)    btnVincular.style.display    = 'none';
+        if (btnDesvincular) btnDesvincular.style.display = '';
+        renderTable(applyClientFilters(allTransactions));
+        showToast('Venta vinculada exitosamente.', 'success');
+      } else {
+        showToast(result?.message || 'Error al vincular.', 'error');
+        btn.disabled    = false;
+        btn.textContent = 'Vincular';
+      }
+    } catch (_) {
+      showToast('Error al vincular la venta.', 'error');
+      btn.disabled    = false;
+      btn.textContent = 'Vincular';
+    }
   });
 
   // ── Manual bulk sync ──────────────────────────────────────────────────────────

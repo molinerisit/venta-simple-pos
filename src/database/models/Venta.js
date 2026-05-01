@@ -28,6 +28,13 @@ module.exports = (sequelize) => {
 
     cloud_id: { type: DataTypes.STRING(36), allowNull: true },
 
+    // Mercado Pago venta linking
+    mpPaymentId:          { type: DataTypes.STRING, allowNull: true },
+    mpTransactionStatus:  { type: DataTypes.STRING, allowNull: true },
+    mpPaymentMethod:      { type: DataTypes.STRING, allowNull: true },
+    mpMatchedAt:          { type: DataTypes.DATE,   allowNull: true },
+    mpMatchConfidence:    { type: DataTypes.FLOAT,  allowNull: true },
+
   }, {
     tableName: 'ventas',
     timestamps: true,
@@ -44,6 +51,8 @@ module.exports = (sequelize) => {
       // --- Índices de Sync Eliminados ---
       { fields: ['updatedAt'] },
       { fields: ['deletedAt'] },
+
+      { fields: ['mpPaymentId'] },
     ]
   });
 

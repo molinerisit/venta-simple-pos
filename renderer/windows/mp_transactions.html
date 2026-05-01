@@ -191,9 +191,17 @@
           <span class="tx-detail-label">Monto</span>
           <span class="tx-detail-value tx-detail-amount" id="detail-amount">—</span>
         </div>
+        <div class="tx-detail-row" id="detail-row-net-amount">
+          <span class="tx-detail-label">Neto recibido</span>
+          <span class="tx-detail-value tx-detail-value--muted" id="detail-net-amount">—</span>
+        </div>
         <div class="tx-detail-row">
-          <span class="tx-detail-label">Fecha</span>
+          <span class="tx-detail-label">Fecha creación</span>
           <span class="tx-detail-value" id="detail-date">—</span>
+        </div>
+        <div class="tx-detail-row" id="detail-row-date-approved">
+          <span class="tx-detail-label">Fecha aprobación</span>
+          <span class="tx-detail-value" id="detail-date-approved">—</span>
         </div>
         <div class="tx-detail-row">
           <span class="tx-detail-label">Medio de pago</span>
@@ -202,6 +210,10 @@
         <div class="tx-detail-row">
           <span class="tx-detail-label">Referencia</span>
           <span class="tx-detail-value" id="detail-ref">—</span>
+        </div>
+        <div class="tx-detail-row" id="detail-row-banco" style="display:none">
+          <span class="tx-detail-label">Banco / Emisor</span>
+          <span class="tx-detail-value" id="detail-banco">—</span>
         </div>
         <div class="tx-detail-row" id="detail-row-installments">
           <span class="tx-detail-label">Cuotas</span>
@@ -231,6 +243,14 @@
         <div class="tx-detail-row">
           <span class="tx-detail-label">ID de pago</span>
           <span class="tx-detail-value tx-detail-id" id="detail-payment-id">—</span>
+        </div>
+        <div class="tx-detail-divider"></div>
+        <div class="tx-detail-venta-section" id="detail-venta-section"></div>
+        <div class="tx-detail-actions-bar" id="detail-actions-bar">
+          <button id="detail-btn-copiar" class="btn-sm btn-ghost">Copiar datos</button>
+          <button id="detail-btn-ver-cliente" class="btn-sm btn-ghost" style="display:none">Ver cliente</button>
+          <button id="detail-btn-vincular-venta" class="btn-sm btn-secondary" style="display:none">Vincular venta</button>
+          <button id="detail-btn-desvincular" class="btn-sm btn-danger" style="display:none">Desvincular venta</button>
         </div>
       </div>
     </div>
