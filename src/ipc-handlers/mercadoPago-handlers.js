@@ -651,9 +651,6 @@ function registerMercadoPagoHandlers(models) {
           print_on_terminal: true,
         },
       };
-      if (paymentType) {
-        body.payment = { type: paymentType };
-      }
 
       return await doFetch(
         `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,
