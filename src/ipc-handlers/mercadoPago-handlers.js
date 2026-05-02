@@ -669,6 +669,15 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
+      // Activar modo PDV antes de crear el intent.
+      // Si el terminal está en modo standalone muestra su menú propio
+      // y nunca procesa los intents de la API.
+      await doFetch(`${POINT_BASE}/devices/${encodeURIComponent(deviceId)}`, {
+        method: "PATCH",
+        headers: authHeaders(accessToken),
+        body: JSON.stringify({ operating_mode: "PDV" }),
+      });
+
       // Point Integration API: solo acepta amount y payment_mode en el body.
       // "payment", "description", "additional_info" son rechazados con 400.
       // El terminal determina crédito/débito cuando el cliente inserta la tarjeta.
@@ -713,6 +722,24 @@ function registerMercadoPagoHandlers(models) {
 
       return await doFetch(
         `${POINT_BASE}/payment-intents/${encodeURIComponent(intentId)}`,
+        { headers: authHeaders(accessToken, { "Content-Type": undefined }) }
+      );
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  // Consulta directa de un pago por su ID (fallback cuando el intent no incluye payment.status aún)
+  ipcMain.handle("mp:get-payment", async (_evt, { paymentId }) => {
+    try {
+      if (!paymentId) return { ok: false, error: "paymentId requerido" };
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+
+      return await doFetch(
+        `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
         { headers: authHeaders(accessToken, { "Content-Type": undefined }) }
       );
     } catch (e) {

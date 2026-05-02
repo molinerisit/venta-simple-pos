@@ -2045,7 +2045,17 @@ if (event.key === "Enter") {
             return;
           }
           const state = (statusResult.data?.state || "").toUpperCase();
-          const paymentStatus = (statusResult.data?.payment?.status || "").toLowerCase();
+          let paymentStatus = (statusResult.data?.payment?.status || "").toLowerCase();
+          let mpPaymentId = statusResult.data?.payment?.id || null;
+
+          // Cuando el intent está FINISHED pero payment.status no llegó aún,
+          // consultar el pago directamente para confirmar la aprobación.
+          if ((state === "FINISHED" || state === "PROCESSED") && !paymentStatus && mpPaymentId) {
+            const payRes = await window.electronAPI.invoke("mp:get-payment", { paymentId: mpPaymentId });
+            if (payRes?.ok) {
+              paymentStatus = (payRes.data?.status || "").toLowerCase();
+            }
+          }
 
           if ((state === "FINISHED" || state === "PROCESSED") && paymentStatus === "approved") {
             cerrarPosnetModal(true);
@@ -2053,8 +2063,11 @@ if (event.key === "Enter") {
             paymentButtons.forEach((b) => b.classList.remove("active"));
             document.querySelector(`[data-metodo="${metodo}"]`)?.classList.add("active");
             CajaState.ultimaExternalReference = externalReference;
-            CajaState.ultimoMPPaymentId = statusResult.data?.payment?.id || null;
+            CajaState.ultimoMPPaymentId = mpPaymentId;
             setTimeout(() => btnRegistrarVenta?.click(), 300);
+          } else if ((state === "FINISHED" || state === "PROCESSED") && ["rejected", "cancelled"].includes(paymentStatus)) {
+            cerrarPosnetModal(false);
+            showErrorModal(`El pago fue rechazado por la red (${paymentStatus}).`);
           } else if (["CANCELED", "ERROR", "ABANDONED"].includes(state)) {
             cerrarPosnetModal(false);
             showErrorModal(`El cobro fue cancelado o falló (estado: ${state}).`);
