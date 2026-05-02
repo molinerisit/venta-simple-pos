@@ -57,18 +57,22 @@ function registerMercadoPagoHandlers(models) {
   async function resolveActiveMpContext(models) {
     const admin = await Usuario.findOne({
       where: { rol: "administrador" },
-      attributes: ["mp_access_token", "mp_user_id", "mp_pos_id"],
+      attributes: ["mp_access_token", "mp_user_id", "mp_pos_id", "mp_payment_config"],
       raw: true,
     });
     if (!admin) {
       return { ok: false, error: "No se encontró un usuario administrador." };
     }
+    const cfg = typeof admin.mp_payment_config === "string"
+      ? JSON.parse(admin.mp_payment_config)
+      : (admin.mp_payment_config || {});
     return {
       ok: true,
       ctx: {
         accessToken: admin.mp_access_token || null,
         userId: admin.mp_user_id || null,
         posId: admin.mp_pos_id || null,
+        storeId: cfg.store_id || null,
       },
     };
   }
@@ -260,7 +264,7 @@ function registerMercadoPagoHandlers(models) {
       const res = await resolveActiveMpContext(models);
       if (!res.ok) return { ok: false, error: res.error };
 
-      const { accessToken, userId, posId } = res.ctx;
+      const { accessToken, userId, posId, storeId } = res.ctx;
 
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
       if (!userId)      return { ok: false, error: "Falta mp_user_id en la configuración del administrador." };
@@ -271,7 +275,10 @@ function registerMercadoPagoHandlers(models) {
         return { ok: false, error: `Monto inválido: ${total_amount}. Debe ser un número mayor a 0.` };
       }
 
-      const url = `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${encodeURIComponent(userId)}/pos/${encodeURIComponent(posId)}/qrs`;
+      // Endpoint nuevo (con store) cuando está disponible; fallback al endpoint legacy sin store
+      const url = storeId
+        ? `https://api.mercadopago.com/instore/qr/seller/collectors/${encodeURIComponent(userId)}/stores/${encodeURIComponent(storeId)}/pos/${encodeURIComponent(posId)}/orders`
+        : `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${encodeURIComponent(userId)}/pos/${encodeURIComponent(posId)}/qrs`;
 
       const processedItems = (items || []).map(item => ({
         title: item.title || "Producto",
@@ -292,7 +299,7 @@ function registerMercadoPagoHandlers(models) {
       };
 
       const httpMethod = method === "PUT" ? "PUT" : "POST";
-      console.log(`[create-mp-order] ${httpMethod} → pos=${posId} user=${userId} amount=${numericAmount}`);
+      console.log(`[create-mp-order] ${httpMethod} → user=${userId} store=${storeId || "legacy"} pos=${posId} amount=${numericAmount}`);
 
       const apiResponse = await doFetch(url, {
         method: httpMethod,
@@ -554,9 +561,10 @@ function registerMercadoPagoHandlers(models) {
         credit_mode:    cfg.credit_mode    || "posnet",
         point_device_id: cfg.point_device_id || null,
         pos_id:          cfg.pos_id || admin?.mp_pos_id || null,
+        store_id:        cfg.store_id || null,
       };
     } catch (e) {
-      return { qr_mode: "dinamico", debit_mode: "posnet", credit_mode: "posnet", point_device_id: null, pos_id: null };
+      return { qr_mode: "dinamico", debit_mode: "posnet", credit_mode: "posnet", point_device_id: null, pos_id: null, store_id: null };
     }
   });
 
@@ -568,6 +576,7 @@ function registerMercadoPagoHandlers(models) {
         credit_mode:    ["posnet", "none"].includes(data?.credit_mode)            ? data.credit_mode : "posnet",
         point_device_id: data?.point_device_id || null,
         pos_id:          data?.pos_id || null,
+        store_id:        data?.store_id || null,
       };
       await Usuario.update(
         { mp_payment_config: cfg },
@@ -599,6 +608,14 @@ function registerMercadoPagoHandlers(models) {
                 { where: { id: admin.id } }
               );
               posAutoSaved = firstPos.external_id;
+              // Guardar external_store_id si está disponible (necesario para endpoint QR v2)
+              if (firstPos.external_store_id && !cfg.store_id) {
+                cfg.store_id = firstPos.external_store_id;
+                await Usuario.update(
+                  { mp_payment_config: cfg },
+                  { where: { id: admin.id } }
+                );
+              }
             }
           }
         }
@@ -650,12 +667,16 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
-      // Point Integration API solo acepta "card" (insertar/acercar tarjeta) o "qr" (QR en terminal).
-      // "credit_card" / "debit_card" son tipos de tarjeta, no modos — el terminal los detecta solo.
-      // "description" no es un campo válido en este endpoint (causa error 400).
+      // Point Integration API: payment_mode siempre "card" para terminales físicas.
+      // El tipo crédito/débito va en payment.type (no en payment_mode).
+      // "description" no está permitido en el root (causa error 400).
       const body = {
         amount: amountCents,
         payment_mode: "card",
+        payment: {
+          installments: 1,
+          type: paymentType || "credit_card",
+        },
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,
