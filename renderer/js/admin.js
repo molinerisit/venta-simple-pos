@@ -259,6 +259,35 @@
     on(btnRefreshCajas,   "click", () => refreshCajas(mpCajaSelect?.value));
     on(btnRefreshTerminals, "click", () => loadAllTerminalsForActivation());
 
+    const btnVerQrImpreso   = document.getElementById("btn-ver-qr-impreso");
+    const btnCerrarQrImpreso = document.getElementById("btn-cerrar-qr-impreso");
+    const qrImpresoModal    = document.getElementById("qr-impreso-modal");
+    const qrImpresoImg      = document.getElementById("qr-impreso-img");
+    const qrImpresoLink     = document.getElementById("qr-impreso-link");
+    const qrImpresoHint     = document.getElementById("qr-impreso-hint");
+
+    on(btnVerQrImpreso, "click", async () => {
+      if (!btnVerQrImpreso) return;
+      setBtnLoading(btnVerQrImpreso, true, "Cargando QR…");
+      if (qrImpresoModal) qrImpresoModal.style.display = "none";
+      const res = await ipcInvoke("mp:get-pos-qr").catch(e => ({ ok: false, error: e.message }));
+      setBtnLoading(btnVerQrImpreso, false, "Ver QR para imprimir");
+      if (res?.ok && res.qr_image) {
+        if (qrImpresoImg)  qrImpresoImg.src   = res.qr_image;
+        if (qrImpresoLink) { qrImpresoLink.href = res.qr_image; qrImpresoLink.textContent = `Abrir imagen (${res.pos_name || "caja"})`; }
+        if (qrImpresoModal) qrImpresoModal.style.display = "";
+        if (qrImpresoHint) qrImpresoHint.textContent = "Imprimí este QR y colocálo en el mostrador para que los clientes puedan pagar.";
+      } else {
+        const msg = res?.error || "No se pudo obtener el QR.";
+        if (qrImpresoHint) qrImpresoHint.textContent = msg;
+        toast.show(msg, "error");
+      }
+    });
+
+    on(btnCerrarQrImpreso, "click", () => {
+      if (qrImpresoModal) qrImpresoModal.style.display = "none";
+    });
+
     on(btnSaveMpPaymentConfig, "click", async () => {
       setBtnLoading(btnSaveMpPaymentConfig, true, "Guardando…");
       const result = await ipcInvoke("save-mp-payment-config", {

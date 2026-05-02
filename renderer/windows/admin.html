@@ -720,6 +720,22 @@
                   </div>
                   <small>La caja (punto de venta) de Mercado Pago asociada al QR impreso de tu local.</small>
                 </div>
+                <div class="form-campo" style="margin-top:.5rem;">
+                  <button type="button" id="btn-ver-qr-impreso" class="btn btn-secundario btn-sm">Ver QR para imprimir</button>
+                  <small id="qr-impreso-hint" style="display:block;margin-top:.3rem;color:var(--text-muted);">
+                    Abre la imagen del QR físico de tu caja para que puedas imprimirlo y colocarlo en el mostrador.
+                  </small>
+                </div>
+                <!-- Modal inline para mostrar el QR impreso -->
+                <div id="qr-impreso-modal" style="display:none;margin-top:.75rem;padding:.75rem;background:var(--bg-secondary,#f5f5f5);border-radius:8px;text-align:center;">
+                  <p style="margin:0 0 .5rem;font-size:.85rem;font-weight:600;">QR para imprimir — pegalo en el mostrador</p>
+                  <img id="qr-impreso-img" src="" alt="QR Mercado Pago" style="max-width:200px;border:1px solid #ddd;border-radius:4px;"/>
+                  <div style="margin-top:.5rem;display:flex;gap:8px;justify-content:center;">
+                    <a id="qr-impreso-link" href="" target="_blank" class="btn btn-primario btn-sm">Abrir imagen</a>
+                    <button type="button" id="btn-cerrar-qr-impreso" class="btn btn-secundario btn-sm">Cerrar</button>
+                  </div>
+                  <p style="margin:.5rem 0 0;font-size:.78rem;color:var(--text-muted);">Una vez impreso, pegalo en el mostrador. Cada vez que un cliente quiera pagar, presioná el botón QR en la caja y el cliente escanea este QR.</p>
+                </div>
               </div>
 
               <div class="form-actions" style="margin-top:.75rem;">

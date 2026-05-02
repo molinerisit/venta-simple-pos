@@ -190,6 +190,7 @@ const validInvokeChannels = [
   "mp:point-cancel-intent",
   "mp:point-intent-status",
   "mp:get-payment",
+  "mp:get-pos-qr",
 
   // Acceso remoto
   "remote-get-config",

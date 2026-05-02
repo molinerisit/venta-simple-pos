@@ -765,6 +765,34 @@ function registerMercadoPagoHandlers(models) {
     }
   });
 
+  // Devuelve la URL de la imagen QR del POS configurado (para imprimir)
+  ipcMain.handle("mp:get-pos-qr", async () => {
+    try {
+      const res = await resolveActiveMpContext(models);
+      if (!res.ok) return { ok: false, error: res.error };
+      const { accessToken, posId } = res.ctx;
+      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
+      if (!posId) return { ok: false, error: "No hay caja (POS) configurada. Guardá la configuración de cobros primero." };
+
+      const r = await doFetch(
+        `https://api.mercadopago.com/pos?limit=50&offset=0`,
+        { headers: authHeaders(accessToken, { "Content-Type": undefined }) }
+      );
+      if (!r.ok) return { ok: false, error: r.error };
+
+      const posList = r.data?.results || [];
+      const pos = posList.find(p => p.external_id === posId) || posList[0];
+      if (!pos) return { ok: false, error: "No se encontró la caja en Mercado Pago." };
+
+      const qrImage = pos.qr?.image || pos.qr?.template_image || null;
+      if (!qrImage) return { ok: false, error: "Esta caja no tiene QR generado. Creá la caja desde el panel de desarrolladores de MP con fixed_amount: true." };
+
+      return { ok: true, qr_image: qrImage, pos_name: pos.name || pos.external_id };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
   // Activa Modo PDV en un terminal para que acepte payment intents via API
   ipcMain.handle("mp:point-activate-pdv", async (_evt, { terminalId }) => {
     try {
