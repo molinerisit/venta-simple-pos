@@ -31,22 +31,65 @@ function registerClientesHandlers(models) {
 
   function normalizePayer(tx) {
     const payer = tx.payer || {};
+
+    // DNI / CUIT / CUIL — validar que tenga al menos 7 dígitos
+    const identRaw = payer.identification?.number
+      ? String(payer.identification.number).replace(/\D+/g, '').trim()
+      : null;
+    const dni = identRaw && identRaw.length >= 7 ? identRaw : null;
+
+    // Teléfono — combinar área + número
+    let telefono = null;
+    if (payer.phone) {
+      const area = String(payer.phone.area_code || '').replace(/\D+/g, '');
+      const num  = String(payer.phone.number    || '').replace(/\D+/g, '');
+      const combined = area + num;
+      if (combined.length >= 8) telefono = combined;
+    }
+
     if (payer.first_name && String(payer.first_name).trim()) {
-      const displayName = [payer.first_name, payer.last_name]
-        .filter(Boolean).map(s => String(s).trim()).join(' ');
-      return { displayName, email: payer.email || null, payerId: String(payer.id || '') };
+      const nombre   = String(payer.first_name).trim();
+      const apellido = payer.last_name ? String(payer.last_name).trim() : null;
+      return {
+        displayName: [nombre, apellido].filter(Boolean).join(' '),
+        nombre,
+        apellido,
+        email:      payer.email || null,
+        payerId:    String(payer.id || ''),
+        dni,
+        telefono,
+        confidence: 'high',
+      };
     }
     if (payer.email) {
-      const prefix = payer.email.split('@')[0];
+      const prefix  = payer.email.split('@')[0];
       const cleaned = prefix
         .replace(/[._\-]/g, ' ')
         .replace(/\s+\d+$/, '')
         .split(' ').filter(Boolean)
         .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
         .join(' ').trim();
-      return { displayName: cleaned || 'Cliente', email: payer.email, payerId: String(payer.id || '') };
+      return {
+        displayName: cleaned || 'Cliente',
+        nombre:      cleaned || 'Cliente',
+        apellido:    null,
+        email:       payer.email,
+        payerId:     String(payer.id || ''),
+        dni,
+        telefono,
+        confidence:  'medium',
+      };
     }
-    return { displayName: 'Cliente sin identificar', email: null, payerId: String(payer.id || '') };
+    return {
+      displayName: 'Cliente sin identificar',
+      nombre:      null,
+      apellido:    null,
+      email:       null,
+      payerId:     String(payer.id || ''),
+      dni:         null,
+      telefono:    null,
+      confidence:  'low',
+    };
   }
 
   // ─── List / Search ───────────────────────────────────────────────────────────
@@ -292,12 +335,18 @@ function registerClientesHandlers(models) {
           if (already) continue;
         }
 
-        const payer   = normalizePayer(tx);
-        const medio   = normalizePaymentMethod(tx);
-        const txDate  = tx.date_created ? new Date(tx.date_created) : new Date();
-        const amount  = tx.transaction_amount || 0;
+        const payer  = normalizePayer(tx);
+        const medio  = normalizePaymentMethod(tx);
+        const txDate = tx.date_created ? new Date(tx.date_created) : new Date();
+        const amount = tx.transaction_amount || 0;
 
-        // Find existing cliente
+        // No crear clientes para pagadores sin información identificable
+        if (payer.confidence === 'low') {
+          if (MpSyncLog) await MpSyncLog.upsert({ paymentId, clienteId: null, syncedAt: new Date() });
+          continue;
+        }
+
+        // Buscar cliente existente: por payerId → email → DNI
         let cliente = null;
         if (payer.payerId) {
           cliente = await Cliente.findOne({ where: { mercadoPagoPayerId: payer.payerId } });
@@ -305,35 +354,45 @@ function registerClientesHandlers(models) {
         if (!cliente && payer.email) {
           cliente = await Cliente.findOne({ where: { email: payer.email } });
         }
+        if (!cliente && payer.dni) {
+          cliente = await Cliente.findOne({ where: { dni: payer.dni } });
+        }
 
         if (cliente) {
-          // Update stats
+          // Actualizar estadísticas y enriquecer campos faltantes
           const stats = cliente.paymentStats;
           if (stats[medio] !== undefined) stats[medio] += 1;
           else stats.otro += 1;
 
           await cliente.update({
-            ultimaCompraMP:   txDate,
-            totalCompradoMP:  (cliente.totalCompradoMP || 0) + amount,
-            cantidadComprasMP:(cliente.cantidadComprasMP || 0) + 1,
-            ultimoMedioPago:  medio,
-            paymentStats:     stats,
-            estadoCliente:    computeEstadoCliente(txDate),
-            ...(payer.payerId && !cliente.mercadoPagoPayerId ? { mercadoPagoPayerId: payer.payerId } : {}),
-            ...(payer.email && !cliente.email ? { email: payer.email } : {}),
+            ultimaCompraMP:    txDate,
+            totalCompradoMP:   (cliente.totalCompradoMP || 0) + amount,
+            cantidadComprasMP: (cliente.cantidadComprasMP || 0) + 1,
+            ultimoMedioPago:   medio,
+            paymentStats:      stats,
+            estadoCliente:     computeEstadoCliente(txDate),
+            // Enriquecer campos de contacto si faltan
+            ...(payer.payerId  && !cliente.mercadoPagoPayerId ? { mercadoPagoPayerId: payer.payerId  } : {}),
+            ...(payer.email    && !cliente.email              ? { email:    payer.email    } : {}),
+            ...(payer.apellido && !cliente.apellido           ? { apellido: payer.apellido } : {}),
+            ...(payer.dni      && !cliente.dni                ? { dni:      payer.dni      } : {}),
+            ...(payer.telefono && !cliente.telefono           ? { telefono: payer.telefono } : {}),
           });
           updated++;
         } else {
-          // Create new cliente
+          // Crear nuevo cliente con todos los datos disponibles
           const newStats = { qr: 0, transferencia: 0, tarjeta: 0, dineroCuenta: 0, otro: 0 };
           if (newStats[medio] !== undefined) newStats[medio] = 1;
           else newStats.otro = 1;
 
-          const newCliente = {
-            nombre:             payer.displayName,
-            email:              payer.email,
+          const c = await Cliente.create({
+            nombre:             payer.nombre || payer.displayName,
+            apellido:           payer.apellido  || null,
+            email:              payer.email     || null,
+            dni:                payer.dni       || null,
+            telefono:           payer.telefono  || null,
             origenCliente:      'mercado_pago',
-            mercadoPagoPayerId: payer.payerId || null,
+            mercadoPagoPayerId: payer.payerId   || null,
             primeraCompraMP:    txDate,
             ultimaCompraMP:     txDate,
             totalCompradoMP:    amount,
@@ -342,20 +401,25 @@ function registerClientesHandlers(models) {
             paymentStats:       newStats,
             estadoCliente:      'activo',
             descuento:          0,
-          };
-
-          const c = await Cliente.create(newCliente);
+          });
           cliente = c;
           created++;
         }
 
-        // Record in sync log
+        // Registrar en log de idempotencia
         if (MpSyncLog && cliente) {
           await MpSyncLog.upsert({ paymentId, clienteId: cliente.id, syncedAt: new Date() });
         }
       } catch (err) {
-        console.error(`[sync-mp-to-clientes] Error en payment ${tx.id}:`, err.message);
-        errors.push({ paymentId: tx.id, error: err.message });
+        if (err.name === 'SequelizeUniqueConstraintError') {
+          // Duplicado por race condition — marcar en log para no reintentar
+          if (MpSyncLog) {
+            await MpSyncLog.upsert({ paymentId: String(tx.id), clienteId: null, syncedAt: new Date() }).catch(() => {});
+          }
+        } else {
+          console.error(`[sync-mp-to-clientes] Error en payment ${tx.id}:`, err.message);
+          errors.push({ paymentId: tx.id, error: err.message });
+        }
       }
     }
 
