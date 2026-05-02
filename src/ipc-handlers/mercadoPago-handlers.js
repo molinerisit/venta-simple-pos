@@ -654,14 +654,13 @@ function registerMercadoPagoHandlers(models) {
     }
   });
 
-  ipcMain.handle("mp:point-create-intent", async (_evt, { deviceId, amount, externalReference, description, paymentType }) => {
+  ipcMain.handle("mp:point-create-intent", async (_evt, { deviceId, amount }) => {
     try {
       if (!deviceId) return { ok: false, error: "deviceId requerido" };
       const numAmount = Number(amount);
       if (!Number.isFinite(numAmount) || numAmount <= 0) {
         return { ok: false, error: `Monto inválido: ${amount}` };
       }
-      // MP Point Integration API espera el monto en centavos (entero sin decimales)
       const amountCents = Math.round(numAmount * 100);
 
       const res = await resolveActiveMpContext(models);
@@ -669,27 +668,34 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
-      // Activar modo PDV antes de crear el intent.
-      // Si el terminal está en modo standalone muestra su menú propio
-      // y nunca procesa los intents de la API.
-      await doFetch(`${POINT_BASE}/devices/${encodeURIComponent(deviceId)}`, {
-        method: "PATCH",
-        headers: authHeaders(accessToken),
-        body: JSON.stringify({ operating_mode: "PDV" }),
-      });
+      const intentUrl = `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`;
+      const intentBody = JSON.stringify({ amount: amountCents, payment_mode: "card" });
+      const hdrs = authHeaders(accessToken);
 
-      // Point Integration API: solo acepta amount y payment_mode en el body.
-      // "payment", "description", "additional_info" son rechazados con 400.
-      // El terminal determina crédito/débito cuando el cliente inserta la tarjeta.
-      const body = {
-        amount: amountCents,
-        payment_mode: "card",
-      };
+      // 1er intento directo — si el dispositivo ya está en modo PDV funciona al instante
+      let intentRes = await doFetch(intentUrl, { method: "POST", headers: hdrs, body: intentBody });
 
-      return await doFetch(
-        `${POINT_BASE}/devices/${encodeURIComponent(deviceId)}/payment-intents`,
-        { method: "POST", headers: authHeaders(accessToken), body: JSON.stringify(body) }
-      );
+      // Si falló (posiblemente por estar en modo standalone) → activar PDV y reintentar
+      if (!intentRes.ok) {
+        await doFetch(`${POINT_BASE}/devices/${encodeURIComponent(deviceId)}`, {
+          method: "PATCH",
+          headers: authHeaders(accessToken),
+          body: JSON.stringify({ operating_mode: "PDV" }),
+        });
+        // Dar tiempo al dispositivo para sincronizar el cambio de modo con MP
+        await new Promise(r => setTimeout(r, 2500));
+        intentRes = await doFetch(intentUrl, { method: "POST", headers: hdrs, body: intentBody });
+      }
+
+      if (!intentRes.ok) {
+        return {
+          ok: false,
+          error: "El posnet no pudo recibir la orden. Asegurate de que esté en Modo PDV: Admin → MP → Activar Modo PDV, luego reiniciá el terminal y volvé a intentarlo.",
+          raw: intentRes.data,
+        };
+      }
+
+      return intentRes;
     } catch (e) {
       return { ok: false, error: e.message };
     }
