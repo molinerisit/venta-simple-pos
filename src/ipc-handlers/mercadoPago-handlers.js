@@ -291,14 +291,20 @@ function registerMercadoPagoHandlers(models) {
         cash_out: { amount: 0 },
       };
 
+      const httpMethod = method === "PUT" ? "PUT" : "POST";
+      console.log(`[create-mp-order] ${httpMethod} → pos=${posId} user=${userId} amount=${numericAmount}`);
+
       const apiResponse = await doFetch(url, {
-        method: method === "PUT" ? "PUT" : "POST",
+        method: httpMethod,
         headers: authHeaders(accessToken),
         body: JSON.stringify(body),
       });
 
       if (!apiResponse.ok) {
-        console.error("[create-mp-order] MP API error:", apiResponse.error);
+        console.error("[create-mp-order] MP API error:", JSON.stringify(apiResponse.error));
+      } else {
+        const hasQr = !!apiResponse.data?.qr_data;
+        console.log(`[create-mp-order] OK — qr_data presente: ${hasQr} | keys: ${Object.keys(apiResponse.data || {}).join(", ")}`);
       }
       return apiResponse;
 
@@ -644,10 +650,12 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
+      // Point Integration API solo acepta "card" (insertar/acercar tarjeta) o "qr" (QR en terminal).
+      // "credit_card" / "debit_card" son tipos de tarjeta, no modos — el terminal los detecta solo.
+      // "description" no es un campo válido en este endpoint (causa error 400).
       const body = {
         amount: amountCents,
-        description: description || "Cobro en tienda",
-        payment_mode: paymentType || "credit_card",
+        payment_mode: "card",
         additional_info: {
           external_reference: externalReference || `vs-${Date.now()}`,
           print_on_terminal: true,
