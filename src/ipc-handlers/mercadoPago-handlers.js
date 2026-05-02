@@ -587,35 +587,37 @@ function registerMercadoPagoHandlers(models) {
       let posAutoSaved = null;
       if (cfg.pos_id) {
         await Usuario.update({ mp_pos_id: cfg.pos_id }, { where: { rol: "administrador" } });
-      } else if (cfg.qr_mode !== "none") {
-        // Auto-fetch si no hay pos_id explícito y mp_pos_id está vacío
+      }
+
+      // Siempre intentar rellenar store_id faltante cuando qr_mode está activo.
+      // Esto corre aunque mp_pos_id ya estuviera guardado (bug anterior que impedía
+      // que store_id se guardara en cuentas ya configuradas).
+      if (cfg.qr_mode !== "none" && !cfg.store_id) {
         const admin = await Usuario.findOne({
           where: { rol: "administrador" },
           attributes: ["id", "mp_pos_id"],
           raw: true,
         });
-        if (!admin?.mp_pos_id) {
-          const ctxRes = await resolveActiveMpContext(models);
-          if (ctxRes.ok && ctxRes.ctx.accessToken) {
-            const posList = await doFetch(
-              "https://api.mercadopago.com/pos?limit=50&offset=0",
-              { headers: authHeaders(ctxRes.ctx.accessToken, { "Content-Type": undefined }) }
-            );
-            const firstPos = (posList.data?.results || []).find(p => p.external_id);
-            if (firstPos) {
-              await Usuario.update(
-                { mp_pos_id: firstPos.external_id },
-                { where: { id: admin.id } }
-              );
-              posAutoSaved = firstPos.external_id;
-              // Guardar external_store_id si está disponible (necesario para endpoint QR v2)
-              if (firstPos.external_store_id && !cfg.store_id) {
-                cfg.store_id = firstPos.external_store_id;
-                await Usuario.update(
-                  { mp_payment_config: cfg },
-                  { where: { id: admin.id } }
-                );
-              }
+        const ctxRes = await resolveActiveMpContext(models);
+        if (ctxRes.ok && ctxRes.ctx.accessToken) {
+          const posList = await doFetch(
+            "https://api.mercadopago.com/pos?limit=50&offset=0",
+            { headers: authHeaders(ctxRes.ctx.accessToken, { "Content-Type": undefined }) }
+          );
+          const results = posList.data?.results || [];
+          // Preferir el POS que coincide con mp_pos_id ya guardado
+          const currentPosId = admin?.mp_pos_id;
+          const matchPos = currentPosId
+            ? (results.find(p => p.external_id === currentPosId) || results.find(p => p.external_id))
+            : results.find(p => p.external_id);
+          if (matchPos) {
+            if (!admin?.mp_pos_id) {
+              await Usuario.update({ mp_pos_id: matchPos.external_id }, { where: { id: admin.id } });
+              posAutoSaved = matchPos.external_id;
+            }
+            if (matchPos.external_store_id) {
+              cfg.store_id = matchPos.external_store_id;
+              await Usuario.update({ mp_payment_config: cfg }, { where: { id: admin.id } });
             }
           }
         }
@@ -667,20 +669,12 @@ function registerMercadoPagoHandlers(models) {
       const { accessToken } = res.ctx;
       if (!accessToken) return { ok: false, error: "Access Token no configurado." };
 
-      // Point Integration API: payment_mode siempre "card" para terminales físicas.
-      // El tipo crédito/débito va en payment.type (no en payment_mode).
-      // "description" no está permitido en el root (causa error 400).
+      // Point Integration API: solo acepta amount y payment_mode en el body.
+      // "payment", "description", "additional_info" son rechazados con 400.
+      // El terminal determina crédito/débito cuando el cliente inserta la tarjeta.
       const body = {
         amount: amountCents,
         payment_mode: "card",
-        payment: {
-          installments: 1,
-          type: paymentType || "credit_card",
-        },
-        additional_info: {
-          external_reference: externalReference || `vs-${Date.now()}`,
-          print_on_terminal: true,
-        },
       };
 
       return await doFetch(
