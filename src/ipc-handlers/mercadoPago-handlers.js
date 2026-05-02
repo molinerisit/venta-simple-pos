@@ -729,23 +729,7 @@ function registerMercadoPagoHandlers(models) {
     }
   });
 
-  // Consulta directa de un pago por su ID (fallback cuando el intent no incluye payment.status aún)
-  ipcMain.handle("mp:get-payment", async (_evt, { paymentId }) => {
-    try {
-      if (!paymentId) return { ok: false, error: "paymentId requerido" };
-      const res = await resolveActiveMpContext(models);
-      if (!res.ok) return { ok: false, error: res.error };
-      const { accessToken } = res.ctx;
-      if (!accessToken) return { ok: false, error: "Access Token no configurado." };
-
-      return await doFetch(
-        `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
-        { headers: authHeaders(accessToken, { "Content-Type": undefined }) }
-      );
-    } catch (e) {
-      return { ok: false, error: e.message };
-    }
-  });
+  // mp:get-payment ya registrado arriba (línea ~174) — no duplicar
 
   // Lista TODOS los terminales de la cuenta (incluyendo los que no están en modo PDV)
   ipcMain.handle("mp:point-list-all-terminals", async () => {
